@@ -54,10 +54,14 @@ urlpatterns = [
     
     
     
+    #Faqs
+    path('faqs_header/', views.faqs_header, name='faqs_header'),
+    #Faqs
     
     
-    
-    
+    #wishlist
+    path('wishlist_header/', views.wishlist_header, name='wishlist_header'),
+    #wishlist
     
     
     

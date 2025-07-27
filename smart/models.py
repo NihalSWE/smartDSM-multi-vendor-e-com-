@@ -597,3 +597,27 @@ class AboutusPageHeader(models.Model):
 
     def __str__(self):
         return f"{self.page_slug} - {self.title}"
+    
+    
+#--AboutUs page header
+
+class FaqsPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/Faq-page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"
+    
+    
+#--wishlist page header
+
+class WishlistPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/Wishlist-page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"

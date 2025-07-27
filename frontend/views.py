@@ -91,13 +91,21 @@ def error404(request):
     return render(request, 'front/pages/error-404.html')
 
 def faq(request):
-    return render(request, 'front/pages/faq.html')
+    header=FaqsPageHeader.objects.filter(is_active=True).first()
+    context={
+        "header":header,
+        }
+    return render(request, 'front/pages/faq.html',context)
 
 def myAccount(request):
     return render(request, 'front/profile/my-account.html')
 
 def wishlist(request):
-    return render(request, 'front/shop/wishlist.html')
+    header=WishlistPageHeader.objects.filter(is_active=True).first()
+    context={
+        "header":header,
+        }
+    return render(request, 'front/shop/wishlist.html',context)
 
 def compare(request):
     return render(request, 'front/shop/compare.html')

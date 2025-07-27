@@ -1907,3 +1907,47 @@ def aboutUs_header(request):
         return redirect('aboutUs_header')
 
     return render(request, 'applications/aboutus/aboutus-header.html', {'header': header})
+
+
+#-----------faq header
+
+def faqs_header(request):
+    header = FaqsPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = FaqsPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('faqs_header')
+
+    return render(request, 'applications/faqs/faqs-header.html', {'header': header})
+
+
+#-----------wishlist header
+
+def wishlist_header(request):
+    header = WishlistPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = WishlistPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('wishlist_header')
+
+    return render(request, 'applications/wishlist/wishlist-header.html', {'header': header})

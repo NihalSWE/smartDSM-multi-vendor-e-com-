@@ -630,13 +630,7 @@
               <svg class="fill-icon">
                 <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-price"></use>
               </svg><span>Pricing  </span></a></li>
-          <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title link-nav" href="/FAQ">
-              <svg class="stroke-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-faq"></use>
-              </svg>
-              <svg class="fill-icon">
-                <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-faq"></use>
-              </svg><span>FAQ</span></a></li>
+          
           <li class="sidebar-main-title">
             <div>
               <h6>Miscellaneous</h6>
@@ -669,6 +663,30 @@
             
           </ul>
         </li>
+        <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title" href="#">
+          <svg class="stroke-icon">
+            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-blog"></use>
+          </svg>
+          <svg class="fill-icon">
+            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-blog"></use>
+          </svg><span>Faqs</span></a>
+        <ul class="sidebar-submenu">
+          <li><a href="{% url 'faqs_header' %}">Page Header</a></li>
+          
+        </ul>
+      </li>
+      <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+          <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-blog"></use>
+        </svg>
+        <svg class="fill-icon">
+          <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-blog"></use>
+        </svg><span>WishList</span></a>
+      <ul class="sidebar-submenu">
+        <li><a href="{% url 'wishlist_header' %}">Page Header</a></li>
+        
+      </ul>
+    </li>
           <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title" href="#">
               <svg class="stroke-icon">
                 <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-blog"></use>
