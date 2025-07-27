@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}">
+
+<style>
+    .modal-lg { max-width: 700px; }
+    .table th, .table td {
+        vertical-align: middle; /* Align content vertically in the middle */
+    }
+    .table th:nth-child(1), /* City header */
+    .table td:nth-child(1) {
+        text-align: left;
+    }
+    .table th:nth-child(2), /* Address header */
+    .table td:nth-child(2) {
+        text-align: left;
+    }
+    .table th:nth-child(3), /* Email header */
+    .table td:nth-child(3) {
+        text-align: left;
+    }
+    .table th:nth-child(4), /* Number header */
+    .table td:nth-child(4) {
+        text-align: left;
+    }
+    .table th:nth-child(5), /* Image header */
+    .table td:nth-child(5) {
+        text-align: center;
+    }
+    .table th:nth-child(6), /* Actions header */
+    .table td:nth-child(6) {
+        text-align: center;
+    }
+</style>
+
+{% endblock %}
+{% block content %}
+<div class="container mt-4">
+
+    <h2>Manage Contact Locations</h2>
+    <button class="btn btn-primary mb-3" id="btnAddLocation">Add New Location</button>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>City</th>
+                <th>Address</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th class="text-center">Image</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="locationsTableBody">
+            {% for loc in locations %}
+                <tr data-id="{{ loc.id }}">
+                    <td class="city">{{ loc.city }}</td>
+                    <td class="address">{{ loc.address|linebreaksbr }}</td>
+                    <td class="email">{{ loc.email|default:"—" }}</td>
+                    <td class="number">{{ loc.number|default:"—" }}</td>
+                    <td class="image text-center">
+                        {% if loc.image %}
+                            <img src="{{ loc.image.url }}" alt="{{ loc.city }}" style="height:54px; width:80px; object-fit: cover;"/>
+                        {% else %}
+                            <span class="text-muted">No Image</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-warning btnEdit" data-id="{{ loc.id }}">Edit</button>
+                        <button class="btn btn-sm btn-danger btnDelete" data-id="{{ loc.id }}">Delete</button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="text-center">No locations added yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form id="locationForm" enctype="multipart/form-data" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="id" id="locationId" value="">
+            <input type="hidden" name="action" id="formAction" value="add">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="locationModalLabel">Add Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="city" id="city" required>
+                        <div class="invalid-feedback" id="cityError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="address" id="address" rows="3" required></textarea>
+                        <div class="invalid-feedback" id="addressError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" id="email">
+                        <div class="invalid-feedback" id="emailError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="number" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" name="number" id="number">
+                        <div class="invalid-feedback" id="numberError"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image (160x108)</label>
+                        <input type="file" class="form-control" name="image" id="image" accept="image/*">
+                        <div class="invalid-feedback" id="imageError"></div>
+                        <div id="currentImage" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="saveLocationBtn">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scriptcontent %}
+<script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
+<script src="{% static 'assets/js/form-validation-custom.js' %}"></script>
+<script src="{% static 'assets/js/bookmark/jquery.validate.min.js' %}"></script>
+<script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    const locationModal = new bootstrap.Modal(document.getElementById('locationModal'));
+
+    function clearFormErrors() {
+        $('#cityError').text('');
+        $('#addressError').text('');
+        $('#emailError').text('');
+        $('#numberError').text('');
+        $('#imageError').text('');
+        $('#city, #address, #email, #number, #image').removeClass('is-invalid');
+    }
+
+    // Open modal for Add
+    $('#btnAddLocation').click(function() {
+        clearFormErrors();
+        $('#locationModalLabel').text('Add Location');
+        $('#locationForm')[0].reset();
+        $('#formAction').val('add');
+        $('#locationId').val('');
+        $('#currentImage').html('');
+        locationModal.show();
+    });
+
+    // Open modal for Edit
+    $('.btnEdit').click(function() {
+        clearFormErrors();
+        const row = $(this).closest('tr');
+        const id = $(this).data('id');
+        const city = row.find('.city').text().trim();
+        const address = row.find('.address').text().trim();
+        const email = row.find('.email').text().trim();
+        const number = row.find('.number').text().trim();
+        const imgTag = row.find('td.image img');
+        let currentImgHTML = '';
+
+        if(imgTag.length){
+            const src = imgTag.attr('src');
+            currentImgHTML = `<img src="${src}" style="height:54px; width:80px; object-fit: cover;" alt="Current Image">`;
+        }
+
+        $('#locationModalLabel').text('Edit Location');
+        $('#formAction').val('edit');
+        $('#locationId').val(id);
+        $('#city').val(city);
+        $('#address').val(address);
+        $('#email').val(email === '—' ? '' : email);
+        $('#number').val(number === '—' ? '' : number);
+        $('#currentImage').html(currentImgHTML);
+        $('#image').val('');
+        locationModal.show();
+    });
+
+    // Delete action
+    $('.btnDelete').click(function() {
+        if (!confirm('Are you sure you want to delete this location?')) return;
+        const id = $(this).data('id');
+
+        $.ajax({
+            url: '',
+            method: 'POST',
+            data: {
+                'id': id,
+                'action': 'delete',
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+            },
+            success: function(response) {
+                if(response.success){
+                    alert(response.message);
+                    location.reload();  // refresh page
+                } else {
+                    alert('Error deleting location');
+                }
+            }
+        });
+    });
+
+    // Submit form with AJAX
+    $('#locationForm').submit(function(e) {
+        e.preventDefault();
+        clearFormErrors();
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: '',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response){
+                if(response.success){
+                    alert(response.message);
+                    locationModal.hide();
+                    location.reload();
+                } else {
+                    // Show form errors
+                    if(response.errors){
+                        if(response.errors.city){
+                            $('#cityError').text(response.errors.city[0]);
+                            $('#city').addClass('is-invalid');
+                        }
+                        if(response.errors.address){
+                            $('#addressError').text(response.errors.address[0]);
+                            $('#address').addClass('is-invalid');
+                        }
+                        if(response.errors.email){
+                            $('#emailError').text(response.errors.email[0]);
+                            $('#email').addClass('is-invalid');
+                        }
+                        if(response.errors.number){
+                            $('#numberError').text(response.errors.number[0]);
+                            $('#number').addClass('is-invalid');
+                        }
+                        if(response.errors.image){
+                            $('#imageError').text(response.errors.image[0]);
+                            $('#image').addClass('is-invalid');
+                        }
+                    } else {
+                        alert('Something went wrong.');
+                    }
+                }
+            },
+            error: function() {
+                alert('Failed to submit. Please try again.');
+            }
+        });
+    });
+
+</script>
+
+{% endblock %}
+
+
+
+
+

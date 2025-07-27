@@ -18,9 +18,9 @@ from django.contrib import messages
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-LOGIN_URL = '/login/'  # Redirects to this page when @login_required is triggered
+LOGIN_URL = '/login_home/'  # Redirects to this page when @login_required is triggered
 LOGIN_REDIRECT_URL = '/'  # After login, redirect here
-LOGOUT_REDIRECT_URL = '/login/'  # After logout, redirect here
+LOGOUT_REDIRECT_URL = '/login_home/'  # After logout, redirect here
 
 
 # Quick-start development settings - unsuitable for production
@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'smart',
     'widget_tweaks',
     'sass_processor',
+    'frontend',
 ]
 
 MIDDLEWARE = [

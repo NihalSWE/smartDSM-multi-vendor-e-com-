@@ -15,6 +15,36 @@ import uuid
 
 
 
+
+
+class Package(models.Model):
+    package_id = models.CharField(max_length=10, unique=True, editable=False)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    max_products = models.PositiveIntegerField(default=0)
+    can_use_variants = models.BooleanField(default=False)
+    can_create_discounts = models.BooleanField(default=False)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    duration_days = models.PositiveIntegerField(default=30)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.package_id:
+            if not Package.objects.exists():
+                self.package_id = '001'
+            else:
+                last_package = Package.objects.exclude(package_id='001').order_by('-id').first()
+                if last_package:
+                    new_id = str(int(last_package.package_id) + 1).zfill(3)
+                    self.package_id = new_id
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.package_id} - {self.name}"
+    
+    
+    
 class UserManager(BaseUserManager):
     def create_user(self, email, username, password=None, user_id=None, user_type=3, **extra_fields):
         if not email:
@@ -73,6 +103,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     city = models.CharField(max_length=250, blank=True, null=True)
     state = models.CharField(max_length=250, blank=True, null=True)
     postal_code = models.CharField(max_length=50, blank=True, null=True)
+
+    package = models.ForeignKey('Package', on_delete=models.SET_NULL, null=True, blank=True)
+
     user_type = models.IntegerField(choices=USER_TYPE_CHOICES, default=2)
     user_status = models.IntegerField(choices=STATUS_CHOICES, default=1)
 
@@ -83,7 +116,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
-    # REQUIRED_FIELDS = ['user_id', 'username', 'phone_number']
+
+    def save(self, *args, **kwargs):
+        if not self.is_superuser:
+            if self.package:
+                if self.package.package_id == '001':
+                    self.user_type = 3  # Client
+                else:
+                    self.user_type = 1  # Vendor
+            else:
+                self.user_type = 2  # Staff
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
@@ -262,7 +305,7 @@ class Product(models.Model):
 
     sku                 = models.CharField(max_length=50, unique=True)
     title               = models.CharField(max_length=255)
-    slug                = models.SlugField(max_length=255, unique=True, blank=True)
+    slug                = models.SlugField(max_length=255, unique=True)
     description         = models.TextField(blank=True, null=True)
     
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', help_text="Who is selling this item")
@@ -387,7 +430,7 @@ class Discount(models.Model):
 # Variations & Options
 # ——————————————————————————————————————————————
 
-class VariationType(models.Model):
+class ProductVariationType(models.Model):
     name        = models.CharField(max_length=50)
     product     = models.ForeignKey(Product, related_name='variation_types', on_delete=models.CASCADE)
 
@@ -398,8 +441,8 @@ class VariationType(models.Model):
         return f"{self.name} ({self.product.title})"
 
 
-class VariationOption(models.Model):
-    variation_type  = models.ForeignKey(VariationType, related_name='options', on_delete=models.CASCADE)
+class ProductVariationOption(models.Model):
+    variation_type  = models.ForeignKey(ProductVariationType, related_name='options', on_delete=models.CASCADE)
     value           = models.CharField(max_length=50)  # e.g. “Red”, “XL”, “2kg”
     price_modifier  = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # optional
 
@@ -408,3 +451,149 @@ class VariationOption(models.Model):
 
     def __str__(self):
         return f"{self.variation_type.name}: {self.value}"
+    
+    
+class ProductVariant(models.Model):
+    product     = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
+    sku         = models.CharField(max_length=60, unique=True)
+    price       = models.DecimalField(max_digits=10, decimal_places=2)
+    # override stock if needed per‐variant
+    stock_quantity    = models.PositiveIntegerField(default=0)
+    is_active         = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = (('product', 'sku'),)
+        ordering = ['sku']
+
+    def __str__(self):
+        return f"{self.product.title} [{self.sku}]"
+
+
+class VariantOptionSelection(models.Model):
+    variant         = models.ForeignKey(ProductVariant, related_name='selections', on_delete=models.CASCADE)
+    variation_type  = models.ForeignKey(ProductVariationType, on_delete=models.CASCADE)
+    option          = models.ForeignKey(ProductVariationOption, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = (('variant', 'variation_type'),)
+
+    def __str__(self):
+        return f"{self.variant.sku}: {self.variation_type.name} = {self.option.value}"
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#-------------------Nihal--------------------------------------------Nihal--------------------------Nihal--------------
+#contact page
+#------------------
+from PIL import Image
+
+
+class contactPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/contact_page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"
+
+
+
+
+class contactFAQ(models.Model):
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return self.question
+    
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.name} ({self.email})"
+
+
+# Conatct page branch locations
+class ContactLocation(models.Model):
+    city = models.CharField(max_length=100)
+    address = models.TextField()
+    email = models.EmailField(max_length=100,blank=True,null=True)
+    number = models.CharField(max_length=20,blank=True,null=True)  # Mandatory
+    image = models.ImageField(upload_to='media/contact_locations/', null=True, blank=True)
+
+    def __str__(self):
+        return self.city
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image:
+            img = Image.open(self.image.path)
+            img = img.convert('RGB')  # Ensure it's in a valid format
+            img = img.resize((160, 108), Image.LANCZOS)
+            img.save(self.image.path)
+
+
+
+#--Become a vendor--
+class vendorregisterPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/vendor_register_page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"
+    
+    
+    
+#--Blog List Header---
+class BlogListPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/Blog-List-page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"
+    
+    
+#--Blog List Header---
+class BlogPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/Blog-page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"
+    
+    
+
+#--AboutUs page header
+
+class AboutusPageHeader(models.Model):
+    page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
+    title = models.CharField(max_length=255)
+    background_image = models.ImageField(upload_to='media/AboutUs-page_headers/')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.page_slug} - {self.title}"

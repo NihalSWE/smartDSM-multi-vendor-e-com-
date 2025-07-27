@@ -1,0 +1,383 @@
+{% extends "front/base.html" %}
+{% load static %}
+
+{% block custom_css %}
+
+<style>
+    /* Base Styles */
+    .section-title {
+        text-align: center;
+        font-size: 2rem;
+        margin: 40px 0 30px;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .locations-container {
+        width: 90%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px 0;
+    }
+    
+    .locations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+    }
+    
+    /* Card Styles */
+    .location-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .location-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Image Section */
+    .card-image {
+        height: 200px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .location-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3));
+    }
+    
+    .location-card:hover .location-img {
+        transform: scale(1.05);
+    }
+    
+    /* Content Section */
+    .card-content {
+        padding: 25px;
+    }
+    
+    .location-name {
+        font-size: 1.4rem;
+        margin: 0 0 15px;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .location-address {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    /* Contact Info */
+    .contact-info {
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+    }
+    
+    .contact-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .contact-icon {
+        margin-right: 12px;
+        font-size: 1.1rem;
+        color: #3498db;
+    }
+    
+    .contact-link {
+        color: #3498db;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .contact-link:hover {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+    
+    /* Empty State */
+    .no-locations {
+        text-align: center;
+        grid-column: 1 / -1;
+        color: #666;
+        padding: 40px 0;
+        font-size: 1.1rem;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .locations-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .section-title {
+            font-size: 1.6rem;
+        }
+    }
+</style>
+
+
+
+
+
+
+{% endblock custom_css %}
+
+{% block content %}
+            <!-- Start of Page Header -->
+<!-- Dynamic Page Header -->
+{% if header %}
+<section class="page-header text-white text-center" style="
+    background-image: url('{{ header.background_image.url }}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 80px 0;
+">
+    <div class="container">
+        <h1 class="page-title mb-0">{{ header.title }}</h1>
+    </div>
+</section>
+{% else %}
+<section class="page-header text-white text-center" style="
+    background-color: #333;
+    padding: 80px 0;
+">
+    <div class="container">
+        <h1 class="page-title mb-0">Contact Us</h1>
+    </div>
+</section>
+{% endif %}
+
+
+            <!-- End of Page Header -->
+
+            <!-- Start of Breadcrumb -->
+            <nav class="breadcrumb-nav mb-10 pb-1">
+                <div class="container">
+                    <ul class="breadcrumb">
+                        <li><a href="demo1.html">Home</a></li>
+                        <li>Contact Us</li>
+                    </ul>
+                </div>
+            </nav>
+            <!-- End of Breadcrumb -->
+
+            <!-- Start of PageContent -->
+            <div class="page-content contact-us">
+                <div class="container">
+                    <section class="content-title-section mb-10">
+                        <h3 class="title title-center mb-3">Contact
+                            Information
+                        </h3>
+                        <p class="text-center">Lorem ipsum dolor sit amet,
+                            consectetur
+                            adipiscing elit, sed do eiusmod tempor incididunt ut</p>
+                    </section>
+                    <!-- End of Contact Title Section -->
+
+                    <section class="contact-information-section mb-10">
+                        <div class=" swiper-container swiper-theme " data-swiper-options="{
+                            'spaceBetween': 20,
+                            'slidesPerView': 1,
+                            'breakpoints': {
+                                '480': {
+                                    'slidesPerView': 2
+                                },
+                                '768': {
+                                    'slidesPerView': 3
+                                },
+                                '992': {
+                                    'slidesPerView': 4
+                                }
+                            }
+                        }">
+                            <div class="swiper-wrapper row cols-xl-4 cols-md-3 cols-sm-2 cols-1">
+                                <div class="swiper-slide icon-box text-center icon-box-primary">
+                                    <span class="icon-box-icon icon-email">
+                                        <i class="w-icon-envelop-closed"></i>
+                                    </span>
+                                    <div class="icon-box-content">
+                                        <h4 class="icon-box-title">E-mail Address</h4>
+                                        <p><a href="https://portotheme.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="167b777f7a56736e777b667a733875797b">[email&#160;protected]</a></p>
+                                    </div>
+                                </div>
+                                <div class="swiper-slide icon-box text-center icon-box-primary">
+                                    <span class="icon-box-icon icon-headphone">
+                                        <i class="w-icon-headphone"></i>
+                                    </span>
+                                    <div class="icon-box-content">
+                                        <h4 class="icon-box-title">Phone Number</h4>
+                                        <p>(123) 456-7890 / (123) 456-9870</p>
+                                    </div>
+                                </div>
+                                <div class="swiper-slide icon-box text-center icon-box-primary">
+                                    <span class="icon-box-icon icon-map-marker">
+                                        <i class="w-icon-map-marker"></i>
+                                    </span>
+                                    <div class="icon-box-content">
+                                        <h4 class="icon-box-title">Address</h4>
+                                        <p>Lawrence, NY 11345, USA</p>
+                                    </div>
+                                </div>
+                                <div class="swiper-slide icon-box text-center icon-box-primary">
+                                    <span class="icon-box-icon icon-fax">
+                                        <i class="w-icon-fax"></i>
+                                    </span>
+                                    <div class="icon-box-content">
+                                        <h4 class="icon-box-title">Fax</h4>
+                                        <p>1-800-570-7777</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- End of Contact Information section -->
+
+                    <hr class="divider mb-10 pb-1">
+
+                    <section class="contact-section">
+                        <div class="row gutter-lg pb-3">
+                            <div class="col-lg-6 mb-8">
+                                <h4 class="title mb-3">People usually ask these</h4>
+                                <div class="accordion accordion-bg accordion-gutter-md accordion-border">
+                                    {% for faq in faqs %}
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <a href="#collapse{{ faq.id }}" class="{% if forloop.first %}collapse{% else %}expand{% endif %}">
+                                                {{ faq.question }}
+                                            </a>
+                                        </div>
+                                        <div id="collapse{{ faq.id }}" class="card-body {% if forloop.first %}expanded{% else %}collapsed{% endif %}">
+                                            <p class="mb-0">
+                                                {{ faq.answer|linebreaks }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <p>No FAQs available at the moment.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-6 mb-8">
+                                <h4 class="title mb-3">Send Us a Message</h4>
+                                <form class="form contact-us-form" action="{% url 'contactUs' %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="username">Your Name</label>
+                                        <input type="text" id="username" name="username" class="form-control">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="email_1">Your Email</label>
+                                        <input type="email" id="email_1" name="email_1" class="form-control">
+                                    </div>
+                            
+                                    <div class="form-group">
+                                        <label for="phone">Your Phone Number</label>
+                                        <input type="tel" id="phone" name="phone" class="form-control">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="message">Your Message</label>
+                                        <textarea id="message" name="message" cols="30" rows="5" class="form-control"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-dark btn-rounded">Send Now</button>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+                    <!-- End of Contact Section -->
+                </div>
+
+                <hr class="divider mb-10 pb-1">
+                <h2 class="section-title">Branch Locations</h2>
+                <div class="locations-container">
+                    <!-- branch or warehouse locations -->
+                    <div class="locations-grid">
+                        {% for location in locations %}
+                            <div class="location-card wow fadeInUp" data-wow-delay="{{ forloop.counter0|add:'0.3'|floatformat:1 }}s" data-wow-duration="1s">
+                                <div class="card-image" data-tilt>
+                                    <img src="{{ location.image.url }}" alt="{{ location.city }}" class="location-img">
+                                    <div class="image-overlay"></div>
+                                </div>
+                                <div class="card-content">
+                                    <h4 class="location-name">{{ location.city }}</h4>
+                                    <div class="location-address">{{ location.address|linebreaksbr }}</div>
+                                    
+                                    {% if location.email or location.number %}
+                                        <div class="contact-info">
+                                            {% if location.email %}
+                                                <div class="contact-item">
+                                                    <span class="contact-icon">✉</span>
+                                                    <a href="mailto:{{ location.email }}" class="contact-link">{{ location.email }}</a>
+                                                </div>
+                                            {% endif %}
+                                            {% if location.number %}
+                                                <div class="contact-item">
+                                                    <span class="contact-icon">📞</span>
+                                                    <a href="tel:{{ location.number }}" class="contact-link">{{ location.number }}</a>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="no-locations">No locations available at the moment.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+               
+
+
+                <!-- Google Maps - Go to the bottom of the page to change settings and map location. -->
+                <!-- Google Maps -->
+<div class="container mb-10">
+    <div class="card border-0 shadow-sm mx-auto" style="max-width: 1600px;">
+        <div class="card-body p-0">
+            <div style="width: 100%; height: 300px; overflow: hidden;">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d456.5231874731557!2d90.3784557!3d23.740763599999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b5c0611207%3A0xed7ed8cceed1d7ad!2sIGL%20Web%20Ltd!5e0!3m2!1sen!2sbd!4v1753245370502!5m2!1sen!2sbd" 
+                    width="100%" 
+                    height="300" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                <!-- End Map Section -->
+            </div>
+            <!-- End of PageContent -->
+            {% endblock content %}
+
+            {% block custom_js %}
+           
+            {% endblock custom_js %}

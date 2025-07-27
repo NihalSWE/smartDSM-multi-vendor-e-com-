@@ -12,6 +12,11 @@ urlpatterns = [
     path('index/', views.index, name='index'),
     path('regions/', views.regions, name='regions'),
     
+    #autentication
+    path('signup_home', views.signup_home, name="signup_home"),
+    path('login_home', views.login_home, name="login_home"),
+    path('logout_view', views.logout_view, name="logout_view"),
+    
     # User accounts
     path('user-accounts/', views.user_accounts, name='user_accounts'),
     path('add-user-account/', views.add_user_account, name='add_user_account'),
@@ -20,10 +25,19 @@ urlpatterns = [
     # User accounts
     
     # products
-    path('products/', views.product_list, name='product_list'),
-    path('add-product/', views.add_product, name='add_product'),
-    path('edit-product/', views.edit_product, name='edit_product'),
-    path('delete-product/', views.delete_product, name='delete_product'),
+    # path('products/', views.product_list, name='product_list'),
+    # path('add-product/', views.add_product, name='add_product'),
+    # path('edit-product/', views.edit_product, name='edit_product'),
+    # path('delete-product/', views.delete_product, name='delete_product'),
+    
+    # Category
+    path('category/', views.category, name="category"),
+    
+    # products
+    path('add_products',views.add_products, name="add_products"),    
+    path('product_grid',views.product_grid, name="product_grid"),    
+    path('list_products', views.list_products, name="list_products"),
+    path('product_details',views.product_details, name="product_details"),
     
     # purchase products
     path('instant-purchase/', views.instant_purchase, name='instant_purchase'),
@@ -33,7 +47,9 @@ urlpatterns = [
     
     
     
-    
+    #About Us
+    path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
+    #About Us
     
     
     
@@ -95,14 +111,11 @@ urlpatterns = [
     # #------------------Kanban Board
     path('kanban', views.kanban, name="kanban"),
     
+    #vendor register header
+    path('update_vendor_header',views.update_vendor_header,name="update_vendor_header"),
     
-    # #--------------------Ecommerce
-    path('add_products',views.add_products, name="add_products"),    
-    path('product_grid',views.product_grid, name="product_grid"),    
-    path('list_products', views.list_products, name="list_products"),
-    path('product_details',views.product_details, name="product_details"),    
     
-    path('category', views.category, name="category"),
+    
     path('seller_list', views.seller_list, name="seller_list"),
     path('seller_details', views.seller_details, name="seller_details"),
     
@@ -140,6 +153,12 @@ urlpatterns = [
     
     # #------------------------contacts
     path('contacts', views.contacts, name="contacts"),
+    path('contactfaq/update/<int:pk>/', views.update_contactfaq, name='contactfaq_update'),
+    path('contactfaq/delete/<int:pk>/', views.delete_contactfaq, name='contactfaq_delete'),
+     path('contact_messages/', views.contact_messages, name='contact_messages'),
+     path('contact-messages/delete/<int:pk>/', views.delete_contact_message, name='delete_contact_message'),
+     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
+     path('update_contact_header',views.update_contact_header,name='update_contact_header'),
 
     # #------------------------task
     path('task', views.task, name="task"),
@@ -356,6 +375,8 @@ urlpatterns = [
     path('blog_details', views.blog_details, name="blog_details"),
     path('blog_single', views.blog_single, name="blog_single"),
     path('add_post', views.add_post, name="add_post"),
+    path('blogList_header',views.blogList_header,name="blogList_header"),
+    path('blog_header',views.blog_header,name="blog_header"),
 
     #-------------------------job serch
 
@@ -386,10 +407,5 @@ urlpatterns = [
     path('support_ticket', views.support_ticket, name="support_ticket"), 
     
     
-    #-----------------------------------------------------------------------------------    
-    
-    path('signup_home', views.signup_home, name="signup_home"),
-    path('login_home', views.login_home, name="login_home"),
-    path('logout_view', views.logout_view, name="logout_view"),
     
 ]

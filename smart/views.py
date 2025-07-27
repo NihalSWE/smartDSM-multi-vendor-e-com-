@@ -21,6 +21,59 @@ def is_valid_email(email):
     """Simple regex for email validation"""
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
+
+@login_required(login_url="/admin-dashboard/login_home")
+def index(request):
+    context = { "breadcrumb":{"title":"Default","parent":"Dashboard","child":"Default"},}
+    return render(request,'index.html',context)
+
+
+def signup_home(request):
+    if request.method == "GET":
+        return render(request, 'sign-up.html')
+    else:
+        email = request.POST['email']
+        username = request.POST['username']
+        password = request.POST['password']
+        user = User.objects.filter(email=email).exists()
+        if user:
+            raise Exception('Something went wrong')
+        new_user = User.objects.create_user(username=username,email=email, password=password).exis
+        new_user.save()
+        return redirect('index')
+    
+    
+def logout_view(request):
+    logout(request)
+    return redirect('login_home')
+
+
+def login_home(request):
+    if request.method == "POST":
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password  = form.cleaned_data['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request,user)
+                if 'next' in request.GET:
+                    nextPage = request.GET['next']
+                    return HttpResponseRedirect(nextPage)
+                return redirect("index")
+            else:
+                messages.error(request,"Wrong credentials")
+                return redirect("login_home")
+        else:
+            messages.error(request,"Wrong credentials")
+            return redirect("login_home")
+    else:
+        form = AuthenticationForm()        
+        
+    return render(request,'login.html',{"form":form,})
+
+
+
 def regions(request):
     if request.method == 'POST':
         # data = json.loads(request.body.decode('utf-8'))
@@ -71,6 +124,7 @@ def regions(request):
 
 
 
+@login_required(login_url="/login_home")
 def user_accounts(request):
     # user_accounts = UserAccount.objects.all()
     # regions = Region.objects.all()
@@ -375,6 +429,40 @@ def instant_purchase_execute(request):
         'status': 'error',
         'message': 'Invalid request method.'
     }, status=400)
+    
+    
+    
+
+#---------------Ecommerce-------------------#
+
+@login_required(login_url="/login_home")
+def product_grid(request):
+    context = { "breadcrumb":{"title":"Product Grid","parent":"Ecommerce", "child":"Product Grid"}}
+    return render(request,"applications/ecommerce/products/product-grid.html",context)
+
+
+@login_required(login_url="/login_home")
+def list_products(request):
+    context = { "breadcrumb":{"title":"Product List","parent":"Ecommerce", "child":"Product List"}}
+    return render(request,"applications/ecommerce/products/list-products.html",context)
+
+
+@login_required(login_url="/login_home")
+def add_products(request):
+    context = { "breadcrumb":{"title":"Add Product","parent":"ECommerce", "child":"Add Product"}}
+    return render(request,"applications/ecommerce/products/add-products.html",context)
+
+
+@login_required(login_url="/login_home")
+def product_details(request):
+    context = { "breadcrumb":{"title":"Product Details","parent":"Ecommerce", "child":"Product Details"}}
+    return render(request,"applications/ecommerce/products/product-details.html",context)
+
+
+@login_required(login_url="/login_home")
+def category(request):
+    context = { "breadcrumb":{"title":"Category","parent":"Ecommerce", "child":"Category"}}
+    return render(request,"applications/ecommerce/category.html",context)
 
 
 
@@ -416,12 +504,6 @@ def instant_purchase_execute(request):
 
 
 # Built in views in the template
-@login_required(login_url="/login_home")
-def index(request):
-    context = { "breadcrumb":{"title":"Default","parent":"Dashboard","child":"Default"},}
-    return render(request,'index.html',context)
-
-
 @login_required(login_url="/login_home")
 def dashboard_02(request):
     context = { "breadcrumb":{"title":"E-Commerce","parent":"Dashboard","child":"E-Commerce"},}
@@ -567,36 +649,9 @@ def kanban(request):
 
 
 #------------------------ Ecommerce
-@login_required(login_url="/login_home")
-def add_products(request):
-    context = { "breadcrumb":{"title":"Add Product","parent":"ECommerce", "child":"Add Product"}}
-    return render(request,"applications/ecommerce/products/add-products.html",context)
-
-
-@login_required(login_url="/login_home")
-def product_grid(request):
-    context = { "breadcrumb":{"title":"Product Grid","parent":"Ecommerce", "child":"Product Grid"}}
-    return render(request,"applications/ecommerce/products/product-grid.html",context)
-
-
-@login_required(login_url="/login_home")
-def list_products(request):
-    context = { "breadcrumb":{"title":"Product List","parent":"Ecommerce", "child":"Product List"}}
-    return render(request,"applications/ecommerce/products/list-products.html",context)
-
-
-@login_required(login_url="/login_home")
-def product_details(request):
-    context = { "breadcrumb":{"title":"Product Details","parent":"Ecommerce", "child":"Product Details"}}
-    return render(request,"applications/ecommerce/products/product-details.html",context)
 
 
 
-
-@login_required(login_url="/login_home")
-def category(request):
-    context = { "breadcrumb":{"title":"Category","parent":"Ecommerce", "child":"Category"}}
-    return render(request,"applications/ecommerce/category.html",context)
 
 
 @login_required(login_url="/login_home")
@@ -709,11 +764,7 @@ def bookmark(request):
     return render(request,"applications/bookmark/bookmark.html",context)
 
 
-#------------------------contacts
-@login_required(login_url="/login_home")
-def contacts(request):
-    context = { "breadcrumb":{"title":"Contacts","parent":"Apps", "child":"Contacts"}}
-    return render(request,"applications/contacts/contacts.html",context)
+
 
 
 #------------------------task
@@ -1633,48 +1684,226 @@ def support_ticket(request):
     return render(request,"miscellaneous/support-ticket/support-ticket.html",context)
 
 
-#---------------------------------------------------------------------------------------
+#-----------------------------------Nihal----------------------------------------------------
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import *
+from .forms import *
+from django.urls import reverse
 
-def signup_home(request):
-    if request.method == "GET":
-        return render(request, 'sign-up.html')
-    else:
-        email = request.POST['email']
-        username = request.POST['username']
-        password = request.POST['password']
-        user = User.objects.filter(email=email).exists()
-        if user:
-            raise Exception('Something went wrong')
-        new_user = User.objects.create_user(username=username,email=email, password=password).exis
-        new_user.save()
-        return redirect('index')
+#------------------------contacts---------
+def update_contact_header(request):
+    header = contactPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = contactPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('update_contact_header')
+
+    return render(request, 'applications/contacts/page-header.html', {'header': header})
+
+
+
+@login_required(login_url="/login_home")
+def contacts(request):
     
-    
-def logout_view(request):
-    logout(request)
-    return redirect('login_home')
+    faqs = contactFAQ.objects.all().order_by('order')
 
-
-def login_home(request):
-    if request.method == "POST":
-        form = AuthenticationForm(data=request.POST)
+    if request.method == 'POST':
+        form = contactFAQorm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
-            password  = form.cleaned_data['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request,user)
-                if 'next' in request.GET:
-                    nextPage = request.GET['next']
-                    return HttpResponseRedirect(nextPage)
-                return redirect("index")
-            else:
-                messages.error(request,"Wrong credentials")
-                return redirect("login_home")
-        else:
-            messages.error(request,"Wrong credentials")
-            return redirect("login_home")
+            form.save()
+            return redirect('contacts')  # ensure this name matches your urls.py
     else:
-        form = AuthenticationForm()        
+        form = contactFAQorm()
+
+    context = {
+        "breadcrumb": {
+            "title": "Contacts",
+            "parent": "Apps",
+            "child": "Contacts"
+        },
         
-    return render(request,'login.html',{"form":form,})
+        "faqs": faqs,
+        "form": form
+    }
+    return render(request, "applications/contacts/contacts.html", context)
+
+@login_required(login_url="/login_home")
+def update_contactfaq(request, pk):
+    faq = get_object_or_404(contactFAQ, pk=pk)
+    if request.method == 'POST':
+        form = contactFAQorm(request.POST, instance=faq)
+        if form.is_valid():
+            form.save()
+    return redirect('contacts')
+
+@login_required(login_url="/login_home")
+def delete_contactfaq(request, pk):
+    faq = get_object_or_404(contactFAQ, pk=pk)
+    faq.delete()
+    return redirect('contacts')
+
+
+#---contact us form msg
+@login_required(login_url="/login_home")
+def delete_contactfaq(request, pk):
+    faq = get_object_or_404(contactFAQ, pk=pk)
+    faq.delete()
+    return redirect('contacts')
+
+
+
+#user messages--
+@login_required(login_url="/login_home")
+def contact_messages(request):
+    messages_list = ContactMessage.objects.all().order_by('-created_at')
+    context = {
+        "breadcrumb": {"title": "Contact Messages", "parent": "Apps", "child": "Messages"},
+        "messages": messages_list
+    }
+    return render(request, "applications/contacts/message.html", context)
+
+@login_required(login_url="/login_home")
+def delete_contact_message(request, pk):
+    if request.method == "POST":
+        message = get_object_or_404(ContactMessage, pk=pk)
+        message.delete()
+        messages.success(request, "Message deleted successfully.")
+    return redirect('contact_messages')
+
+@login_required
+def contactUs_location(request):
+    locations = ContactLocation.objects.all()
+
+    # Handle AJAX POST requests for add/edit/delete
+    if request.method == "POST" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+
+        if action == "add":
+            form = ContactLocationForm(request.POST, request.FILES)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({"success": True, "message": "Location added successfully."})
+            else:
+                return JsonResponse({"success": False, "errors": form.errors})
+
+        elif action == "edit":
+            loc_id = request.POST.get('id')
+            location = get_object_or_404(ContactLocation, id=loc_id)
+            form = ContactLocationForm(request.POST, request.FILES, instance=location)
+            if form.is_valid():
+                form.save()
+                return JsonResponse({"success": True, "message": "Location updated successfully."})
+            else:
+                return JsonResponse({"success": False, "errors": form.errors})
+
+        elif action == "delete":
+            loc_id = request.POST.get('id')
+            location = get_object_or_404(ContactLocation, id=loc_id)
+            location.delete()
+            return JsonResponse({"success": True, "message": "Location deleted successfully."})
+
+        else:
+            return JsonResponse({"success": False, "message": "Invalid action."})
+
+    # GET request - just render page
+    return render(request, 'applications/contacts/contactLocations.html', {"locations": locations})
+
+
+#-----------------become a vendor
+#page header
+def update_vendor_header(request):
+    header = vendorregisterPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = vendorregisterPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('update_vendor_header')
+
+    return render(request, 'applications/ecommerce/seller/vendorheader.html', {'header': header})
+
+
+#-----------------blog List ---
+#page header
+def blogList_header(request):
+    header = BlogListPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = BlogListPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('blogList_header')
+
+    return render(request, 'miscellaneous/blog/blogList-header.html', {'header': header})
+
+
+
+#-----------------blog single ---
+#page header
+def blog_header(request):
+    header = BlogPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = BlogPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('blog_header')
+
+    return render(request, 'miscellaneous/blog/blog-header.html', {'header': header})
+
+
+#-----------aboutUS header
+
+def aboutUs_header(request):
+    header = AboutusPageHeader.objects.first()  # Only 1 entry expected
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'on'
+        image = request.FILES.get('background_image')
+
+        if not header:
+            header = AboutusPageHeader()
+
+        header.title = title
+        header.is_active = is_active
+        if image:
+            header.background_image = image
+        header.save()
+        return redirect('aboutUs_header')
+
+    return render(request, 'applications/aboutus/aboutus-header.html', {'header': header})
