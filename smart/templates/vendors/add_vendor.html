@@ -1,0 +1,1250 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block custom_css %}
+{% comment %} <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}"> {% endcomment %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'assets/css/select2_custom_style.css' %}">
+
+<style>
+    .select2-container .select2-selection--single{
+        border-radius: 60px !important;
+    }
+    
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+    
+    .required-fields-mark{
+        color: red;
+    }
+
+    <style>
+    /* Scoped styles with vr- prefix (vendor registration) */
+    .vr-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .vr-header {
+        text-align: center;
+        margin-bottom: 4rem;
+        position: relative;
+    }
+    
+    .vr-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 1rem;
+        background: linear-gradient(90deg, #4361ee 0%, #3a0ca3 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .vr-header h1::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(90deg, #4361ee 0%, #3a0ca3 100%);
+        border-radius: 2px;
+    }
+    
+    .vr-header p {
+        font-size: 1.125rem;
+        color: #666;
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+    
+    .vr-success-container {
+        text-align: center;
+        padding: 3rem;
+        display: none;
+    }
+    
+    .vr-success-icon {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 2rem;
+    }
+    
+    .vr-success-message {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #4361ee;
+        margin-bottom: 1.5rem;
+    }
+    
+    .vr-success-details {
+        font-size: 1.25rem;
+        color: #666;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+    
+    .vr-form-stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        position: relative;
+    }
+    
+    .vr-step {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+    }
+    
+    .vr-step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        color: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        margin: 0 auto 10px;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .vr-step.active .vr-step-number {
+        background: #4361ee;
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .vr-step.completed .vr-step-number {
+        background: #4cc9f0;
+        color: white;
+    }
+    
+    .vr-step-label {
+        font-size: 0.875rem;
+        color: #999;
+        font-weight: 500;
+    }
+    
+    .vr-step.active .vr-step-label {
+        color: #4361ee;
+        font-weight: 600;
+    }
+    
+    .vr-step.completed .vr-step-label {
+        color: #4cc9f0;
+    }
+    
+    .vr-stepper-progress {
+        position: absolute;
+        top: 25px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #f0f0f0;
+        z-index: 1;
+    }
+    
+    .vr-stepper-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #4361ee 0%, #3a0ca3 100%);
+        border-radius: 2px;
+        transition: width 0.4s ease;
+    }
+    
+    .vr-card {
+        background: white;
+        border-radius: 12px;
+        /*box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);*/
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    {% comment %} .vr-card:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    } {% endcomment %}
+    
+    .vr-card-header {
+        background: linear-gradient(90deg, #f8f9ff 0%, #ffffff 100%);
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(67, 97, 238, 0.1);
+        display: flex;
+        align-items: center;
+    }
+    
+    .vr-card-header h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #4361ee;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .vr-card-header i {
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+        background: #4361ee;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .vr-card-body {
+        padding: 2rem;
+    }
+    
+    .vr-form-group {
+        margin-bottom: 1.75rem;
+        position: relative;
+    }
+    
+    .vr-form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 0.75rem;
+    }
+    
+    .vr-form-control {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+    }
+    
+    .vr-form-control:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        background-color: white;
+        outline: none;
+    }
+    
+    .vr-textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .vr-radio-group {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .vr-radio-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .vr-radio-input {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .vr-radio-custom {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ddd;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .vr-radio-input:checked ~ .vr-radio-custom {
+        border-color: #4361ee;
+        background-color: #4361ee;
+        box-shadow: inset 0 0 0 3px white;
+    }
+    
+    .vr-file-upload {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .vr-file-input {
+        position: absolute;
+        font-size: 100px;
+        opacity: 0;
+        right: 0;
+        top: 0;
+    }
+    
+    .vr-file-label {
+        border: 2px dashed #e0e0e0;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .vr-file-label:hover {
+        border-color: #4361ee;
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+    
+    .vr-file-label i {
+        font-size: 2rem;
+        color: #4361ee;
+        margin-bottom: 1rem;
+    }
+    
+    .vr-file-text {
+        font-size: 0.875rem;
+        color: #666;
+    }
+    
+    .vr-file-hint {
+        font-size: 0.75rem;
+        color: #999;
+        margin-top: 0.5rem;
+    }
+    
+    .vr-btn-submit {
+        background: linear-gradient(90deg, #4361ee 0%, #3a0ca3 100%);
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        font-size: 1rem;
+        font-weight: 500;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .vr-btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+    }
+    
+    .vr-btn-submit:active {
+        transform: translateY(0);
+    }
+    
+    .vr-btn-submit i {
+        margin-left: 0.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .vr-btn-submit:hover i {
+        transform: translateX(3px);
+    }
+    
+    .vr-btn-submit::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: 0.5s;
+    }
+    
+    .vr-btn-submit:hover::after {
+        left: 100%;
+    }
+    
+    .vr-form-navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3rem;
+        padding: 0 20px 20px 20px;
+    }
+    
+    .vr-btn-prev, .vr-btn-next {
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .vr-btn-prev {
+        background: #f0f0f0;
+        color: #666;
+        border: none;
+    }
+    
+    .vr-btn-prev:hover {
+        background: #e0e0e0;
+    }
+    
+    .vr-btn-prev i {
+        margin-right: 0.5rem;
+    }
+    
+    .vr-btn-next {
+        background: #4361ee;
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .vr-btn-next:hover {
+        background: #3a0ca3;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+    }
+    
+    .vr-btn-next i {
+        margin-left: 0.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .vr-btn-next:hover i {
+        transform: translateX(3px);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .vr-stepper-progress {
+            top: 20px;
+        }
+        
+        .vr-step-number {
+            width: 40px;
+            height: 40px;
+            font-size: 0.875rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .vr-header h1 {
+            font-size: 2rem;
+        }
+        
+        .vr-header p {
+            font-size: 1rem;
+        }
+        
+        .vr-success-message {
+            font-size: 1.5rem;
+        }
+        
+        .vr-success-details {
+            font-size: 1.125rem;
+        }
+        
+        .vr-card-body {
+            padding: 1.5rem;
+        }
+        
+        .vr-form-stepper {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .vr-step {
+            flex: none;
+            width: 25%;
+        }
+        
+        .vr-stepper-progress {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .vr-header h1 {
+            font-size: 1.75rem;
+        }
+        
+        .vr-card-header h3 {
+            font-size: 1.125rem;
+        }
+        
+        .vr-card-header i {
+            width: 30px;
+            height: 30px;
+            font-size: 1rem;
+        }
+        
+        .vr-form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .vr-form-navigation {
+            flex-direction: column-reverse;
+            gap: 1rem;
+        }
+        
+        .vr-btn-prev, .vr-btn-next {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Add a New User</h1>
+                </div>
+                {% comment %} <form class="form theme-form dark-inputs" method="POST">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            {# PHONE #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="phone">Phone Number</label><span class="required-fields-mark">*</span>
+                                <input class="form-control btn-pill" id="phone" name="phone" type="text"
+                                        placeholder="Enter phone number (optional)">
+                                </div>
+                            </div>
+
+                            {# EMAIL #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="email">Email Address</label><span class="required-fields-mark">*</span>
+                                    <input class="form-control btn-pill" id="email" name="email" type="email"
+                                            placeholder="name@example.com">
+                                </div>
+                            </div>
+
+                            {# First Name #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="phone">First Name</label>
+                                <input class="form-control btn-pill" id="first-name" name="first_name" type="text"
+                                        placeholder="First Name (optional)">
+                                </div>
+                            </div>
+
+                            {# Last Name #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="email">Last Name</label>
+                                    <input class="form-control btn-pill" id="last-name" name="last_name" type="text"
+                                            placeholder="Last Name (optional)">
+                                </div>
+                            </div>
+
+                            {# PASSWORD #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="password">Password</label><span class="required-fields-mark">*</span>
+                                <input class="form-control btn-pill" id="password" name="password" type="password"
+                                        placeholder="Password">
+                                </div>
+                            </div>
+
+                            {# USERNAME #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="username">Username</label>
+                                <input class="form-control btn-pill" id="username" name="username" type="text"
+                                        placeholder="Choose a username (optional)">
+                                </div>
+                            </div>
+
+                            {# ADDRESS #}
+                            <div class="col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="address">Address</label>
+                                <input class="form-control btn-pill" id="address" name="address" type="text"
+                                        placeholder="Street address (optional)">
+                                </div>
+                            </div>
+
+                            {# CITY / STATE / POSTAL #}
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="city">City</label>
+                                <input class="form-control btn-pill" id="city" name="city" type="text"
+                                        placeholder="City (optional)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="state">State</label>
+                                <input class="form-control btn-pill" id="state" name="state" type="text"
+                                        placeholder="State (optional)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="postal_code">Postal Code</label>
+                                <input class="form-control btn-pill" id="postal_code" name="postal_code" type="text"
+                                        placeholder="Postal code (optional)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary me-3" type="submit">Submit</button>
+                        <input class="btn btn-light" type="reset" value="Cancel">
+                    </div>
+                    </form> {% endcomment %}
+
+
+                    <!-- Form Stepper -->
+                <div class="vr-form-stepper">
+                    <div class="vr-stepper-progress">
+                        <div class="vr-stepper-progress-bar" style="width: 25%;"></div>
+                    </div>
+                    <div class="vr-step active">
+                        <div class="vr-step-number">1</div>
+                        <div class="vr-step-label">Personal Info</div>
+                    </div>
+                    <div class="vr-step">
+                        <div class="vr-step-number">2</div>
+                        <div class="vr-step-label">Business</div>
+                    </div>
+                    <div class="vr-step">
+                        <div class="vr-step-number">3</div>
+                        <div class="vr-step-label">Compliance</div>
+                    </div>
+                    <div class="vr-step">
+                        <div class="vr-step-number">4</div>
+                        <div class="vr-step-label">Payment</div>
+                    </div>
+                </div>
+
+                <form id="vendorForm" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Step 1: Personal Information -->
+                    <div class="vr-card" id="step1">
+                        <div class="vr-card-header">
+                            <h3><i class="bi bi-person-badge"></i> Personal Information</h3>
+                        </div>
+                        <div class="vr-card-body">
+                            <div class="row">
+                                <div class="col-lg-6 col-12 mb-3">
+                                    <label class="form-label" for="package">Select Package</label><span class="required-fields-mark">*</span>
+                                    <select class="select2 form-control btn-pill" id="package" name="package">
+                                        <option value="">Select a package</option>
+                                        {% for pkg in packages %}
+                                            <option value="{{ pkg.id }}">
+                                                {{ pkg.package_id }} — {{ pkg.name }} ({{ pkg.duration_days }} days, ${{ pkg.price }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-lg-6 col-12 mb-3">
+                                    <label class="form-label" for="user">Select a User</label><span class="required-fields-mark">*</span>
+                                    <select class="select2 form-control btn-pill" id="user" name="user">
+                                        <option value="">Select a User</option>
+                                        {% for user in users %}
+                                            <option value="{{ user.id }}">
+                                                {{ user.email }} — {{ user.phone_number }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <input type="tel" name="phone" class="form-control btn-pill" id="phone" required>
+                                </div>
+
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" name="email" class="form-control btn-pill" id="email" required>
+                                </div>
+
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="full_name" class="form-label">Full Name</label>
+                                    <input type="text" name="full_name" class="form-control btn-pill" id="full_name" required>
+                                </div>
+
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="address" class="form-label">Address</label>
+                                    <input type="text" name="address" class="form-control btn-pill" id="address" required>
+                                </div>
+
+                                <div class="col-md-4 vr-form-group">
+                                    <label for="city" class="form-label">City</label>
+                                    <input type="text" name="city" class="form-control btn-pill" id="city" required>
+                                </div>
+
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="postal_code" class="form-label">Postal Code</label>
+                                    <input type="text" name="postal_code" class="form-control btn-pill" id="postal_code" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Business Information (initially hidden) -->
+                    <div class="vr-card" id="step2" style="display: none;">
+                        <div class="vr-card-header">
+                            <h3><i class="bi bi-building"></i> Business Information</h3>
+                        </div>
+                        <div class="vr-card-body">
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="business_name" class="vr-form-label">Business Name</label>
+                                    <input type="text" name="business_name" class="form-control btn-pill" id="business_name" required>
+                                </div>
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="business_type" class="vr-form-label">Business Type</label>
+                                    <input type="text" name="business_type" class="form-control btn-pill" id="business_type" required>
+                                </div>
+                            </div>
+                            <div class="vr-form-group">
+                                <label for="business_address" class="vr-form-label">Business Address</label>
+                                <textarea name="business_address" class="form-control btn-pill" id="business_address" required></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 vr-form-group">
+                                    <label for="business_phone" class="vr-form-label">Business Phone</label>
+                                    <input type="tel" name="business_phone" class="form-control btn-pill" id="business_phone" required>
+                                </div>
+                                <div class="col-md-4 vr-form-group">
+                                    <label for="business_email" class="vr-form-label">Business Email</label>
+                                    <input type="email" name="business_email" class="form-control btn-pill" id="business_email" required>
+                                </div>
+                                <div class="col-md-4 vr-form-group">
+                                    <label for="established_date" class="vr-form-label">Established Date</label>
+                                    <input type="date" name="established_date" class="form-control btn-pill" id="established_date">
+                                </div>
+                            </div>
+                            <div class="vr-form-group">
+                                <label for="business_details" class="vr-form-label">Business Description</label>
+                                <textarea name="business_details" class="form-control btn-pill vr-textarea" id="business_details" required></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="contact_person_name" class="vr-form-label">Contact Person Name</label>
+                                    <input type="text" name="contact_person_name" class="form-control btn-pill" id="contact_person_name" required>
+                                </div>
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="contact_person_phone" class="vr-form-label">Contact Person Phone</label>
+                                    <input type="tel" name="contact_person_phone" class="form-control btn-pill" id="contact_person_phone" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="tax_certificate" class="vr-form-label">Tax Certificate</label>
+                                    <input type="file" name="tax_certificate" class="form-control btn-pill" id="tax_certificate" accept=".pdf" required>
+                                </div>
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="trade_licence" class="vr-form-label">Trade Licence</label>
+                                    <input type="file" name="trade_licence" class="form-control btn-pill" id="trade_licence" accept=".pdf" required>
+                                </div>
+                            </div>
+
+                            <div class="vr-form-group">
+                                <label class="vr-form-label">Business Logo</label>
+                                <div class="vr-file-upload">
+                                    <input type="file" name="logo" class="vr-file-input" id="logo" required>
+                                    <label for="logo" class="vr-file-label">
+                                        <i class="bi bi-cloud-arrow-up"></i>
+                                        <span class="vr-file-text">Click to upload or drag and drop</span>
+                                        <span class="vr-file-hint">JPEG, PNG (Max 5MB)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Business Compliance (initially hidden) -->
+                    <div class="vr-card" id="step3" style="display: none;">
+                        <div class="vr-card-header">
+                            <h3><i class="bi bi-shield-check"></i> Business Compliance</h3>
+                        </div>
+                        <div class="vr-card-body">
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label class="vr-form-label">Is your business insured?</label>
+                                    <div class="vr-radio-group">
+                                        <label class="vr-radio-label">
+                                            <input type="radio" name="insured" value="Yes" class="vr-radio-input"> 
+                                            <span class="vr-radio-custom"></span>
+                                            Yes
+                                        </label>
+                                        <label class="vr-radio-label">
+                                            <input type="radio" name="insured" value="No" checked class="vr-radio-input">
+                                            <span class="vr-radio-custom"></span>
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 vr-form-group">
+                                    <label class="vr-form-label">Is your business licensed?</label>
+                                    <div class="vr-radio-group">
+                                        <label class="vr-radio-label">
+                                            <input type="radio" name="licensed" value="Yes" class="vr-radio-input">
+                                            <span class="vr-radio-custom"></span>
+                                            Yes
+                                        </label>
+                                        <label class="vr-radio-label">
+                                            <input type="radio" name="licensed" value="No" checked class="vr-radio-input">
+                                            <span class="vr-radio-custom"></span>
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="vr-form-group">
+                                <label for="additional_info" class="vr-form-label">Additional Information</label>
+                                <textarea name="additional_info" class="vr-form-control vr-textarea" id="additional_info"></textarea>
+                                <small class="vr-file-hint">Any other information you'd like to share about your business</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Payment Information (simplified) -->
+                    <div class="vr-card" id="step4" style="display: none;">
+                        <div class="vr-card-header">
+                            <h3><i class="bi bi-credit-card"></i> Payment Information</h3>
+                        </div>
+                        <div class="vr-card-body">
+                            <div class="row">
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="bank_name" class="vr-form-label">Bank Name</label>
+                                    <input type="text" name="bank_name" class="form-control btn-pill" id="bank_name" required>
+                                </div>
+                                <div class="col-md-6 vr-form-group">
+                                    <label for="card_number" class="vr-form-label">Account Number</label>
+                                    <input type="text" name="card_number" class="form-control btn-pill" id="card_number" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+
+                    <!-- Form Navigation -->
+                    <div class="vr-form-navigation">
+                        <button type="button" class="vr-btn-prev" id="prevBtn" style="display: none;">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </button>
+                        <button type="button" class="vr-btn-next" id="nextBtn">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button type="submit" class="vr-btn-submit" id="submitBtn" style="display: none;">
+                            Submit Application <i class="bi bi-check-circle"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+{% comment %} <script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+<script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/telephone-input.js' %}"></script>
+<script src="{% static 'assets/js/select2/custom-inputsearch.js' %}"></script>
+<script src="{% static 'assets/js/select2/select3-custom.js' %}"></script> {% endcomment %}
+<script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/form-wizard/custom-number-wizard.js' %}"></script>
+<script src="{% static 'assets/js/custom_seller.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'assets/js/height-equal.js' %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Multi-step form functionality
+        const steps = document.querySelectorAll('.vr-step');
+        const formSteps = document.querySelectorAll('.vr-card[id^="step"]');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressBar = document.querySelector('.vr-stepper-progress-bar');
+        const form = document.getElementById('vendorForm');
+        const formContainer = document.getElementById('formContainer');
+        const successMessage = document.getElementById('successMessage');
+        
+        let currentStep = 0;
+        const totalSteps = steps.length;
+        
+        function updateFormDisplay() {
+            // Hide all form steps
+            formSteps.forEach(step => {
+                step.style.display = 'none';
+            });
+            
+            // Show current form step
+            formSteps[currentStep].style.display = 'block';
+            
+            // Update stepper UI
+            steps.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                
+                if (index < currentStep) {
+                    step.classList.add('completed');
+                } else if (index === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+            
+            // Update progress bar
+            const progressPercent = (currentStep / (totalSteps - 1)) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            
+            // Update button visibility
+            if (currentStep === 0) {
+                prevBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'flex';
+            }
+            
+            if (currentStep === totalSteps - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-flex';
+            } else {
+                nextBtn.style.display = 'inline-flex';
+                submitBtn.style.display = 'none';
+            }
+        }
+        
+        // Next button click handler
+        nextBtn.addEventListener('click', function() {
+            // Validate current step before proceeding
+            const currentFormStep = formSteps[currentStep];
+            const inputs = currentFormStep.querySelectorAll('[required]');
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = '#ff6b6b';
+                    isValid = false;
+                    
+                    // Add shake animation to invalid fields
+                    input.style.animation = 'shake 0.5s';
+                    input.addEventListener('animationend', function() {
+                        input.style.animation = '';
+                    });
+                } else {
+                    input.style.borderColor = '';
+                }
+            });
+            
+            if (isValid) {
+                currentStep++;
+                updateFormDisplay();
+                
+                // Scroll to top of form
+                window.scrollTo({
+                    top: document.querySelector('.vr-container').offsetTop - 20,
+                    behavior: 'smooth'
+                });
+            } else {
+                // Show error message
+                const errorElement = document.createElement('div');
+                errorElement.className = 'alert alert-danger mt-3';
+                errorElement.textContent = 'Please fill in all required fields.';
+                
+                const existingError = currentFormStep.querySelector('.alert');
+                if (!existingError) {
+                    currentFormStep.querySelector('.vr-card-body').appendChild(errorElement);
+                    
+                    // Remove error after 5 seconds
+                    setTimeout(() => {
+                        errorElement.remove();
+                    }, 5000);
+                }
+            }
+        });
+        
+        // Previous button click handler
+        prevBtn.addEventListener('click', function() {
+            currentStep--;
+            updateFormDisplay();
+            
+            // Scroll to top of form
+            window.scrollTo({
+                top: document.querySelector('.vr-container').offsetTop - 20,
+                behavior: 'smooth'
+            });
+        });
+        
+        // File upload styling
+        const fileInput = document.getElementById('logo');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+                const fileLabel = this.nextElementSibling;
+                const fileText = fileLabel.querySelector('.vr-file-text');
+                
+                if (this.files[0]) {
+                    fileText.textContent = fileName;
+                    fileLabel.style.borderColor = '#4361ee';
+                    fileLabel.style.backgroundColor = 'rgba(67, 97, 238, 0.05)';
+                } else {
+                    fileText.textContent = 'Click to upload or drag and drop';
+                    fileLabel.style.borderColor = '#e0e0e0';
+                    fileLabel.style.backgroundColor = '';
+                }
+            });
+        }
+        
+        // Form submission handler
+        
+        // Initialize form
+        updateFormDisplay();
+        
+        // Add shake animation for invalid fields
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-5px); }
+                40%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Fetch User Information
+        $('#user').on('change', function() {
+            const userId = $(this).val();
+            const $form = $(this).closest('form');
+            
+            if (!userId) {
+                clearUserFields();
+                return;
+            }
+            
+            // Enhanced loading state
+            $form.addClass('loading');
+            $('#user').prop('disabled', true).addClass('loading');
+            
+            fetch(`/admin-dashboard/get-user-data/${userId}/`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(user => {
+                    console.log('User data:', user);
+                    // Use the improved name formatting
+                    $('#full_name').val(formatFullName(user.first_name, user.last_name));
+                    // Keep your existing field mappings
+                    $('#phone').val(user.phone_number || '');
+                    $('#email').val(user.email || '');
+                    $('#address').val(user.address || '');
+                    $('#city').val(user.city || '');
+                    $('#postal_code').val(user.postal_code || '');
+                    
+                    // Add state field if exists
+                    if ($('#state').length) $('#state').val(user.state || '');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Failed to load user data');
+                    clearUserFields();
+                })
+                .finally(() => {
+                    $form.removeClass('loading');
+                    $('#user').prop('disabled', false).removeClass('loading');
+                    updateButtonState();
+                });
+        });
+
+        // Add this new helper function while keeping your existing ones
+        function formatFullName(firstName, lastName) {
+            const names = [];
+            if (firstName) names.push(firstName);
+            if (lastName) names.push(lastName);
+            return names.join(' ').trim();
+        }
+
+        function clearUserFields() {
+            $('#phone, #email, #full_name, #address, #city, #postal_code').val('');
+        }
+
+        function showError(message) {
+            // Implement your error display logic here
+            alert(message); // Replace with a better notification system
+        }
+
+        // save the form data
+        function showMessage(type, message) {
+            const div = $(".error-success-div");
+            function expand() {
+                div.removeClass("error-message success-message")
+                .addClass(type + "-message")
+                .html(message);
+                requestAnimationFrame(() => div.addClass("show"));
+                if (type === "success") setTimeout(() => location.reload(), 2000);
+            }
+            if (div.hasClass("show")) {
+                div.removeClass("show").one("transitionend", expand);
+            } else {
+                expand();
+            }
+        }
+
+        $(document).ready(function () {
+            const form = $('#vendorForm')[0];
+            const submitBtn = $('#submitBtn');
+
+            $('#vendorForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+
+                // Button loading state
+                submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...');
+                submitBtn.prop('disabled', true);
+
+                fetch("{% url 'save_vendor' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('success', data.message);
+                        form.reset();
+                    } else {
+                        showMessage('error', data.message);
+                    }
+                })
+                .catch(() => {
+                    showMessage('error', 'An unexpected error occurred.');
+                })
+                .finally(() => {
+                    // Reset button to default state
+                    submitBtn.html('Submit Application <i class="bi bi-check-circle"></i>');
+                    submitBtn.prop('disabled', false);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

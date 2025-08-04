@@ -8,7 +8,7 @@ urlpatterns = [
     
     
     # #-----------------------Dashboards
-    path('', views.index, name='index'),
+    path('', views.dashboard, name='dashboard'),
     path('index/', views.index, name='index'),
     path('regions/', views.regions, name='regions'),
     
@@ -17,12 +17,21 @@ urlpatterns = [
     path('login_home', views.login_home, name="login_home"),
     path('logout_view', views.logout_view, name="logout_view"),
     
+    # Home Content
+    path('sliders/', views.sliders, name='sliders'),
+    # Home Content
+    
     # User accounts
     path('user-accounts/', views.user_accounts, name='user_accounts'),
     path('add-user-account/', views.add_user_account, name='add_user_account'),
     path('edit-user-account/', views.edit_user_account, name='edit_user_account'), 
     path('delete-user-account/', views.delete_user_account, name='delete_user_account'),
     # User accounts
+    
+    # Users 
+    path('user-list/', views.user_list, name='user_list'),
+    path('add-user/', views.add_user, name='add_user'),
+    # Users
     
     # products
     # path('products/', views.product_list, name='product_list'),
@@ -35,33 +44,76 @@ urlpatterns = [
     
     # products
     path('add_products',views.add_products, name="add_products"),    
-    path('product_grid',views.product_grid, name="product_grid"),    
+    path('product_grid',views.product_grid, name="product_grid"),   
     path('list_products', views.list_products, name="list_products"),
     path('product_details',views.product_details, name="product_details"),
-    
-    # purchase products
-    path('instant-purchase/', views.instant_purchase, name='instant_purchase'),
-    path('instant-pruchase-execute/', views.instant_purchase_execute, name='instant_purchase_execute'),
-
-
-    
-    
     
     #About Us
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
     #About Us
     
-    
-    
-    
     #Faqs
     path('faqs_header/', views.faqs_header, name='faqs_header'),
     #Faqs
     
-    
     #wishlist
     path('wishlist_header/', views.wishlist_header, name='wishlist_header'),
     #wishlist
+    
+    # vendors
+    path('update_vendor_header',views.update_vendor_header,name="update_vendor_header"),
+    path('vendors', views.vendors, name="vendors"),
+    path('vendor/<int:id>/', views.vendor, name="vendor"),
+    path('vendor-list',views.vendor_list,name="vendor_list"),
+    path('add-vendor',views.add_vendor,name="add_vendor"),
+    path('save-vendor',views.save_vendor,name="save_vendor"),
+    path('get-user-data/<int:user_id>/',views.get_user_data,name="get_user_data"),
+    path('update-vendor/<int:id>/',views.update_vendor,name="update_vendor"),
+    
+    # contact
+    path('update_contact_header',views.update_contact_header,name='update_contact_header'),
+    path('contact_messages/', views.contact_messages, name='contact_messages'),
+    path('contactUs_location',views.contactUs_location,name='contactUs_location'),
+    
+    # blogs
+    path('blogList_header',views.blogList_header,name="blogList_header"),
+    path('blog_header',views.blog_header,name="blog_header"),
+    
+    # packages
+    path('packages/', views.packages, name='packages'),
+    
+    # Category
+    # Category
+    path('category/', views.category, name="category"),
+    path('category-types/', views.category_type, name='category_type'),
+    path('get-subcategories/<int:parent_id>/', views.get_subcategories, name='get_subcategories'),
+
+
+
+    #clients home page 
+    path('clientBrands',views.clientBrands,name='clientBrands'),
+    path('brands/add/', views.add_client_brand, name='add_client_brand'),
+    path('brands/edit/', views.edit_client_brand, name='edit_client_brand'),
+    path('brands/delete/', views.delete_client_brand, name='delete_client_brand'),
+    #clients Home page
+    
+    #category Banner
+    path('categorybanner',views.categorybanner,name='categorybanner'),
+    path('category-banners/add/', views.add_category_banner, name='add_category_banner'),
+    path('category-banners/edit/<int:banner_id>/', views.edit_category_banner, name='edit_category_banner'),
+    path('category-banners/delete/<int:banner_id>/', views.delete_category_banner, name='delete_category_banner'),
+    #category Banner
+    
+    
+    
+    #ad banner
+    path('adBanner',views.adBanner,name='adBanner'),
+    path('ad-banners/add/', views.add_ad_banner, name='add_ad_banner'),
+    path('ad-banners/edit/<int:banner_id>/', views.edit_ad_banner, name='edit_ad_banner'),
+    path('ad-banners/delete/<int:banner_id>/', views.delete_ad_banner, name='delete_ad_banner'),
+    #ad banner
+    
+    
     
     
     
@@ -115,8 +167,6 @@ urlpatterns = [
     # #------------------Kanban Board
     path('kanban', views.kanban, name="kanban"),
     
-    #vendor register header
-    path('update_vendor_header',views.update_vendor_header,name="update_vendor_header"),
     
     
     
@@ -157,12 +207,6 @@ urlpatterns = [
     
     # #------------------------contacts
     path('contacts', views.contacts, name="contacts"),
-    path('contactfaq/update/<int:pk>/', views.update_contactfaq, name='contactfaq_update'),
-    path('contactfaq/delete/<int:pk>/', views.delete_contactfaq, name='contactfaq_delete'),
-     path('contact_messages/', views.contact_messages, name='contact_messages'),
-     path('contact-messages/delete/<int:pk>/', views.delete_contact_message, name='delete_contact_message'),
-     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
-     path('update_contact_header',views.update_contact_header,name='update_contact_header'),
 
     # #------------------------task
     path('task', views.task, name="task"),
@@ -379,8 +423,6 @@ urlpatterns = [
     path('blog_details', views.blog_details, name="blog_details"),
     path('blog_single', views.blog_single, name="blog_single"),
     path('add_post', views.add_post, name="add_post"),
-    path('blogList_header',views.blogList_header,name="blogList_header"),
-    path('blog_header',views.blog_header,name="blog_header"),
 
     #-------------------------job serch
 

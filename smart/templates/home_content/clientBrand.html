@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/dataTables.bootstrap5.css' %}">
+<style>
+    .brand-img-preview { max-height: 80px; border-radius: 6px; }
+    .edit-icon, .delete-icon { cursor: pointer; font-size: 22px; transition: 0.3s ease-in-out; }
+    .edit-icon:hover, .delete-icon:hover { transform: scale(1.15); }
+    .error-success-div { max-height: 0; opacity: 0; padding: 10px 20px; border-radius: 20px; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+    .error-success-div.show { max-height: 200px; opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid datatable-init">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between">
+            <h1>Client Brands</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">Add Brand</button>
+        </div>
+        <div class="card-body">
+            <table class="display table-striped border" id="basic-1">
+                <thead>
+                    <tr><th>Preview</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for brand in brands %}
+                    <tr>
+                        <td><img src="{{ brand.image.url }}" class="brand-img-preview" alt="Brand {{ brand.id }}"></td>
+                        <td>
+                            <i class="fa fa-pen-to-square edit-icon me-3"
+                               data-id="{{ brand.id }}"
+                               data-image-url="{{ brand.image.url }}"
+                               data-bs-toggle="modal"
+                               data-bs-target="#editModal"></i>
+
+                            <i class="fa fa-trash delete-icon" data-id="{{ brand.id }}" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"></i>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="addBrandForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <h4>Add Client Brand (410 * 186)</h4>
+                    <input type="file" class="form-control mb-3" name="image" accept="image/*" required>
+                    <div class="error-success-div p-2"></div>
+                    <div class="text-end">
+                        <button class="btn btn-primary" type="submit">Submit</button>
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="editBrandForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <h4>Edit Brand Image</h4>
+                    <input type="hidden" name="id" id="edit-brand-id">
+                    <img id="edit-preview" src="" class="mb-3 brand-img-preview" alt="Current Image">
+                    <input type="file" class="form-control mb-3" name="image" accept="image/*">
+                    <div class="error-success-div p-2"></div>
+                    <div class="text-end">
+                        <button class="btn btn-primary" type="submit">Update</button>
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmationModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 text-center">
+            <h4 class="mb-3">Are you sure?</h4>
+            <p>This brand will be permanently deleted.</p>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button id="confirm-delete" class="btn btn-danger">Yes</button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scriptcontent %}
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.bootstrap5.js' %}"></script>
+<script>
+    $(document).ready(() => {
+        $('#basic-1').DataTable();
+    });
+
+    function showMessage(targetDiv, type, message) {
+        const div = $(targetDiv);
+        function expand() {
+            div.removeClass("error-message success-message")
+               .addClass(type + "-message")
+               .text(message);
+            requestAnimationFrame(() => div.addClass("show"));
+            if (type === "success") setTimeout(() => location.reload(), 1500);
+        }
+        if (div.hasClass("show")) {
+            div.removeClass("show").one("transitionend", expand);
+        } else expand();
+    }
+
+    // Add
+    $("#addBrandForm").on("submit", function(e) {
+        e.preventDefault();
+        const form = new FormData(this);
+        fetch("{% url 'add_client_brand' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            body: form
+        }).then(r => r.json())
+          .then(d => showMessage("#addModal .error-success-div", d.status, d.message));
+    });
+
+    // Open Edit
+    $(document).on("click", ".edit-icon", function() {
+        const id = $(this).data("id");
+        const imageUrl = $(this).data("image-url");
+        $("#edit-brand-id").val(id);
+        $("#edit-preview").attr("src", imageUrl);
+    });
+
+    // Edit Submit
+    $("#editBrandForm").on("submit", function(e) {
+        e.preventDefault();
+        const form = new FormData(this);
+        fetch("{% url 'edit_client_brand' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": "{{ csrf_token }}" },
+            body: form
+        }).then(r => r.json())
+          .then(d => showMessage("#editModal .error-success-div", d.status, d.message));
+    });
+
+    // Delete
+    let pendingDeleteId = null;
+    $(document).on("click", ".delete-icon", function() {
+        pendingDeleteId = $(this).data("id");
+    });
+
+    $("#confirm-delete").on("click", function() {
+        fetch("{% url 'delete_client_brand' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ id: pendingDeleteId })
+        }).then(r => r.json())
+          .then(d => {
+              if (d.status === "success") location.reload();
+              else alert(d.message);
+          });
+    });
+</script>
+{% endblock %}

@@ -53,11 +53,15 @@
                             <li class="nav-item">
                                 <a href="#account-details" class="nav-link">Account details</a>
                             </li>
-                            <li class="link-item">
+                            <li class="nav-item">
                                 <a href="wishlist.html">Wishlist</a>
                             </li>
-                            <li class="link-item">
-                                <a href="login.html">Logout</a>
+                            <li class="nav-item">
+                                <a href="wishlist.html">My Products</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a href="{% url 'logout_user' %}">Logout</a>
                             </li>
                         </ul>
 
@@ -65,10 +69,9 @@
                             <div class="tab-pane active in" id="account-dashboard">
                                 <p class="greeting">
                                     Hello
-                                    <span class="text-dark font-weight-bold">John Doe</span>
-                                    (not
-                                    <span class="text-dark font-weight-bold">John Doe</span>?
-                                    <a href="#" class="text-primary">Log out</a>)
+                                    <span class="text-dark font-weight-bold">{{request.user.username}}</span>
+                                    
+                                    <a href="{% url 'logout_user' %}">Logout</a>
                                 </p>
 
                                 <p class="mb-4">
@@ -142,14 +145,16 @@
                                             </div>
                                         </a>
                                     </div>
+
                                     <div class="col-lg-4 col-md-6 col-sm-4 col-xs-6 mb-4">
-                                        <a href="#">
+                                        <a href="{% url 'logout_user' %}">
                                             <div class="icon-box text-center">
                                                 <span class="icon-box-icon icon-logout">
                                                     <i class="w-icon-logout"></i>
                                                 </span>
                                                 <div class="icon-box-content">
-                                                    <p class="text-uppercase mb-0">Logout</p>
+                                                    <a href="{% url 'logout_user' %}">Logout</a>
+
                                                 </div>
                                             </div>
                                         </a>
@@ -271,31 +276,25 @@
                                                     <tbody>
                                                         <tr>
                                                             <th>Name:</th>
-                                                            <td>John Doe</td>
+                                                            <td>{{request.user.username}}</td>
                                                         </tr>
-                                                        <tr>
-                                                            <th>Company:</th>
-                                                            <td>Conia</td>
-                                                        </tr>
+                    
                                                         <tr>
                                                             <th>Address:</th>
-                                                            <td>Wall Street</td>
+                                                            <td>{{request.user.address}}</td>
                                                         </tr>
                                                         <tr>
                                                             <th>City:</th>
-                                                            <td>California</td>
+                                                            <td>{{request.user.city}}</td>
                                                         </tr>
-                                                        <tr>
-                                                            <th>Country:</th>
-                                                            <td>United States (US)</td>
-                                                        </tr>
+                                                       
                                                         <tr>
                                                             <th>Postcode:</th>
-                                                            <td>92020</td>
+                                                            <td>{{request.user.postal_code}}</td>
                                                         </tr>
                                                         <tr>
                                                             <th>Phone:</th>
-                                                            <td>1112223334</td>
+                                                            <td>{{request.user.phone_number}}</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -355,56 +354,83 @@
                                         <h4 class="icon-box-title mb-0 ls-normal">Account Details</h4>
                                     </div>
                                 </div>
-                                <form class="form account-details-form" action="#" method="post">
+                            
+                                <form class="form account-details-form" action="{% url 'update_account_details' %}" method="post">
+                                    {% csrf_token %}
+                                    
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="firstname">First name *</label>
-                                                <input type="text" id="firstname" name="firstname" placeholder="John"
-                                                    class="form-control form-control-md">
+                                                <label for="firstname">First Name *</label>
+                                                <input type="text" id="firstname" name="firstname" value="{{ request.user.first_name }}" class="form-control form-control-md">
                                             </div>
                                         </div>
+                            
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="lastname">Last name *</label>
-                                                <input type="text" id="lastname" name="lastname" placeholder="Doe"
-                                                    class="form-control form-control-md">
+                                                <label for="lastname">Last Name *</label>
+                                                <input type="text" id="lastname" name="lastname" value="{{ request.user.last_name }}" class="form-control form-control-md">
                                             </div>
                                         </div>
                                     </div>
-
+                            
                                     <div class="form-group mb-3">
-                                        <label for="display-name">Display name *</label>
-                                        <input type="text" id="display-name" name="display_name" placeholder="John Doe"
-                                            class="form-control form-control-md mb-0">
+                                        <label for="display-name">Display Name *</label>
+                                        <input type="text" id="display-name" name="display_name" value="{{ request.user.username }}" class="form-control form-control-md mb-0">
                                         <p>This will be how your name will be displayed in the account section and in reviews</p>
                                     </div>
-
+                            
+                                    <div class="form-group mb-3">
+                                        <label for="email_1">Email Address *</label>
+                                        <input type="email" id="email_1" name="email_1" value="{{ request.user.email }}" class="form-control form-control-md">
+                                    </div>
+                            
+                                    <div class="form-group mb-3">
+                                        <label for="phone_number">Phone Number</label>
+                                        <input type="text" id="phone_number" name="phone_number" value="{{ request.user.phone_number }}" class="form-control form-control-md">
+                                    </div>
+                            
+                                    <div class="form-group mb-3">
+                                        <label for="address">Address</label>
+                                        <input type="text" id="address" name="address" value="{{ request.user.address }}" class="form-control form-control-md">
+                                    </div>
+                            
+                                    <div class="form-group mb-3">
+                                        <label for="city">City</label>
+                                        <input type="text" id="city" name="city" value="{{ request.user.city }}" class="form-control form-control-md">
+                                    </div>
+                            
+                                    <div class="form-group mb-3">
+                                        <label for="state">State</label>
+                                        <input type="text" id="state" name="state" value="{{ request.user.state }}" class="form-control form-control-md">
+                                    </div>
+                            
                                     <div class="form-group mb-6">
-                                        <label for="email_1">Email address *</label>
-                                        <input type="email" id="email_1" name="email_1"
-                                            class="form-control form-control-md">
+                                        <label for="postal_code">Postal Code</label>
+                                        <input type="text" id="postal_code" name="postal_code" value="{{ request.user.postal_code }}" class="form-control form-control-md">
                                     </div>
-                                  
-                                    <h4 class="title title-password ls-25 font-weight-bold">Password change</h4>
+                            
+                                    <h4 class="title title-password ls-25 font-weight-bold">Password Change</h4>
+                            
                                     <div class="form-group">
-                                        <label class="text-dark" for="cur-password">Current Password leave blank to leave unchanged</label>
-                                        <input type="password" class="form-control form-control-md"
-                                            id="cur-password" name="cur_password">
+                                        <label class="text-dark" for="cur-password">Current Password (leave blank to keep unchanged)</label>
+                                        <input type="password" class="form-control form-control-md" id="cur-password" name="cur_password">
                                     </div>
+                            
                                     <div class="form-group">
-                                        <label class="text-dark" for="new-password">New Password leave blank to leave unchanged</label>
-                                        <input type="password" class="form-control form-control-md"
-                                            id="new-password" name="new_password">
+                                        <label class="text-dark" for="new-password">New Password (leave blank to keep unchanged)</label>
+                                        <input type="password" class="form-control form-control-md" id="new-password" name="new_password">
                                     </div>
+                            
                                     <div class="form-group mb-10">
-                                        <label class="text-dark" for="conf-password">Confirm Password</label>
-                                        <input type="password" class="form-control form-control-md"
-                                            id="conf-password" name="conf_password">
+                                        <label class="text-dark" for="conf-password">Confirm New Password</label>
+                                        <input type="password" class="form-control form-control-md" id="conf-password" name="conf_password">
                                     </div>
+                            
                                     <button type="submit" class="btn btn-dark btn-rounded btn-sm mb-4">Save Changes</button>
                                 </form>
                             </div>
+                            
                         </div>
                     </div>
                 </div>

@@ -6,7 +6,6 @@
 {% endblock custom_css %}
 
 {% block content %}
-
  <section class="intro-section">
                 <div class="swiper-container swiper-theme nav-inner pg-inner swiper-nav-lg animation-slider pg-xxl-hide nav-xxl-show nav-hide"
                     data-swiper-options="{
@@ -17,52 +16,78 @@
                     }
                 }">
                     <div class="swiper-wrapper">
-                        <div class="swiper-slide banner banner-fixed intro-slide intro-slide1"
-                            style="background-image: url({% static 'front/assets/images/demos/demo1/sliders/slide-1.jpg' %}); background-color: #ebeef2;">
+                        {% for slider in sliders %}
+                            <div class="swiper-slide banner banner-fixed intro-slide {% if slider.text_alignment == 1 %}intro-slide1{% elif slider.text_alignment == 0 %}intro-slide2{% endif %}"
+                                style="background-image: url({{ slider.background_image.url }}); background-color: {{ slider.paragraph_color|default:'#ebeef2' }};">
                             <div class="container">
-                                <figure class="slide-image skrollable slide-animate">
-                                    <img src="{% static 'front/assets/images/demos/demo1/sliders/shoes.png'%}" alt="Banner"
+
+                                <figure class="slide-image skrollable slide-animate" 
+                                        data-animation-options="{'name': 'fadeInUpShorter','duration': '1s','delay': '.2s'}">
+                                {% if slider.image %}
+                                    <img src="{{ slider.image.url }}" alt="{{ slider.name }}"
                                         data-bottom-top="transform: translateY(10vh);"
-                                        data-top-bottom="transform: translateY(-10vh);" width="474" height="397">
+                                        data-top-bottom="transform: translateY(-10vh);"
+                                        width="474" height="397">
+                                {% endif %}
                                 </figure>
-                                <div class="banner-content y-50 text-right">
+
+                                {# choose left vs. right text alignment #}
+                                <div class="banner-content y-50 {% if slider.text_alignment == 1 %}text-right{% else %}{% endif %}">
+                                {% if slider.heading_h3 %}
                                     <h5 class="banner-subtitle font-weight-normal text-default ls-50 lh-1 mb-2 slide-animate"
                                         data-animation-options="{
-                                    'name': 'fadeInRightShorter',
-                                    'duration': '1s',
-                                    'delay': '.2s'
-                                }">
-                                        Custom <span class="p-relative d-inline-block">Men’s</span>
+                                        'name': 'fadeInRightShorter',
+                                        'duration': '1s',
+                                        'delay': '.2s'
+                                        }"
+                                        style="color: {{ slider.heading_h3_color }};">
+                                    {{ slider.heading_h3 }}
                                     </h5>
+                                {% endif %}
+
+                                {% if slider.heading_h5 %}
                                     <h3 class="banner-title font-weight-bolder ls-25 lh-1 slide-animate"
                                         data-animation-options="{
-                                    'name': 'fadeInRightShorter',
-                                    'duration': '1s',
-                                    'delay': '.4s'
-                                }">
-                                        RUNNING SHOES
+                                        'name': 'fadeInRightShorter',
+                                        'duration': '1s',
+                                        'delay': '.4s'
+                                        }"
+                                        style="color: {{ slider.heading_h5_color }};">
+                                    {{ slider.heading_h5 }}
                                     </h3>
-                                    <p class="font-weight-normal text-default slide-animate" data-animation-options="{
-                                    'name': 'fadeInRightShorter',
-                                    'duration': '1s',
-                                    'delay': '.6s'
-                                }">
-                                        Sale up to <span class="font-weight-bolder text-secondary">30% OFF</span>
+                                {% endif %}
+
+                                {% if slider.paragraph %}
+                                    <p class="font-weight-normal text-default slide-animate"
+                                    data-animation-options="{
+                                        'name': 'fadeInRightShorter',
+                                        'duration': '1s',
+                                        'delay': '.6s'
+                                    }"
+                                    style="color: {{ slider.paragraph_color }};">
+                                    {{ slider.paragraph }}
                                     </p>
+                                {% endif %}
 
-                                    <a href="shop-list.html"
-                                        class="btn btn-dark btn-outline btn-rounded btn-icon-right slide-animate"
-                                        data-animation-options="{
-                                    'name': 'fadeInRightShorter',
-                                    'duration': '1s',
-                                    'delay': '.8s'
-                                }">SHOP NOW<i class="w-icon-long-arrow-right"></i></a>
-
+                                {% if slider.button_link %}
+                                    <a href="{{ slider.button_link }}"
+                                    class="btn btn-dark btn-outline btn-rounded btn-icon-right slide-animate"
+                                    data-animation-options="{
+                                        'name': 'fadeInRightShorter',
+                                        'duration': '1s',
+                                        'delay': '.8s'
+                                    }">
+                                    Shop Now <i class="w-icon-long-arrow-right"></i>
+                                    </a>
+                                {% endif %}
                                 </div>
-                                <!-- End of .banner-content -->
+                                <!-- /.banner-content -->
+
                             </div>
-                            <!-- End of .container -->
-                        </div>
+                            <!-- /.container -->
+                            </div>
+                            <!-- /.intro-slide{{ forloop.counter }} -->
+                        {% endfor %}
                         <!-- End of .intro-slide1 -->
 
                         <div class="swiper-slide banner banner-fixed intro-slide intro-slide2"
@@ -233,40 +258,25 @@
                 <!-- End of Iocn Box Wrapper -->
 
                 <div class="row category-banner-wrapper appear-animate pt-6 pb-8">
+                    {% for banner in banners|slice:":2" %}
                     <div class="col-md-6 mb-4">
                         <div class="banner banner-fixed br-xs">
                             <figure>
-                                <img src="{% static 'front/assets/images/demos/demo1/categories/1-1.jpg'%}" alt="Category Banner"
-                                    width="610" height="160" style="background-color: #ecedec;" />
+                                <img src="{{ banner.image.url }}" alt="{{ banner.title }}" width="610" height="200" />
                             </figure>
                             <div class="banner-content y-50 mt-0">
-                                <h5 class="banner-subtitle font-weight-normal text-dark">Get up to <span
-                                        class="text-secondary font-weight-bolder text-uppercase ls-25">20% Off</span>
+                                <h5 class="banner-subtitle font-weight-normal text-dark">
+                                    {{ banner.description }}
                                 </h5>
-                                <h3 class="banner-title text-uppercase">Sports Outfits<br><span
-                                        class="font-weight-normal                       text-capitalize">Collection</span>
-                                </h3>
-                                <div class="banner-price-info font-weight-normal">Starting at <span
-                                        class="text-secondary                       font-weight-bolder">$170.00</span>
-                                </div>
+                                <h3 class="banner-title text-uppercase">{{ banner.title }}</h3>
+                                <a href="{{ banner.button_link }}"
+                                   class="btn btn-dark btn-link btn-underline btn-icon-right">
+                                   {{ banner.button_text }} <i class="w-icon-long-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="banner banner-fixed br-xs">
-                            <figure>
-                                <img src="{% static 'front/assets/images/demos/demo1/categories/1-2.jpg'%}" alt="Category Banner"
-                                    width="610" height="160" style="background-color: #636363;" />
-                            </figure>
-                            <div class="banner-content y-50 mt-0">
-                                <h5 class="banner-subtitle font-weight-normal text-capitalize">New Arrivals</h5>
-                                <h3 class="banner-title text-white text-uppercase">Accessories<br><span
-                                        class="font-weight-normal text-capitalize">Collection</span></h3>
-                                <div class="banner-price-info text-white font-weight-normal text-capitalize">Only From
-                                    <span class="text-secondary font-weight-bolder">$90.00</span></div>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
                 <!-- End of Category Banner Wrapper -->
 
@@ -2433,38 +2443,23 @@
                 <!-- End of Tab Content -->
 
                 <div class="row category-cosmetic-lifestyle appear-animate mb-5">
+                    {% for banner in banners|slice:"2:4" %}
                     <div class="col-md-6 mb-4">
-                        <div class="banner banner-fixed category-banner-1 br-xs">
+                        <div class="banner banner-fixed br-xs">
                             <figure>
-                                <img src="front/assets/images/demos/demo1/categories/3-1.jpg" alt="Category Banner"
-                                    width="610" height="200" style="background-color: #3B4B48;" />
+                                <img src="{{ banner.image.url }}" alt="{{ banner.title }}" width="610" height="200" />
                             </figure>
                             <div class="banner-content y-50 pt-1">
-                                <h5 class="banner-subtitle font-weight-bold text-uppercase">Natural Process</h5>
-                                <h3 class="banner-title font-weight-bolder text-capitalize text-white">Cosmetic
-                                    Makeup<br>Professional</h3>
-                                <a href="shop-banner-sidebar.html"
-                                    class="btn btn-white btn-link btn-underline btn-icon-right">Shop Now<i
-                                        class="w-icon-long-arrow-right"></i></a>
+                                <h5 class="banner-subtitle font-weight-bold text-uppercase">{{ banner.description }}</h5>
+                                <h3 class="banner-title font-weight-bolder text-capitalize text-white">{{ banner.title }}</h3>
+                                <a href="{{ banner.button_link }}"
+                                   class="btn btn-dark btn-link btn-underline btn-icon-right">
+                                   {{ banner.button_text }} <i class="w-icon-long-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="banner banner-fixed category-banner-2 br-xs">
-                            <figure>
-                                <img src="front/assets/images/demos/demo1/categories/3-2.jpg" alt="Category Banner"
-                                    width="610" height="200" style="background-color: #E5E5E5;" />
-                            </figure>
-                            <div class="banner-content y-50 pt-1">
-                                <h5 class="banner-subtitle font-weight-bold text-uppercase">Trending Now</h5>
-                                <h3 class="banner-title font-weight-bolder text-capitalize">Women's
-                                    Lifestyle<br>Collection</h3>
-                                <a href="shop-banner-sidebar.html"
-                                    class="btn btn-dark btn-link btn-underline btn-icon-right">Shop Now<i
-                                        class="w-icon-long-arrow-right"></i></a>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
                 <!-- End of Category Cosmetic Lifestyle -->
 
@@ -2475,21 +2470,24 @@
                             Products<i class="w-icon-long-arrow-right"></i></a>
                     </div>
                     <div class="row">
+                        {% for banner in ad_banners %}
+                        {% if banner.order == 1 %}
                         <div class="col-lg-3 col-sm-4 mb-4">
-                            <div class="banner h-100 br-sm" style="background-image: url(front/assets/images/demos/demo1/banners/2.jpg); 
+                            <div class="banner h-100 br-sm" style="background-image: url({{ banner.image.url }}); 
                                 background-color: #ebeced;">
                                 <div class="banner-content content-top">
-                                    <h5 class="banner-subtitle font-weight-normal mb-2">Weekend Sale</h5>
+                                    <h5 class="banner-subtitle font-weight-normal mb-2">{{ banner.title }}</h5>
                                     <hr class="banner-divider bg-dark mb-2">
                                     <h3 class="banner-title font-weight-bolder ls-25 text-uppercase">
-                                        New Arrivals<br> <span
-                                            class="font-weight-normal text-capitalize">Collection</span>
+                                        {{ banner.description|truncatewords:5 }}
                                     </h3>
-                                    <a href="shop-banner-sidebar.html"
-                                        class="btn btn-dark btn-outline btn-rounded btn-sm">shop Now</a>
+                                    <a href="{{ banner.button_link }}"
+                                        class="btn btn-dark btn-outline btn-rounded btn-sm">{{ banner.button_text }}</a>
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
+                        {% endfor %}
                         <!-- End of Banner -->
                         <div class="col-lg-9 col-sm-8">
                             <div class="swiper-container swiper-theme" data-swiper-options="{
@@ -2508,7 +2506,7 @@
                                     <div class="swiper-slide product-col">
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-1.jpg" alt="Product"
                                                         width="216" height="243" />
                                                 </a>
@@ -2543,7 +2541,7 @@
                                         </div>
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-5-1.jpg"
                                                         alt="Product" width="216" height="243" />
                                                     <img src="front/assets/images/demos/demo1/products/4-5-2.jpg"
@@ -2582,7 +2580,7 @@
                                     <div class="swiper-slide product-col">
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-2-1.jpg"
                                                         alt="Product" width="216" height="243" />
                                                     <img src="front/assets/images/demos/demo1/products/4-2-2.jpg"
@@ -2618,7 +2616,7 @@
                                         </div>
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-6.jpg" alt="Product"
                                                         width="216" height="243" />
                                                 </a>
@@ -2654,7 +2652,7 @@
                                     <div class="swiper-slide product-col">
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-3.jpg" alt="Product"
                                                         width="216" height="243" />
                                                 </a>
@@ -2688,7 +2686,7 @@
                                         </div>
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-7.jpg" alt="Product"
                                                         width="216" height="243" />
                                                 </a>
@@ -2725,7 +2723,7 @@
                                     <div class="swiper-slide product-col">
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-4-1.jpg"
                                                         alt="Product" width="216" height="243" />
                                                     <img src="front/assets/images/demos/demo1/products/4-4-2.jpg"
@@ -2761,7 +2759,7 @@
                                         </div>
                                         <div class="product-wrap product text-center">
                                             <figure class="product-media">
-                                                <a href="#">
+                                                <a href="{% url 'productDetails' %}">
                                                     <img src="front/assets/images/demos/demo1/products/4-8.jpg" alt="Product"
                                                         width="216" height="243" />
                                                 </a>
@@ -2808,21 +2806,24 @@
                             Products<i class="w-icon-long-arrow-right"></i></a>
                     </div>
                     <div class="row">
+                        {% for banner in ad_banners %}
+                        {% if banner.order == 2 %}
                         <div class="col-lg-3 col-sm-4 mb-4">
-                            <div class="banner h-100 br-sm" style="background-image: url(front/assets/images/demos/demo1/banners/3.jpg); 
-                            background-color: #252525;">
+                            <div class="banner h-100 br-sm" style="background-image: url({{ banner.image.url }}); 
+                                background-color: #ebeced;">
                                 <div class="banner-content content-top">
-                                    <h5 class="banner-subtitle text-white font-weight-normal mb-2">New Collection</h5>
-                                    <hr class="banner-divider bg-white mb-2">
-                                    <h3 class="banner-title text-white font-weight-bolder text-uppercase ls-25">
-                                        Top Camera <br> <span
-                                            class="font-weight-normal text-capitalize">Mirrorless</span>
+                                    <h5 class="banner-subtitle font-weight-normal mb-2">{{ banner.title }}</h5>
+                                    <hr class="banner-divider bg-dark mb-2">
+                                    <h3 class="banner-title font-weight-bolder ls-25 text-uppercase">
+                                        {{ banner.description|truncatewords:5 }}
                                     </h3>
-                                    <a href="shop-banner-sidebar.html"
-                                        class="btn btn-white btn-outline btn-rounded btn-sm">shop now</a>
+                                    <a href="{{ banner.button_link }}"
+                                        class="btn btn-dark btn-outline btn-rounded btn-sm">{{ banner.button_text }}</a>
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
+                        {% endfor %}
                         <!-- End of Banner -->
                         <div class="col-lg-9 col-sm-8">
                             <div class="swiper-container swiper-theme" data-swiper-options="{
@@ -3143,7 +3144,7 @@
                 </div>
                 <!-- End of Product Wrapper 1 -->
 
-                <div class="banner banner-fashion appear-animate br-sm mb-9" style="background-image: url(front/assets/images/demos/demo1/banners/4.jpg);
+                <div class="banner banner-fashion appear-animate br-sm mb-9" style="background-image: url({% static 'front/assets/images/demos/demo1/banners/4.jpg'%});
                     background-color: #383839;">
                     <div class="banner-content align-items-center">
                         <div class="content-left d-flex align-items-center mb-3">
@@ -3177,21 +3178,24 @@
                             Products<i class="w-icon-long-arrow-right"></i></a>
                     </div>
                     <div class="row">
+                        {% for banner in ad_banners %}
+                        {% if banner.order == 3 %}
                         <div class="col-lg-3 col-sm-4 mb-4">
-                            <div class="banner h-100 br-sm" style="background-image: url(front/assets/images/demos/demo1/banners/5.jpg); 
-                            background-color: #EAEFF3;">
+                            <div class="banner h-100 br-sm" style="background-image: url({{ banner.image.url }}); 
+                                background-color: #ebeced;">
                                 <div class="banner-content content-top">
-                                    <h5 class="banner-subtitle font-weight-normal mb-2">Deals And Promotions</h5>
+                                    <h5 class="banner-subtitle font-weight-normal mb-2">{{ banner.title }}</h5>
                                     <hr class="banner-divider bg-dark mb-2">
-                                    <h3 class="banner-title font-weight-bolder text-uppercase ls-25">
-                                        Trending <br> <span class="font-weight-normal text-capitalize">House
-                                            Utensil</span>
+                                    <h3 class="banner-title font-weight-bolder ls-25 text-uppercase">
+                                        {{ banner.description|truncatewords:5 }}
                                     </h3>
-                                    <a href="shop-banner-sidebar.html"
-                                        class="btn btn-dark btn-outline btn-rounded btn-sm">shop now</a>
+                                    <a href="{{ banner.button_link }}"
+                                        class="btn btn-dark btn-outline btn-rounded btn-sm">{{ banner.button_text }}</a>
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
+                        {% endfor %}
                         <!-- End of Banner -->
                         <div class="col-lg-9 col-sm-8">
                             <div class="swiper-container swiper-theme" data-swiper-options="{
@@ -3528,66 +3532,15 @@
                     }
                 }">
                     <div class="swiper-wrapper row gutter-no cols-xl-6 cols-lg-5 cols-md-4 cols-sm-3 cols-2">
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/1.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/2.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/3.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/4.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/5.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/6.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/7.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/8.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/9.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/10.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
-                        <div class="swiper-slide brand-col">
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/11.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                            <figure class="brand-wrapper">
-                                <img src="front/assets/images/demos/demo1/brands/12.png" alt="Brand" width="410"
-                                    height="186" />
-                            </figure>
-                        </div>
+                        {% for pair in brand_pairs %}
+                            <div class="swiper-slide brand-col">
+                                {% for brand in pair %}
+                                <figure class="brand-wrapper">
+                                    <img src="{{ brand.image.url }}" alt="Brand" width="410" height="186" />
+                                </figure>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
                 <!-- End of Brands Wrapper -->
@@ -3617,7 +3570,7 @@
                                 <div class="swiper-slide post text-center overlay-zoom">
                                     <figure class="post-media br-sm">
                                         <a href="post-single.html">
-                                            <img src="front/assets/images/demos/demo1/blogs/1.jpg" alt="Post" width="280"
+                                            <img src="{% static 'front/assets/images/demos/demo1/blogs/1.jpg'%}" alt="Post" width="280"
                                                 height="180" style="background-color: #4b6e91;" />
                                         </a>
                                     </figure>
@@ -3636,7 +3589,7 @@
                                 <div class="swiper-slide post text-center overlay-zoom">
                                     <figure class="post-media br-sm">
                                         <a href="post-single.html">
-                                            <img src="front/assets/images/demos/demo1/blogs/2.jpg" alt="Post" width="280"
+                                            <img src="{% static 'front/assets/images/demos/demo1/blogs/2.jpg'%}" alt="Post" width="280"
                                                 height="180" style="background-color: #cec9cf;" />
                                         </a>
                                     </figure>
@@ -3654,7 +3607,7 @@
                                 <div class="swiper-slide post text-center overlay-zoom">
                                     <figure class="post-media br-sm">
                                         <a href="post-single.html">
-                                            <img src="front/assets/images/demos/demo1/blogs/3.jpg" alt="Post" width="280"
+                                            <img src="{% static 'front/assets/images/demos/demo1/blogs/3.jpg'%}" alt="Post" width="280"
                                                 height="180" style="background-color: #c9c7bb;" />
                                         </a>
                                     </figure>
@@ -3673,7 +3626,7 @@
                                 <div class="swiper-slide post text-center overlay-zoom">
                                     <figure class="post-media br-sm">
                                         <a href="post-single.html">
-                                            <img src="front/assets/images/demos/demo1/blogs/4.jpg" alt="Post" width="280"
+                                            <img src="{% static 'front/assets/images/demos/demo1/blogs/4.jpg'%}" alt="Post" width="280"
                                                 height="180" style="background-color: #d8dce0;" />
                                         </a>
                                     </figure>
@@ -3719,7 +3672,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="https://www.portotheme.com/html/wolmart/product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-1.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-1.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3733,7 +3686,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-2.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-2.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3747,7 +3700,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-3.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-3.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3761,7 +3714,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-4.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-4.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3775,7 +3728,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-5.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-5.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3789,7 +3742,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-6.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-6.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3803,7 +3756,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-7.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-7.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>
@@ -3817,7 +3770,7 @@
                             <div class="product text-center product-absolute">
                                 <figure class="product-media">
                                     <a href="product-defaproduct-default.html">
-                                        <img src="front/assets/images/demos/demo1/products/7-8.jpg" alt="Category image"
+                                        <img src="{% static 'front/assets/images/demos/demo1/products/7-8.jpg'%}" alt="Category image"
                                             width="130" height="146" style="background-color: #fff" />
                                     </a>
                                 </figure>

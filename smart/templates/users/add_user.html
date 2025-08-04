@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block custom_css %}
+{% comment %} <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}"> {% endcomment %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'assets/css/select2_custom_style.css' %}">
+
+<style>
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+    
+    .required-fields-mark{
+        color: red;
+    }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Add a New User</h1>
+                </div>
+                <form class="form theme-form dark-inputs" method="POST">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            {# PHONE #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="phone">Phone Number</label><span class="required-fields-mark">*</span>
+                                <input class="form-control btn-pill" id="phone" name="phone" type="text"
+                                        placeholder="Enter phone number (optional)">
+                                </div>
+                            </div>
+
+                            {# EMAIL #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="email">Email Address</label><span class="required-fields-mark">*</span>
+                                    <input class="form-control btn-pill" id="email" name="email" type="email"
+                                            placeholder="name@example.com">
+                                </div>
+                            </div>
+
+                            {# First Name #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="phone">First Name</label>
+                                <input class="form-control btn-pill" id="first-name" name="first_name" type="text"
+                                        placeholder="First Name (optional)">
+                                </div>
+                            </div>
+
+                            {# Last Name #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="email">Last Name</label>
+                                    <input class="form-control btn-pill" id="last-name" name="last_name" type="text"
+                                            placeholder="Last Name (optional)">
+                                </div>
+                            </div>
+
+                            {# PASSWORD #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="password">Password</label><span class="required-fields-mark">*</span>
+                                <input class="form-control btn-pill" id="password" name="password" type="password"
+                                        placeholder="Password">
+                                </div>
+                            </div>
+
+                            {# USERNAME #}
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="username">Username</label>
+                                <input class="form-control btn-pill" id="username" name="username" type="text"
+                                        placeholder="Choose a username (optional)">
+                                </div>
+                            </div>
+
+                            {# ADDRESS #}
+                            <div class="col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="address">Address</label>
+                                <input class="form-control btn-pill" id="address" name="address" type="text"
+                                        placeholder="Street address (optional)">
+                                </div>
+                            </div>
+
+                            {# CITY / STATE / POSTAL #}
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="city">City</label>
+                                <input class="form-control btn-pill" id="city" name="city" type="text"
+                                        placeholder="City (optional)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="state">State</label>
+                                <input class="form-control btn-pill" id="state" name="state" type="text"
+                                        placeholder="State (optional)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                <label class="form-label" for="postal_code">Postal Code</label>
+                                <input class="form-control btn-pill" id="postal_code" name="postal_code" type="text"
+                                        placeholder="Postal code (optional)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary me-3" type="submit">Submit</button>
+                        <input class="btn btn-light" type="reset" value="Cancel">
+                    </div>
+                    </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+{% comment %} <script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+<script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/telephone-input.js' %}"></script>
+<script src="{% static 'assets/js/select2/custom-inputsearch.js' %}"></script>
+<script src="{% static 'assets/js/select2/select3-custom.js' %}"></script> {% endcomment %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'assets/js/height-equal.js' %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+
+<script>
+    function showMessage(type, message) {
+        const div = $(".error-success-div");
+        function expand() {
+            div.removeClass("error-message success-message")
+            .addClass(type + "-message")
+            .text(message);
+            requestAnimationFrame(() => div.addClass("show"));
+            if (type === "success") setTimeout(() => location.reload(), 2000);
+        }
+        if (div.hasClass("show")) {
+            div.removeClass("show").one("transitionend", expand);
+        } else {
+            expand();
+        }
+    }
+
+    $(document).ready(function () {
+        $('form').on('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch("{% url 'add_user' %}", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: formData,
+            })
+            .then(r => r.json())
+            .then(data => {
+            if (data.success) {
+                showMessage(data.status, data.message);
+                $('form')[0].reset();
+            } else {
+                alert("Error: " + data.message);
+            }
+            })
+            .catch(() => alert("An unexpected error occurred."));
+        });
+    });
+</script>
+{% endblock %}

@@ -1,14 +1,16 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 from .utils.slug_utils import generate_unique_slug
 from django.utils import timezone
+from django.db.models import F, Q
 from django.core.files.storage import default_storage
 from io import BytesIO
 from django.core.files.base import ContentFile
 from decimal import Decimal
+from PIL import Image
 import uuid
 
 
@@ -18,8 +20,14 @@ import uuid
 
 
 class Package(models.Model):
+    PACKAGE_TYPE_CHOICES = [
+        (0, 'Free'),
+        (1, 'Paid'),
+    ]
+    
     package_id = models.CharField(max_length=10, unique=True, editable=False)
     name = models.CharField(max_length=100)
+    package_type = models.PositiveSmallIntegerField(choices=PACKAGE_TYPE_CHOICES, default=0)
     description = models.TextField(blank=True, null=True)
     max_products = models.PositiveIntegerField(default=0)
     can_use_variants = models.BooleanField(default=False)
@@ -30,14 +38,12 @@ class Package(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if not self.package_id:
-            if not Package.objects.exists():
-                self.package_id = '001'
-            else:
-                last_package = Package.objects.exclude(package_id='001').order_by('-id').first()
-                if last_package:
-                    new_id = str(int(last_package.package_id) + 1).zfill(3)
-                    self.package_id = new_id
+        if not self.pk and not self.package_id:
+            # Only generate package_id on creation
+            existing_ids = Package.objects.exclude(package_id='').values_list('package_id', flat=True)
+            numeric_ids = [int(pid) for pid in existing_ids if pid.isdigit()]
+            next_id = max(numeric_ids, default=0) + 1
+            self.package_id = str(next_id).zfill(3)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -99,6 +105,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(unique=True, max_length=150, blank=True, null=True)
     email = models.EmailField(unique=True, max_length=100)
     phone_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    first_name = models.CharField(max_length=30, blank=True, null=True)
+    last_name = models.CharField(max_length=30, blank=True, null=True)
     address = models.CharField(max_length=250, blank=True, null=True)
     city = models.CharField(max_length=250, blank=True, null=True)
     state = models.CharField(max_length=250, blank=True, null=True)
@@ -118,14 +126,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['username']
 
     def save(self, *args, **kwargs):
+        # Generate user_id only if it's not already set
+        if not self.user_id:
+            # You can customize the prefix and length as needed
+            self.user_id = 'USR-' + str(uuid.uuid4())[:8].upper() # Example: USR-ABCDEF12
+
         if not self.is_superuser:
             if self.package:
-                if self.package.package_id == '001':
+                if self.package.package_type == 0:
                     self.user_type = 3  # Client
                 else:
                     self.user_type = 1  # Vendor
             else:
-                self.user_type = 2  # Staff
+                self.user_type = 2 # Default to Staff if no package is assigned
+                
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -178,6 +192,8 @@ class VendorCompanyOverview(models.Model):
     business_type = models.CharField(max_length=100)
     is_licensed = models.BooleanField(default=False)
     is_insured = models.BooleanField(default=False)
+    tax_certificate = models.FileField(upload_to='vendor_documents/tax_certificates/', blank=True, null=True)
+    trade_licence = models.FileField(upload_to='vendor_documents/trade_licences/', blank=True, null=True)
     additional_info = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -199,13 +215,47 @@ class VendorFinancialInfo(models.Model):
 
 
 class VendorVerification(models.Model):
+    STATUS_CHOICES = [
+        ('0', 'Pending'),
+        ('1', 'Approved'),
+        ('2', 'Rejected'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(blank=True, null=True)
     rejection_reason = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=1, # Max length of the choice key (e.g., '0', '1', '2')
+        choices=STATUS_CHOICES,
+        default='0', # Set a default status, e.g., 'Pending'
+        help_text="Current verification status of the vendor."
+    )
 
     def __str__(self):
         return f"{self.user.username} - {'Verified' if self.is_verified else 'Not Verified'}"
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Overrides the save_model method to automatically update
+        is_verified and verified_at based on the status field.
+        """
+        # Get the original object from the database if it's an existing instance
+        # This is important to check if the status has actually changed
+        original_obj = None
+        if obj.pk:
+            original_obj = VendorVerification.objects.get(pk=obj.pk)
+
+        # Check if the status field has changed to 'Approved'
+        if obj.status == '1': # '1' is the database value for 'Approved'
+            obj.is_verified = True
+            
+            if original_obj is None or original_obj.status != '1':
+                obj.verified_at = timezone.now()
+        else:
+            obj.is_verified = False
+            obj.verified_at = None
+
+        super().save_model(request, obj, form, change) # Call the parent save_model to save the object
 
 
 
@@ -219,7 +269,24 @@ class VendorReview(models.Model):
     def __str__(self):
         return f"{self.client.username} reviewed {self.vendor.username}"
     
+
+
+class CategoryType(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
+    def __str__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        # slug
+        if not self.slug:
+            self.slug = generate_unique_slug(self, Product, 'slug')
+            
+        super().save(*args, **kwargs)
+
 
 class Category(models.Model):
     STATUS_CHOICES = (
@@ -228,7 +295,8 @@ class Category(models.Model):
     )
 
     name = models.CharField(max_length=255, unique=True)
-    slug_name = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    category_type = models.ForeignKey(CategoryType, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     
     parent_category = models.ForeignKey(
@@ -257,13 +325,17 @@ class Category(models.Model):
         ordering = ['position', 'name']
 
     def save(self, *args, **kwargs):
-        if not self.slug_name:
-            self.slug_name = generate_unique_slug(self, Category, 'slug_name')
-
+        if self.pk:
+            old_instance = Category.objects.get(pk=self.pk)
+            if old_instance.name != self.name:
+                self.slug = generate_unique_slug(self, Category, 'slug')
+        else:
+            self.slug = generate_unique_slug(self, Category, 'slug')
+    
         if not self.code:
             last = Category.objects.order_by('-code').first()
             self.code = (last.code + 1) if last else 10
-
+    
         super().save(*args, **kwargs)
         
 
@@ -356,14 +428,17 @@ class Product(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        # slug
-        if not self.slug:
-            self.slug = generate_unique_slug(self, Product, 'slug')
-        # code: e.g. “P-0001”, you could customize format
+        if self.pk:
+            old_instance = Category.objects.get(pk=self.pk)
+            if old_instance.name != self.name:
+                self.slug = generate_unique_slug(self, Category, 'slug')
+        else:
+            self.slug = generate_unique_slug(self, Category, 'slug')
+
         if not self.code:
-            last = Product.objects.order_by('-id').first()
-            idx = (last.id + 1) if last else 1
-            self.code = f"P-{idx:04d}"
+            last = Category.objects.order_by('-code').first()
+            self.code = (last.code + 1) if last else 10
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -380,13 +455,60 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product.title} Image #{self.position}"
+    
+    
+# example best seller, new arrival
+class ProductLabel(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True, blank=True)
+    icon = models.ImageField(upload_to='labels/icons/', blank=True, null=True)  # Optional
+    color = models.CharField(max_length=7, blank=True, null=True)  # e.g. "#ff6600"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old_instance = Category.objects.get(pk=self.pk)
+            if old_instance.name != self.name:
+                self.slug = generate_unique_slug(self, Category, 'slug')
+        else:
+            self.slug = generate_unique_slug(self, Category, 'slug')
+
+        if not self.code:
+            last = Category.objects.order_by('-code').first()
+            self.code = (last.code + 1) if last else 10
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+    
+
+class ProductLabelRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='label_requests')
+    label = models.ForeignKey(ProductLabel, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='label_requests')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    admin_comment = models.TextField(blank=True, null=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('product', 'label')
+
+    def __str__(self):
+        return f"{self.product.title} - {self.label.name} ({self.status})"
 
 
 # ——————————————————————————————————————————————
 # Discounts
 # ——————————————————————————————————————————————
 
-class Discount(models.Model):
+class ProductDiscount(models.Model):
     FIXED      = 'fixed'
     PERCENT    = 'percentage'
     BOGO       = 'bogo'
@@ -481,20 +603,77 @@ class VariantOptionSelection(models.Model):
         return f"{self.variant.sku}: {self.variation_type.name} = {self.option.value}"
     
     
+class Slider(models.Model):
+    STATUS_CHOICES = (
+        (0, 'Inactive'),
+        (1, 'Active'),
+    )
     
-    
-    
-    
-    
-    
-    
-    
-    
-#-------------------Nihal--------------------------------------------Nihal--------------------------Nihal--------------
-#contact page
-#------------------
-from PIL import Image
+    ALIGNMENT_CHOICES = (
+        (0, 'Left'),
+        (1, 'Right'),
+    )
 
+    name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='sliders/images/', blank=True, null=True)
+    background_image = models.ImageField(upload_to='sliders/backgrounds/')
+
+    paragraph = models.TextField(blank=True, null=True)
+    paragraph_color = models.CharField(max_length=7, blank=True, null=True, help_text="Hex color (e.g. #000000)")
+
+    heading_h3 = models.CharField(max_length=255, blank=True, null=True)
+    heading_h3_color = models.CharField(max_length=7, blank=True, null=True, help_text="Hex color (e.g. #ff0000)")
+
+    heading_h5 = models.CharField(max_length=255, blank=True, null=True)
+    heading_h5_color = models.CharField(max_length=7, blank=True, null=True, help_text="Hex color (e.g. #333333)")
+
+    button_link = models.URLField(blank=True, null=True)
+
+    status = models.IntegerField(choices=STATUS_CHOICES, default=1)
+    position = models.PositiveIntegerField(default=0)
+    
+    text_alignment = models.IntegerField(choices=ALIGNMENT_CHOICES, default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['position', 'name']
+
+    def __str__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        # Wrap in a transaction so our shifts and save happen atomically.
+        with transaction.atomic():
+            # Are we creating a brand-new slider?
+            if self._state.adding:
+                # If no explicit position was set or position < 1, append at end.
+                if not self.position or self.position < 1:
+                    max_pos = Slider.objects.aggregate(max=models.Max('position'))['max'] or 0
+                    self.position = max_pos + 1
+                else:
+                    # shift existing sliders at >= this position up by 1
+                    Slider.objects.filter(position__gte=self.position).update(position=F('position') + 1)
+            else:
+                # We're updating an existing slider.
+                # Fetch its previous position from the DB.
+                old = Slider.objects.get(pk=self.pk)
+                old_pos = old.position
+                new_pos = self.position
+
+                # If position wasn’t changed, do nothing special.
+                if new_pos and new_pos != old_pos:
+                    # Temporarily “vacate” the old slot
+                    # shift those between old_pos+1 and infinity down by 1
+                    Slider.objects.filter(position__gt=old_pos).update(position=F('position') - 1)
+
+                    # Now insert at new_pos: shift up everyone at >= new_pos
+                    Slider.objects.filter(position__gte=new_pos).update(position=F('position') + 1)
+
+            # Finally save ourselves into our newly-cleared slot
+            super().save(*args, **kwargs)
+            
+            
 
 class contactPageHeader(models.Model):
     page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
@@ -621,3 +800,46 @@ class WishlistPageHeader(models.Model):
 
     def __str__(self):
         return f"{self.page_slug} - {self.title}"
+    
+    
+#home page clients section
+class ClientBrand(models.Model):
+    image = models.ImageField(upload_to='media/brands/')
+
+    def __str__(self):
+        return f"Brand {self.id}"
+    
+#home page category cards
+# models.py
+from django.db import models
+
+class CategoryBanner(models.Model):
+    image = models.ImageField(upload_to='media/category_banners/')
+    title = models.CharField(max_length=200,blank=True,null=True)
+    description = models.TextField(max_length=500,blank=True,null=True)
+    button_text = models.CharField(max_length=50, default="Shop Now")
+    button_link = models.CharField(max_length=50,default="#")
+    order = models.PositiveIntegerField(unique=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.order}. {self.title}"
+
+
+#home page Advertising cards
+class AdvertisingBanner(models.Model):
+    categories = models.ManyToManyField(Category, related_name='advertising_banners', blank=True)
+    title = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(max_length=500, blank=True, null=True)
+    image = models.ImageField(upload_to='media/advertising-banners/')
+    button_text = models.CharField(max_length=50, default='Shop Now')
+    button_link = models.CharField(max_length=50, default='#')
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.title} ({self.order})"

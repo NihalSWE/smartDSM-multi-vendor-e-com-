@@ -1,246 +1,867 @@
 {% extends "front/base.html" %}
 {% load static %}
 
-{% block custom_css %}{% endblock custom_css %}
+{% block custom_css %}
+<style>
+    /* Base Styles */
+    .vendor-registration-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    /* Stepper Styles */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        position: relative;
+    }
+    
+    .stepper:before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #e0e0e0;
+        z-index: 1;
+    }
+    
+    .stepper-progress {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        height: 3px;
+        background: #4361ee;
+        z-index: 2;
+        transition: width 0.3s ease;
+    }
+    
+    .step {
+        position: relative;
+        z-index: 3;
+        text-align: center;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: bold;
+        border: 3px solid white;
+    }
+    
+    .step.active .step-number {
+        background: #4361ee;
+        color: white;
+    }
+    
+    .step.completed .step-number {
+        background: #4cc9f0;
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 0.875rem;
+        color: #999;
+    }
+    
+    .step.active .step-label {
+        color: #4361ee;
+        font-weight: 600;
+    }
+    
+    /* Form Card Styles */
+    .form-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        display: none;
+    }
+    
+    .form-card.active {
+        display: block;
+    }
+    
+    .form-card-header {
+        background: #f8f9ff;
+        padding: 1.25rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .form-card-header h3 {
+        margin: 0;
+        color: #4361ee;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-card-header i {
+        margin-right: 10px;
+        font-size: 1.25rem;
+    }
+    
+    .form-card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Form Elements */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        outline: none;
+    }
+    
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        padding-right: 2.5rem;
+    }
+    
+    /* Buttons */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-prev {
+        background: #f0f0f0;
+        color: #666;
+        border: none;
+    }
+    
+    .btn-prev:hover {
+        background: #e0e0e0;
+    }
+    
+    .btn-next {
+        background: #4361ee;
+        color: white;
+        border: none;
+    }
+    
+    .btn-next:hover {
+        background: #3a0ca3;
+    }
+    
+    .btn-submit {
+        background: #4cc9f0;
+        color: white;
+        border: none;
+    }
+    
+    .btn-submit:hover {
+        background: #3aa8d8;
+    }
+    
+    /* File Upload */
+    .file-upload {
+        border: 2px dashed #ddd;
+        border-radius: 6px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-upload:hover {
+        border-color: #4361ee;
+        background: rgba(67, 97, 238, 0.05);
+    }
+    
+    /* Success Message */
+    .success-message {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+    }
+    
+    .success-icon {
+        font-size: 5rem;
+        color: #4cc9f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Error Message */
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+    
+    /* Required field marker */
+    .required-fields-mark {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stepper {
+            flex-wrap: wrap;
+        }
+        
+        .step {
+            width: 50%;
+            margin-bottom: 1rem;
+        }
+        
+        .stepper:before, .stepper-progress {
+            top: 15px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Start of Page Header -->
-<!-- Dynamic Page Header -->
-{% if header %}
-<section class="page-header text-white text-center" style="
-    background-image: url('{{ header.background_image.url }}');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    padding: 80px 0;
-">
-    <div class="container">
-        <h1 class="page-title mb-0">{{ header.title }}</h1>
+<!-- Page Header -->
+<section class="page-header" style="background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%); padding: 80px 0; color: white;">
+    <div class="container text-center">
+        <h1 class="page-title mb-3">Become A Vendor</h1>
+        <p class="mb-0">Join our network of trusted vendors and grow your business</p>
     </div>
 </section>
-{% else %}
-<section class="page-header text-white text-center" style="
-    background-color: #333;
-    padding: 80px 0;
-">
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb-nav mb-5">
     <div class="container">
-        <h1 class="page-title mb-0">Become A Vendor</h1>
+        <ul class="breadcrumb">
+            <li><a href="/">Home</a></li>
+            <li>Become a Vendor</li>
+        </ul>
     </div>
-</section>
-{% endif %}
+</nav>
 
-<!-- End of Page Header -->
+<!-- Main Content -->
+<div class="vendor-registration-container">
+    <!-- Success Message (Hidden Initially) -->
+    <div class="success-message" id="successMessage">
+        <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h2>Application Submitted Successfully!</h2>
+        <p>Thank you for your vendor application. Our team will review your information and contact you within 3-5 business days.</p>
+        <a href="/" class="btn btn-next mt-3">Return to Home</a>
+    </div>
 
+    <!-- Form Container -->
+    <div id="formContainer">
+        <!-- Stepper -->
+        <div class="stepper">
+            <div class="stepper-progress" id="stepperProgress" style="width: 25%;"></div>
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Personal Info</div>
+            </div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Business Info</div>
+            </div>
+            <div class="step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Documents</div>
+            </div>
+            <div class="step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Payment</div>
+            </div>
+        </div>
 
-            <!-- Start of Breadcrumb -->
-            <nav class="breadcrumb-nav mb-10 pb-1 pb-lg-10">
-                <div class="container">
-                    <ul class="breadcrumb">
-                        <li><a href="demo1.html">Home</a></li>
-                        <li>Become a Vendor</li>
-                    </ul>
-                </div>
-            </nav>
-            <!-- End of Breadcrumb -->
-
-
+        <!-- Form -->
+        <form id="vendorForm" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
             
-    <div class="modal fade" id="category-pill-modal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-xl">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title" id="modaldashboard">Add Seller</h5>
-                      <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body basic-wizard important-validation">
-                      <div class="stepper-horizontal custom-scrollbar" id="stepper1">
-                        <div class="stepper-one stepper step editing active">
-                          <div class="step-circle"><span>1</span></div>
-                          <div class="step-title">Personal Info</div>
-                          <div class="step-bar-left"></div>
-                          <div class="step-bar-right"></div>
-                        </div>
-                        <div class="stepper-two step">
-                          <div class="step-circle"><span>2</span></div>
-                          <div class="step-title">Company Contact</div>
-                          <div class="step-bar-left"></div>
-                          <div class="step-bar-right"></div>
-                        </div>
-                        <div class="stepper-three step">
-                          <div class="step-circle"><span>3</span></div>
-                          <div class="step-title">Company Overview</div>
-                          <div class="step-bar-left"></div>
-                          <div class="step-bar-right"></div>
-                        </div>
-                        <div class="stepper-four step">
-                          <div class="step-circle"><span>4</span></div>
-                          <div class="step-title">Financial Info</div>
-                          <div class="step-bar-left"></div>
-                          <div class="step-bar-right"></div>
-                        </div>
-                        <div class="stepper-five step">
-                          <div class="step-circle"><span>5</span></div>
-                          <div class="step-title">Finish</div>
-                          <div class="step-bar-left"></div>
-                          <div class="step-bar-right"></div>
-                        </div>
-                      </div>
-                      <div id="msform">
-                        <form class="stepper-one row g-3 needs-validation custom-input" novalidate="">
-                          <div class="col-sm-6">
-                            <label class="form-label" for="sellerFirstName">Full Name</label>
-                            <input class="form-control" id="sellerFirstName" type="text" required="" placeholder="Enter your full name">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="col-sm-12 form-label" for="sellerNumber">Phone</label>
-                            <input class="form-control" id="sellerNumber" type="number" placeholder="Enter your phone number" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="col-sm-12 form-label" for="city">City</label>
-                            <input class="form-control" id="city" type="city" placeholder="Enter your city" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="col-sm-12 form-label" for="state">State</label>
-                            <input class="form-control" id="state" type="text" placeholder="Enter your state" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="col-sm-12 form-label" for="country">Country</label>
-                            <input class="form-control" id="country" type="text" placeholder="Enter your country" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="col-sm-12 form-label" for="sellerMail">Email</label>
-                            <input class="form-control" id="sellerMail" type="email" placeholder="Enter your email" required="">
-                          </div>
-                          <div class="col-sm-6"> 
-                            <label class="form-label" for="postalCode">Postal Code</label>
-                            <input class="form-control" id="postalCode" type="text" placeholder="Enter your postal code" required="">
-                          </div>
-                        </form>
-                        <form class="stepper-two row g-3 needs-validation custom-input" novalidate="">
-                          <div class="col-sm-6">
-                            <label class="form-label" for="formFileDocument">Business Logo</label>
-                            <input class="form-control" id="formFileDocument" type="file" required="">
-                          </div>
-                          <div class="col-sm-6"> 
-                            <label class="form-label" for="companyName">Business Name</label>
-                            <input class="form-control" id="companyName" type="text" required="" placeholder="Enter your business name here">
-                          </div>
-                          <div class="col-12">
-                            <label class="form-label">Business Address</label>
-                            <textarea class="form-control" placeholder="Enter your business address" required="" rows="3"></textarea>
-                            <div class="invalid-feedback">Please enter a message in the textarea.</div>
-                          </div>
-                          <div class="col-lg-4 col-sm-6">
-                            <label class="form-label" for="phoneNumber">Phone Number</label>
-                            <input class="form-control" id="phoneNumber" type="number" placeholder="Enter your phone number" required="">
-                          </div>
-                          <div class="col-lg-4 col-sm-6">
-                            <label class="form-label" for="validationServer05">Postal Code</label>
-                            <input class="form-control" id="validationServer05" type="text" placeholder="Enter your postal code" required="">
-                          </div>
-                          <div class="col-lg-4">
-                            <label class="form-label" for="companyEmail">Business Email</label>
-                            <input class="form-control" id="companyEmail" type="email" placeholder="Enter your business email" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="form-label" for="contactPersonName">Contact Person Name</label>
-                            <input class="form-control" id="contactPersonName" type="text" placeholder="Enter your contact person name" required="">
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="form-label" for="contactPersonPhone">Contact Person Phone</label>
-                            <input class="form-control" id="contactPersonPhone" type="number" placeholder="Enter your contact person phone" required="">
-                          </div>
-                        </form>
-                        <form class="stepper-three row g-3 needs-validation custom-input" novalidate="">
-                          <div class="col-12">
-                            <label class="form-label" for="businessDetails">Business Details</label>
-                            <textarea class="form-control" id="businessDetails" placeholder="Enter your business details" required="" rows="3"></textarea>
-                            <div class="invalid-feedback">Please enter a message in the textarea.    </div>
-                          </div>
-                          <div class="col-sm-6">
-                            <label class="form-label">Establishment Date</label>
-                            <div class="input-group flatpicker-calender product-date">
-                              <input class="form-control" id="human-friendly1" type="date">
-                            </div>
-                          </div>
-                          <div class="col-sm-6"> 
-                            <label class="form-label" for="serviceArea">Business Type</label>
-                            <input class="form-control" id="serviceArea" type="text" placeholder="Enter your business type" required="">
-                          </div>
-                          <div class="col-lg-2 col-sm-3">
-                            <label class="form-label" for="serviceArea">Insured?</label>
-                            <div class="common-flex">
-                              <div class="form-check">
-                                <input class="form-check-input" id="flexRadioDefault1" type="radio" name="flexRadioDefault">
-                                <label class="form-check-label" for="flexRadioDefault1">Yes</label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" id="flexRadioDefault2" type="radio" name="flexRadioDefault" checked="">
-                                <label class="form-check-label" for="flexRadioDefault2">No </label>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-lg-2 col-sm-3">
-                            <label class="form-label" for="serviceArea">Licensed?</label>
-                            <div class="common-flex">
-                              <div class="form-check">
-                                <input class="form-check-input" id="flexRadioDefault3" type="radio" name="flexRadioDefault">
-                                <label class="form-check-label" for="flexRadioDefault3">Yes</label>
-                              </div>
-                              <div class="form-check">
-                                <input class="form-check-input" id="flexRadioDefault4" type="radio" name="flexRadioDefault" checked="">
-                                <label class="form-check-label" for="flexRadioDefault4">No </label>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-12"> 
-                            <label class="form-label" for="additionalInfo">Additional Info</label>
-                            <textarea class="form-control" id="additionalInfo" placeholder="You can write anything..." required="" rows="3"></textarea>
-                            <div class="invalid-feedback">Please enter a message in the textarea. </div>
-                          </div>
-                        </form>
-                        <form class="stepper-four row g-3 needs-validation custom-input" novalidate="">
-                          <div class="col-sm-6">
-                            <label class="form-label" for="bankName">Bank Name</label>
-                            <input class="form-control" id="bankName" type="text" placeholder="Enter your bank name" required="">
-                          </div>
-                          <div class="col-sm-6"> 
-                            <label class="form-label" for="cardNumber">Card Number</label>
-                            <input class="form-control" id="cardNumber" type="number" placeholder="xxxx xxxx xxxx xxxx" required="">
-                          </div>
-                          <div class="col-xl-4">
-                            <label class="form-label" for="expirationDates01">Expiration(MM/YY)</label>
-                            <input class="form-control" id="expirationDates01" type="number" placeholder="xx/xx" required="">
-                          </div>
-                          <div class="col-xl-4 col-sm-6">
-                            <label class="form-label" for="cvvNumber">CVV Number</label>
-                            <input class="form-control" id="cvvNumber" type="number" required="">
-                          </div>
-                          <div class="col-xl-4 col-sm-6">
-                            <label class="form-label" for="shiftCode">Shift Code</label>
-                            <input class="form-control" id="shiftCode" type="text" required="">
-                          </div>
-                        </form>
-                        <form class="stepper-five row g-3 needs-validation" novalidate="">
-                          <div class="col-12 m-0"></div>
-                          <div class="successful-form"><img class="img-fluid" src="{% static 'assets/images/gif/dashboard-8/successful.gif' %}" alt="successful">
-                            <h5>Congratulations </h5>
-                            <p>Well done! You have successfully completed. </p>
-                          </div>
-                        </form>
-                      </div>
-                      <div class="wizard-footer d-flex gap-2 justify-content-end">
-                        <button class="btn button-light-primary" id="backbtn" onclick="backStep()"> Back</button>
-                        <button class="btn btn-primary" id="nextbtn" onclick="nextStep()">Next</button>
-                      </div>
-                    </div>
-                  </div>
+            <!-- Hidden User ID Field for logged in users -->
+            {% if request.user.is_authenticated %}
+            <input type="hidden" name="user" id="user" value="{{ request.user.id }}">
+            {% endif %}
+
+            <!-- Step 1: Personal Information -->
+            <div class="form-card active" id="step1">
+                <div class="form-card-header">
+                    <h3><i class="bi bi-person-fill"></i> Personal Information</h3>
                 </div>
-              </div> 
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="phone" class="form-label">Phone Number <span class="required-fields-mark">*</span></label>
+                            <input type="tel" name="phone" id="phone" class="form-control" required>
+                            <div class="error-message" id="phoneError">Please enter a valid phone number</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="email" class="form-label">Email Address <span class="required-fields-mark">*</span></label>
+                            <input type="email" name="email" id="email" class="form-control" required>
+                            <div class="error-message" id="emailError">Please enter a valid email address</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="full_name" class="form-label">Full Name <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="full_name" id="full_name" class="form-control" required>
+                            <div class="error-message" id="nameError">Please enter your full name</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="address" class="form-label">Address <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="address" id="address" class="form-control" required>
+                            <div class="error-message" id="addressError">Please enter your address</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label for="city" class="form-label">City <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="city" id="city" class="form-control" required>
+                            <div class="error-message" id="cityError">Please enter your city</div>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="state" class="form-label">State</label>
+                            <input type="text" name="state" id="state" class="form-control">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="postal_code" class="form-label">Postal Code <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="postal_code" id="postal_code" class="form-control" required>
+                            <div class="error-message" id="postalError">Please enter your postal code</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- End of Page Content -->
-            {% endblock content %}
+            <!-- Step 2: Business Information -->
+            <div class="form-card" id="step2">
+                <div class="form-card-header">
+                    <h3><i class="bi bi-building"></i> Business Information</h3>
+                </div>
+                <div class="form-card-body">
+                    <!-- Package Selection -->
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="package" class="form-label">Select Package <span class="required-fields-mark">*</span></label>
+                            <select name="package" id="package" class="form-control" required>
+                                <option value="">Select a package</option>
+                                {% for pkg in packages %}
+                                    <option value="{{ pkg.id }}">
+                                        {{ pkg.package_id }} — {{ pkg.name }} ({{ pkg.duration_days }} days, ${{ pkg.price }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="error-message" id="packageError">Please select a package</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="business_name" class="form-label">Business Name <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="business_name" id="business_name" class="form-control" required>
+                            <div class="error-message" id="businessNameError">Please enter your business name</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="business_type" class="form-label">Business Type <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="business_type" id="business_type" class="form-control" required>
+                            <div class="error-message" id="businessTypeError">Please enter your business type</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="business_address" class="form-label">Business Address <span class="required-fields-mark">*</span></label>
+                        <textarea name="business_address" id="business_address" class="form-control" rows="3" required></textarea>
+                        <div class="error-message" id="businessAddressError">Please enter your business address</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="business_phone" class="form-label">Business Phone <span class="required-fields-mark">*</span></label>
+                            <input type="tel" name="business_phone" id="business_phone" class="form-control" required>
+                            <div class="error-message" id="businessPhoneError">Please enter a valid business phone</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="business_email" class="form-label">Business Email</label>
+                            <input type="email" name="business_email" id="business_email" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="contact_person_name" class="form-label">Contact Person Name <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="contact_person_name" id="contact_person_name" class="form-control" required>
+                            <div class="error-message" id="contactPersonError">Please enter contact person name</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="contact_person_phone" class="form-label">Contact Person Phone <span class="required-fields-mark">*</span></label>
+                            <input type="tel" name="contact_person_phone" id="contact_person_phone" class="form-control" required>
+                            <div class="error-message" id="contactPhoneError">Please enter a valid contact phone</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            {% block custom_js %}
-           
-            {% endblock custom_js %}
+            <!-- Step 3: Documents -->
+            <div class="form-card" id="step3">
+                <div class="form-card-header">
+                    <h3><i class="bi bi-file-earmark-text"></i> Business Documents</h3>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="established_date" class="form-label">Established Date</label>
+                            <input type="date" name="established_date" id="established_date" class="form-control">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label">Is your business licensed? <span class="required-fields-mark">*</span></label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="licensed" id="licensedYes" value="Yes" required>
+                                    <label class="form-check-label" for="licensedYes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="licensed" id="licensedNo" value="No" checked>
+                                    <label class="form-check-label" for="licensedNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label">Is your business insured? <span class="required-fields-mark">*</span></label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="insured" id="insuredYes" value="Yes" required>
+                                    <label class="form-check-label" for="insuredYes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="insured" id="insuredNo" value="No" checked>
+                                    <label class="form-check-label" for="insuredNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="business_details" class="form-label">Business Description <span class="required-fields-mark">*</span></label>
+                        <textarea name="business_details" id="business_details" class="form-control" rows="5" required></textarea>
+                        <div class="error-message" id="businessDetailsError">Please describe your business</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="tax_certificate" class="form-label">Tax Certificate <span class="required-fields-mark">*</span></label>
+                            <input type="file" name="tax_certificate" id="tax_certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <small class="text-muted">PDF, JPG, or PNG (Max 5MB)</small>
+                            <div class="error-message" id="taxCertError">Please upload tax certificate</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="trade_licence" class="form-label">Trade Licence <span class="required-fields-mark">*</span></label>
+                            <input type="file" name="trade_licence" id="trade_licence" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                            <small class="text-muted">PDF, JPG, or PNG (Max 5MB)</small>
+                            <div class="error-message" id="tradeLicenceError">Please upload trade licence</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="logo" class="form-label">Business Logo <span class="required-fields-mark">*</span></label>
+                        <div class="file-upload">
+                            <input type="file" name="logo" id="logo" class="d-none" accept=".jpg,.jpeg,.png" required>
+                            <label for="logo" class="d-flex flex-column align-items-center">
+                                <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2"></i>
+                                <span>Click to upload or drag and drop</span>
+                                <small class="text-muted">JPG or PNG (Max 2MB)</small>
+                            </label>
+                        </div>
+                        <div class="error-message" id="logoError">Please upload business logo</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Payment -->
+            <div class="form-card" id="step4">
+                <div class="form-card-header">
+                    <h3><i class="bi bi-credit-card"></i> Payment Information</h3>
+                </div>
+                <div class="form-card-body">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="bank_name" class="form-label">Bank Name <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="bank_name" id="bank_name" class="form-control" required>
+                            <div class="error-message" id="bankNameError">Please enter bank name</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="card_number" class="form-label">Account Number <span class="required-fields-mark">*</span></label>
+                            <input type="text" name="card_number" id="card_number" class="form-control" required>
+                            <div class="error-message" id="accountNumberError">Please enter account number</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additional_info" class="form-label">Additional Information</label>
+                        <textarea name="additional_info" id="additional_info" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group form-check">
+                        <input type="checkbox" name="terms" id="terms" class="form-check-input" required>
+                        <label for="terms" class="form-check-label">I agree to the terms and conditions <span class="required-fields-mark">*</span></label>
+                        <div class="error-message" id="termsError">You must agree to the terms</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-prev" id="prevBtn" style="display: none;">
+                    <i class="bi bi-chevron-left me-2"></i> Previous
+                </button>
+                <button type="button" class="btn btn-next ms-auto" id="nextBtn">
+                    Next <i class="bi bi-chevron-right ms-2"></i>
+                </button>
+                <button type="submit" class="btn btn-submit" id="submitBtn" style="display: none;">
+                    Submit Application <i class="bi bi-check-circle ms-2"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block custom_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form elements
+    const form = document.getElementById('vendorForm');
+    const formContainer = document.getElementById('formContainer');
+    const successMessage = document.getElementById('successMessage');
+    const steps = document.querySelectorAll('.step');
+    const formSteps = document.querySelectorAll('.form-card');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const stepperProgress = document.getElementById('stepperProgress');
+    
+    let currentStep = 0;
+    const totalSteps = steps.length;
+    
+    // Initialize form
+    updateFormDisplay();
+    
+    // Update form display based on current step
+    function updateFormDisplay() {
+        // Hide all form steps
+        formSteps.forEach(step => {
+            step.classList.remove('active');
+        });
+        
+        // Show current step
+        formSteps[currentStep].classList.add('active');
+        
+        // Update stepper UI
+        steps.forEach((step, index) => {
+            step.classList.remove('active', 'completed');
+            
+            if (index < currentStep) {
+                step.classList.add('completed');
+            } else if (index === currentStep) {
+                step.classList.add('active');
+            }
+        });
+        
+        // Update progress bar
+        const progressPercent = (currentStep / (totalSteps - 1)) * 100;
+        stepperProgress.style.width = `${progressPercent}%`;
+        
+        // Update button visibility
+        if (currentStep === 0) {
+            prevBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'flex';
+        }
+        
+        if (currentStep === totalSteps - 1) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'flex';
+        } else {
+            nextBtn.style.display = 'flex';
+            submitBtn.style.display = 'none';
+        }
+    }
+    
+    // Next button click handler
+    nextBtn.addEventListener('click', function() {
+        if (validateCurrentStep()) {
+            currentStep++;
+            updateFormDisplay();
+            scrollToTop();
+        }
+    });
+    
+    // Previous button click handler
+    prevBtn.addEventListener('click', function() {
+        currentStep--;
+        updateFormDisplay();
+        scrollToTop();
+    });
+    
+    // Validate current step before proceeding
+    function validateCurrentStep() {
+        const currentFormStep = formSteps[currentStep];
+        const inputs = currentFormStep.querySelectorAll('[required]');
+        let isValid = true;
+        
+        // Reset error messages
+        currentFormStep.querySelectorAll('.error-message').forEach(msg => {
+            msg.style.display = 'none';
+        });
+        
+        // Validate each required field
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                // Show error message
+                const errorId = `${input.id}Error`;
+                const errorElement = document.getElementById(errorId);
+                if (errorElement) {
+                    errorElement.style.display = 'block';
+                }
+                
+                // Highlight field
+                input.style.borderColor = '#dc3545';
+                input.addEventListener('input', function() {
+                    if (this.value.trim()) {
+                        this.style.borderColor = '';
+                        if (errorElement) errorElement.style.display = 'none';
+                    }
+                });
+                
+                isValid = false;
+            }
+            
+            // Special validation for email
+            if (input.type === 'email' && input.value.trim() && !isValidEmail(input.value)) {
+                document.getElementById(`${input.id}Error`).style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                isValid = false;
+            }
+            
+            // Special validation for phone
+            if (input.type === 'tel' && input.value.trim() && !isValidPhone(input.value)) {
+                document.getElementById(`${input.id}Error`).style.display = 'block';
+                input.style.borderColor = '#dc3545';
+                isValid = false;
+            }
+        });
+        
+        // Validate file inputs
+        const fileInputs = currentFormStep.querySelectorAll('input[type="file"][required]');
+        fileInputs.forEach(input => {
+            if (!input.files || input.files.length === 0) {
+                document.getElementById(`${input.id}Error`).style.display = 'block';
+                isValid = false;
+            }
+        });
+        
+        // Validate radio buttons
+        const radioGroups = currentFormStep.querySelectorAll('input[type="radio"][required]');
+        radioGroups.forEach(group => {
+            const name = group.name;
+            const checked = currentFormStep.querySelector(`input[name="${name}"]:checked`);
+            if (!checked) {
+                isValid = false;
+                // Highlight radio group
+                const errorId = `${name}Error`;
+                const errorElement = document.getElementById(errorId);
+                if (errorElement) errorElement.style.display = 'block';
+            }
+        });
+        
+        // Special validation for package selection
+        if (currentStep === 1) { // Business info step
+            const packageSelect = document.getElementById('package');
+            if (packageSelect && !packageSelect.value) {
+                document.getElementById('packageError').style.display = 'block';
+                packageSelect.style.borderColor = '#dc3545';
+                isValid = false;
+                
+                packageSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        this.style.borderColor = '';
+                        document.getElementById('packageError').style.display = 'none';
+                    }
+                });
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Email validation helper
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    
+    // Phone validation helper (basic)
+    function isValidPhone(phone) {
+        return /^[0-9]{10,15}$/.test(phone);
+    }
+    
+    // Scroll to top of form
+    function scrollToTop() {
+        window.scrollTo({
+            top: document.querySelector('.vendor-registration-container').offsetTop - 20,
+            behavior: 'smooth'
+        });
+    }
+    
+    // File upload styling
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+            const label = this.nextElementSibling;
+            
+            if (label && label.classList.contains('file-upload')) {
+                const fileText = label.querySelector('span');
+                if (fileText) fileText.textContent = fileName;
+            }
+        });
+    });
+    
+    // Auto-fill for logged-in users
+    {% if request.user.is_authenticated %}
+    function autoFillUserData() {
+        // Make AJAX request to get user data
+        fetch(`/api/user-data/${document.getElementById('user').value}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fill the form fields
+                    document.getElementById('full_name').value = `${data.first_name} ${data.last_name}`.trim();
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('phone').value = data.phone_number || '';
+                    document.getElementById('address').value = data.address || '';
+                    document.getElementById('city').value = data.city || '';
+                    document.getElementById('postal_code').value = data.postal_code || '';
+                    if (data.state) document.getElementById('state').value = data.state;
+                    if (data.package_id) document.getElementById('package').value = data.package_id;
+                }
+            })
+            .catch(error => console.error('Error fetching user data:', error));
+    }
+    
+    // Call auto-fill on page load
+    autoFillUserData();
+    {% endif %}
+    
+    // Phone number lookup for non-logged-in users
+    document.getElementById('phone').addEventListener('blur', function() {
+        {% if not request.user.is_authenticated %}
+        if (this.value.trim().length >= 10) {
+            fetch(`/api/phone-lookup/${this.value}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('full_name').value = `${data.first_name} ${data.last_name}`.trim();
+                        document.getElementById('email').value = data.email || '';
+                        document.getElementById('address').value = data.address || '';
+                        document.getElementById('city').value = data.city || '';
+                        document.getElementById('postal_code').value = data.postal_code || '';
+                        if (data.state) document.getElementById('state').value = data.state;
+                    }
+                })
+                .catch(error => console.error('Error fetching phone data:', error));
+        }
+        {% endif %}
+    });
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate all steps before submission
+        let allValid = true;
+        for (let i = 0; i < totalSteps; i++) {
+            currentStep = i;
+            if (!validateCurrentStep()) {
+                allValid = false;
+                break;
+            }
+        }
+        
+        // Reset to first invalid step
+        if (!allValid) {
+            updateFormDisplay();
+            scrollToTop();
+            return;
+        }
+        
+        // Submit the form via AJAX
+        const formData = new FormData(form);
+        
+        // Show loading state
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Processing...';
+        submitBtn.disabled = true;
+        
+        fetch("{% url 'save_vendor' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                formContainer.style.display = 'none';
+                successMessage.style.display = 'block';
+            } else {
+                // Show error message
+                alert(data.message || 'An error occurred. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = 'Submit Application <i class="bi bi-check-circle ms-2"></i>';
+            submitBtn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

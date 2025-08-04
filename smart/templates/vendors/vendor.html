@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block custom_css %}
+{% comment %} <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}"> {% endcomment %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'assets/css/select2_custom_style.css' %}">
+
+<style>
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+    
+    .required-fields-mark{
+        color: red;
+    }
+
+    .form-select:focus {
+        box-shadow: 0 9px 9px -5px rgba(115, 102, 255, 0.3) !important;
+        border-color: rgba(115, 102, 255, 0.3) !important;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 9px 9px -5px rgba(115, 102, 255, 0.3) !important;
+        border-color: rgba(115, 102, 255, 0.3) !important;
+    }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Add a New User</h1>
+                </div>
+                <form class="form theme-form dark-inputs" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+
+                            <!-- === USER EMAIL & PHONE HEADER === -->
+                            <div class="col-12 mb-3">
+                                <h5>User: {{ vendor.email }} | Phone: {{ vendor.phone_number }}</h5>
+                            </div>
+
+                            <!-- === BASIC USER INFO === -->
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="username">Username</label>
+                                    <input class="form-control btn-pill" id="username" name="username" type="text" value="{{ vendor.username }}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="first_name">First Name</label>
+                                    <input class="form-control btn-pill" id="first_name" name="first_name" type="text" value="{{ vendor.first_name }}"readonly>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="last_name">Last Name</label>
+                                    <input class="form-control btn-pill" id="last_name" name="last_name" type="text" value="{{ vendor.last_name }}"readonly>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="address">Address</label>
+                                    <input class="form-control btn-pill" id="address" name="address" type="text" value="{{ vendor.address }}"readonly>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="city">City</label>
+                                    <input class="form-control btn-pill" id="city" name="city" type="text" value="{{ vendor.city }}"readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="state">State</label>
+                                    <input class="form-control btn-pill" id="state" name="state" type="text" value="{{ vendor.state }}"readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="postal_code">Postal Code</label>
+                                    <input class="form-control btn-pill" id="postal_code" name="postal_code" type="text" value="{{ vendor.postal_code }}"readonly>
+                                </div>
+                            </div>
+
+                            <!-- === CONTACT INFO === -->
+                            <div class="col-12 mt-4">
+                                <h5 class="mb-3">Business Contact Info</h5>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Business Name</label>
+                                    <input class="form-control btn-pill" name="business_name" type="text" value="{{ vendor.contact_info.business_name }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Business Email</label>
+                                    <input class="form-control btn-pill" name="business_email" type="email" value="{{ vendor.contact_info.business_email }}">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Business Address</label>
+                                    <input class="form-control btn-pill" name="business_address" type="text" value="{{ vendor.contact_info.business_address }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Person Name</label>
+                                    <input class="form-control btn-pill" name="contact_person_name" type="text" value="{{ vendor.contact_info.contact_person_name }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Contact Person Phone</label>
+                                    <input class="form-control btn-pill" name="contact_person_phone" type="text" value="{{ vendor.contact_info.contact_person_phone }}">
+                                </div>
+                            </div>
+
+                            <!-- === COMPANY OVERVIEW === -->
+                            <div class="col-12 mt-4">
+                                <h5 class="mb-3">Business Overview</h5>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Business Details</label>
+                                    <textarea class="form-control btn-pill" name="business_details">{{ vendor.company_overview.business_details }}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Establishment Date</label>
+                                    <input class="form-control btn-pill" name="establishment_date" type="date" value="{{ vendor.company_overview.establishment_date|date:'Y-m-d' }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Business Type</label>
+                                    <input class="form-control btn-pill" name="business_type" type="text" value="{{ vendor.company_overview.business_type }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Licensed</label>
+                                    <select class="form-control btn-pill" name="is_licensed">
+                                        <option value="1" {% if vendor.company_overview.is_licensed %}selected{% endif %}>Yes</option>
+                                        <option value="0" {% if not vendor.company_overview.is_licensed %}selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Insured</label>
+                                    <select class="form-control btn-pill" name="is_insured">
+                                        <option value="1" {% if vendor.company_overview.is_insured %}selected{% endif %}>Yes</option>
+                                        <option value="0" {% if not vendor.company_overview.is_insured %}selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Tax Certificate</label><br>
+                                    {% if vendor.company_overview.tax_certificate %}
+                                        <a href="{{ vendor.company_overview.tax_certificate.url }}" target="_blank">View existing</a><br>
+                                    {% endif %}
+                                    <input class="form-control btn-pill" type="file" name="tax_certificate">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Trade Licence</label><br>
+                                    {% if vendor.company_overview.trade_licence %}
+                                        <a href="{{ vendor.company_overview.trade_licence.url }}" target="_blank">View existing</a><br>
+                                    {% endif %}
+                                    <input class="form-control btn-pill" type="file" name="trade_licence">
+                                </div>
+                            </div>
+
+                            <!-- === FINANCIAL INFO === -->
+                            <div class="col-12 mt-4">
+                                <h5 class="mb-3">Financial Info</h5>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Bank Name</label>
+                                    <input class="form-control btn-pill" name="bank_name" type="text" value="{{ vendor.financial_info.bank_name }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Card Last 4</label>
+                                    <input class="form-control btn-pill" name="card_last4" type="text" value="{{ vendor.financial_info.card_last4 }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Expiration Date</label>
+                                    <input class="form-control btn-pill" name="expiration_date" type="text" value="{{ vendor.financial_info.expiration_date }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Shift Code</label>
+                                    <input class="form-control btn-pill" name="shift_code" type="text" value="{{ vendor.financial_info.shift_code }}">
+                                </div>
+                            </div>
+
+                            <!-- === VERIFICATION INFO === -->
+                            <div class="col-12 mt-4">
+                                <h5 class="mb-3">Verification</h5>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Verification Status</label>
+                                    <select class="form-control btn-pill" name="verification_status">
+                                        <option value="0" {% if vendor.vendorverification.status == '0' %}selected{% endif %}>Pending</option>
+                                        <option value="1" {% if vendor.vendorverification.status == '1' %}selected{% endif %}>Approved</option>
+                                        <option value="2" {% if vendor.vendorverification.status == '2' %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Rejection Reason</label>
+                                    <textarea class="form-control btn-pill" name="rejection_reason">{{ vendor.vendorverification.rejection_reason }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary me-3" type="submit">Update</button>
+                        <input class="btn btn-light" type="reset" value="Cancel">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+{% comment %} <script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+<script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/telephone-input.js' %}"></script>
+<script src="{% static 'assets/js/select2/custom-inputsearch.js' %}"></script>
+<script src="{% static 'assets/js/select2/select3-custom.js' %}"></script> {% endcomment %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'assets/js/height-equal.js' %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+
+<script>
+    function showMessage(type, message) {
+        const div = $(".error-success-div");
+        function expand() {
+            div.removeClass("error-message success-message")
+                .addClass(type + "-message")
+                .text(message);
+            requestAnimationFrame(() => div.addClass("show"));
+            if (type === "success") setTimeout(() => location.reload(), 2000);
+        }
+        if (div.hasClass("show")) {
+            div.removeClass("show").one("transitionend", expand);
+        } else {
+            expand();
+        }
+    }
+
+    $(document).ready(function () {
+        $('form').on('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch("{% url 'update_vendor' vendor.id %}", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: formData,
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.status, data.message);
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(() => alert("An unexpected error occurred."));
+        });
+    });
+</script>
+{% endblock %}

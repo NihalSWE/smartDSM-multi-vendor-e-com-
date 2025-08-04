@@ -12,6 +12,15 @@ urlpatterns = [
     path('error404',views.error404,name="error404"),
     path('faq',views.faq,name="faq"),
     
+    #login
+    path('login_user', views.login_user, name="login_user"),
+    path('user-signup', views.user_signup, name="user_signup"),
+    path('update_account_details', views.update_account_details, name='update_account_details'),
+
+    path('logout_user', views.logout_user, name='logout_user'),
+    
+    #logout
+    
     #shop#
     path('shop',views.shop,name='shop'),
     path('productDetails',views.productDetails,name='productDetails'),
@@ -23,6 +32,7 @@ urlpatterns = [
     path('single_vendor',views.single_vendor,name='single_vendor'),
     path('vendor_list',views.vendor_list,name='vendor_list'),
     path('become_a_vendor',views.become_a_vendor,name='become_a_vendor'),
+    path('save-vendor', views.save_vendor, name='save_vendor'),
     #vendor
      
     #blog
@@ -40,6 +50,8 @@ urlpatterns = [
     path('checkOut',views.checkOut,name='checkOut'),
     path('orderComplete',views.orderComplete,name='orderComplete'),
     #cart
+    
+    
     
 ]
 

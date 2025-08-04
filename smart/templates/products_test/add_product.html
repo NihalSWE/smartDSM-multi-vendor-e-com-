@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block custom_css %}
+{% comment %} <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}"> {% endcomment %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/select2_custom_style.css' %}">
+
+<style>
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+    
+    .required-fields-mark{
+        color: red;
+    }
+
+    .tagify{
+        width: 100%;
+        height: 46px;
+        border-radius: 60px;
+        padding: 3px 20px;
+    }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Add a New User Account</h1>
+                </div>
+                <form class="form theme-form dark-inputs" method="POST">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="name">Product Name</label><span class="required-fields-mark">*</span>
+                                    <input class="form-control btn-pill" id="name" name="name" type="text" placeholder="PUBG 60 UC">
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="name">Variant Name (same as tha name of product in the website)</label><span class="required-fields-mark">*</span>
+                                    <input class="form-control btn-pill" id="name" name="name" type="text" placeholder="PUBG 60 UC">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label class="form-label" for="product-url">Product URL</label><span class="required-fields-mark">*</span>
+                                    <input class="form-control btn-pill" id="product-url" name="product_url" type="url" placeholder="https://razergold/pubgvoucher.com">
+                                </div>
+                            </div>
+
+                            {% comment %} <div class="col-md-6 col-12">
+                                <label class="form-label" for="key">Select Region</label><span class="required-fields-mark">*</span>
+                                <select class="select2" name="region">
+                                    <option value="">Select a region</option>
+                                    {% for region in regions %}
+                                        <option value="{{ region.id }}">{{ region.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div> {% endcomment %}
+
+                            <div class="col-md-6 col-12">
+                                <label class="form-label" for="key">Select User Account</label>
+                                <select class="select2" name="user_account">
+                                    <option value="">Select a user account</option>
+                                    {% for user_account in user_accounts %}
+                                        <option value="{{ user_account.id }}">{{ user_account.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 col-12">
+                                <label class="form-label d-block" for="key">Select Regions</label>
+                                <textarea id="region-input" name="regions" placeholder="Select regions"></textarea>
+                                <textarea name="regions" hidden></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary me-3" type="submit">Submit</button>
+                        <input class="btn btn-light" type="reset" value="Cancel">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+{% comment %} <script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+<script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/telephone-input.js' %}"></script>
+<script src="{% static 'assets/js/select2/custom-inputsearch.js' %}"></script>
+<script src="{% static 'assets/js/select2/select3-custom.js' %}"></script> {% endcomment %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+<script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+<script src="{% static 'assets/js/select2/telephone-input.js' %}"></script>
+<script src="{% static 'assets/js/select2/custom-inputsearch.js' %}"></script>
+<script src="{% static 'assets/js/select2/select3-custom.js' %}"></script>
+<script src="{% static 'assets/js/height-equal.js' %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+
+<script>
+    // Popup helper
+    function showMessage(type, message) {
+        const div = $(".error-success-div");
+        function expand() {
+        div
+            .removeClass("error-message success-message")
+            .addClass(type + "-message")
+            .text(message);
+        requestAnimationFrame(() => div.addClass("show"));
+        if (type === "success") setTimeout(() => location.reload(), 2000);
+        }
+        if (div.hasClass("show")) {
+            div.removeClass("show").one("transitionend", expand);
+        } else {
+        expand();
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const textarea = document.getElementById('region-input');
+
+        const tagify = new Tagify(textarea, {
+            enforceWhitelist: true,
+            whitelist: {{ regions|safe }},       // e.g. [{"value":1,"name":"USA"}, ...]
+            tagTextProp: 'name',                  // tags show the name
+            dropdown: {
+            enabled: 0,                         // we’ll open manually
+            closeOnSelect: false,
+            classname: "tags-look",
+            highlightFirst: true,
+            mapValueTo: 'name',                 // display/filter by name
+            searchKeys: ['name'],               // search only the name field
+            maxItems: 20
+            }
+        });
+
+        // Helper to open + repopulate the dropdown with the full list
+        function showAllRegions() {
+            tagify.dropdown.show();  // open it
+            // “update” the list with entire whitelist
+            tagify.dropdown.update(tagify.settings.whitelist);
+        }
+
+        // Open & repopulate on focus or click
+        textarea.addEventListener('focus', showAllRegions);
+        tagify.DOM.scope.addEventListener('click', showAllRegions);
+
+        // Now let Tagify do its own filtering once you start typing, based on searchKeys
+
+        // AJAX form submit — collect only IDs
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.delete('regions');
+            tagify.value.forEach(tag => {
+            formData.append('regions[]', tag.value);
+            });
+
+            fetch("{% url 'add_product' %}", {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+            if (data.success) {
+                showMessage(data.status, data.message);
+                $('form')[0].reset();
+                tagify.removeAllTags();
+            } else {
+                alert('Error: ' + data.message);
+            }
+            })
+            .catch(() => alert('Unexpected error'));
+        });
+    });
+</script>
+
+{% endblock %}

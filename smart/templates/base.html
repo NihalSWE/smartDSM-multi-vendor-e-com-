@@ -43,6 +43,16 @@
     <link rel="stylesheet" type="text/css" href="{% sass_src 'assets/scss/responsive.scss' %}">
 
     {% block custom_css %}  {% endblock custom_css %}
+
+    <style>
+      .page-wrapper.compact-wrapper .page-body-wrapper div.sidebar-wrapper .logo-wrapper, .page-wrapper.compact-wrapper .page-body-wrapper div.sidebar-wrapper .logo-icon-wrapper{
+        padding: 10px 20px !important;
+      }
+      .img-fluid {
+          max-width: 70px;
+          height: auto;
+      }
+    </style>
   </head>
 
   <body class={{layout}} {% if request.path == '/index' %} onload="startTime()" {% endif %}> 

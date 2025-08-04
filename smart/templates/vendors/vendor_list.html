@@ -1,0 +1,967 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'assets/css/select2_custom_style.css' %}">
+
+<style>
+    #nextbtn:disabled, #backbtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    form.loading {
+        position: relative;
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    form.loading::after {
+        content: "Loading...";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* Loading indicator for select dropdown */
+    select.loading {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-6.219-8.56'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        background-size: 1rem;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .stepper-step {
+        display: none;
+    }
+
+    .stepper-step.active {
+        display: block;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    #nextbtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Stepper styles with transitions */
+.step {
+    position: relative;
+    flex: 1;
+    text-align: center;
+    padding: 0 10px;
+}
+
+.step-circle {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.step-circle.transition {
+    transition: all 0.3s ease;
+}
+
+.step.editing .step-circle {
+    background: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.step.completed .step-circle {
+    background: #28a745;
+    color: white;
+}
+
+.step.completed .step-circle::after {
+    content: "✓";
+    display: block;
+}
+
+.step-title {
+    margin-top: 10px;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.step.editing .step-title {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.step.completed .step-title {
+    color: #28a745;
+}
+
+.step-bar-left,
+.step-bar-right {
+    position: absolute;
+    top: 15px;
+    height: 2px;
+    background: #e9ecef;
+    width: calc(50% - 15px);
+    transition: all 0.3s ease;
+}
+
+.step-bar-left.transition,
+.step-bar-right.transition {
+    transition: all 0.3s ease;
+}
+
+.step-bar-left {
+    left: 0;
+}
+
+.step-bar-right {
+    right: 0;
+}
+
+.step-bar-left.completed,
+.step-bar-right.completed {
+    background: #28a745;
+}
+
+.stepper-horizontal {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    position: relative;
+}
+</style>
+{% endblock css %}
+
+{% block content %}
+
+<!-- Container-fluid starts-->
+<div class="container-fluid">
+    <div class="row seller-wrapper">
+        <div class="col-12"> 
+        <div class="card"> 
+            <div class="card-header common-space">
+                <div class="common-f-start">
+                    <span class="seller-filter" data-filter="all">All</span><span class="seller-filter" data-filter="furniture">Furniture</span><span class="seller-filter" data-filter="professional_service">Professional Services</span><span class="seller-filter" data-filter="security">Security</span><span class="seller-filter" data-filter="travel">Travel</span><span class="seller-filter" data-filter="healthcare">Healthcare</span>
+                </div>
+                <div class="right-vendor">
+                    <div class="input-group common-searchbox"><span class="input-group-text"><i class="search-icon text-gray" data-feather="search"></i></span>
+                        <input class="form-control" type="text" placeholder="Search Categories...">
+                    </div>
+                    {% comment %} <a class="btn btn-primary" href="{% url 'add_vendor' %}" data-bs-toggle="modal" data-bs-target="#category-pill-modal"><i class="me-2 fa fa-plus"></i>Add Seller</a> {% endcomment %}
+                    <a class="btn btn-primary" href="{% url 'add_vendor' %}"><i class="me-2 fa fa-plus"></i>Add Seller</a>
+                </div>
+                <div class="modal fade" id="category-pill-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modaldashboard">Add Seller</h5>
+                                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body basic-wizard important-validation">
+                                <div class="stepper-horizontal custom-scrollbar" id="stepper1">
+                                    <div class="stepper-one stepper step editing active">
+                                    <div class="step-circle"><span>1</span></div>
+                                        <div class="step-title">Personal Info</div>
+                                        <div class="step-bar-left"></div>
+                                        <div class="step-bar-right"></div>
+                                    </div>
+                                    <div class="stepper-two step">
+                                        <div class="step-circle"><span>2</span></div>
+                                        <div class="step-title">Company Contact</div>
+                                        <div class="step-bar-left"></div>
+                                        <div class="step-bar-right"></div>
+                                    </div>
+                                    <div class="stepper-three step">
+                                        <div class="step-circle"><span>3</span></div>
+                                        <div class="step-title">Company Overview</div>
+                                        <div class="step-bar-left"></div>
+                                        <div class="step-bar-right"></div>
+                                    </div>
+                                    <div class="stepper-four step">
+                                        <div class="step-circle"><span>4</span></div>
+                                        <div class="step-title">Financial Info</div>
+                                        <div class="step-bar-left"></div>
+                                        <div class="step-bar-right"></div>
+                                    </div>
+                                    <div class="stepper-five step">
+                                        <div class="step-circle"><span>5</span></div>
+                                        <div class="step-title">Finish</div>
+                                        <div class="step-bar-left"></div>
+                                        <div class="step-bar-right"></div>
+                                    </div>
+                                </div>
+                                <div id="msform">
+                                    <form id="multiStepForm" class="needs-validation" novalidate method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="stepper-step active" data-step="1">
+                                            <div class="row g-3 custom-input">
+                                                <div class="col-lg-6 col-12 mb-3">
+                                                    <label class="form-label" for="package">Select Package</label><span class="required-fields-mark">*</span>
+                                                    <select class="select2" id="package" name="package">
+                                                        <option value="">Select a package</option>
+                                                        {% for pkg in packages %}
+                                                            <option value="{{ pkg.id }}">
+                                                                {{ pkg.package_id }} — {{ pkg.name }} ({{ pkg.duration_days }} days, ${{ pkg.price }})
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-lg-6 col-12 mb-3">
+                                                    <label class="form-label" for="user">Select Package</label><span class="required-fields-mark">*</span>
+                                                    <select class="select2" id="user" name="user">
+                                                        <option value="">Select a User</option>
+                                                        {% for user in users %}
+                                                            <option value="{{ user.id }}">
+                                                                {{ user.email }} — {{ user.phone_number }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <label class="col-sm-12 form-label" for="sellerNumber">Phone</label>
+                                                    <input class="form-control" id="sellerNumber" type="number" placeholder="Enter your phone number" required="">
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <label class="col-sm-12 form-label" for="sellerMail">Email</label>
+                                                    <input class="form-control" id="sellerMail" type="email" placeholder="Enter your email" required="">
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="sellerFirstName">Full Name</label>
+                                                    <input class="form-control" id="sellerFirstName" type="text" required="" placeholder="Enter your full name">
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <label class="col-sm-12 form-label" for="personal-address">Address</label>
+                                                    <input class="form-control" id="personal-address" type="text" placeholder="Adress" required="">
+                                                </div>
+
+                                                <div class="col-sm-6">
+                                                    <label class="col-sm-12 form-label" for="personal-city">City</label>
+                                                    <input class="form-control" id="personal-city" type="text" placeholder="City" required="">
+                                                </div>
+
+                                                <div class="col-sm-6"> 
+                                                    <label class="form-label" for="postalCode">Postal Code</label>
+                                                    <input class="form-control" id="postalCode" type="text" placeholder="Enter your postal code" required="">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% comment %} </form> {% endcomment %}
+
+                                        {% comment %} <form class="stepper-two row g-3 needs-validation custom-input" novalidate=""> {% endcomment %}
+                                        <div class="stepper-step" data-step="2">
+                                            <div class="row g-3 custom-input">
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="formFileDocument">Business Logo</label>
+                                                    <input class="form-control" id="formFileDocument" type="file" required="">
+                                                </div>
+                                                <div class="col-sm-6"> 
+                                                    <label class="form-label" for="companyName">Business Name</label>
+                                                    <input class="form-control" id="companyName" type="text" required="" placeholder="Enter your business name here">
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Business Address</label>
+                                                    <textarea class="form-control" placeholder="Enter your business address" required="" rows="3"></textarea>
+                                                    <div class="invalid-feedback">Please enter a message in the textarea.</div>
+                                                </div>
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="form-label" for="phoneNumber">Phone Number</label>
+                                                    <input class="form-control" id="phoneNumber" type="number" placeholder="Enter your phone number" required="">
+                                                </div>
+                                                <div class="col-lg-4 col-sm-6">
+                                                    <label class="form-label" for="validationServer05">Postal Code</label>
+                                                    <input class="form-control" id="validationServer05" type="text" placeholder="Enter your postal code" required="">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="form-label" for="companyEmail">Business Email</label>
+                                                    <input class="form-control" id="companyEmail" type="email" placeholder="Enter your business email" required="">
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="contactPersonName">Contact Person Name</label>
+                                                    <input class="form-control" id="contactPersonName" type="text" placeholder="Enter your contact person name" required="">
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="contactPersonPhone">Contact Person Phone</label>
+                                                    <input class="form-control" id="contactPersonPhone" type="number" placeholder="Enter your contact person phone" required="">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% comment %} </form> {% endcomment %}
+                                        {% comment %} <form class="stepper-three row g-3 needs-validation custom-input" novalidate=""> {% endcomment %}
+                                        <div class="stepper-step" data-step="3">
+                                            <div class="row g-3 custom-input">
+                                                <div class="col-12">
+                                                    <label class="form-label" for="businessDetails">Business Details</label>
+                                                    <textarea class="form-control" id="businessDetails" placeholder="Enter your business details" required="" rows="3"></textarea>
+                                                    <div class="invalid-feedback">Please enter a message in the textarea.    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label">Establishment Date</label>
+                                                    <div class="input-group flatpicker-calender product-date">
+                                                    <input class="form-control" id="human-friendly1" type="date">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6"> 
+                                                    <label class="form-label" for="serviceArea">Business Type</label>
+                                                    <input class="form-control" id="serviceArea" type="text" placeholder="Enter your business type" required="">
+                                                </div>
+                                                <div class="col-lg-2 col-sm-3">
+                                                    <label class="form-label" for="serviceArea">Insured?</label>
+                                                    <div class="common-flex">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" id="flexRadioDefault1" type="radio" name="flexRadioDefault">
+                                                        <label class="form-check-label" for="flexRadioDefault1">Yes</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" id="flexRadioDefault2" type="radio" name="flexRadioDefault" checked="">
+                                                        <label class="form-check-label" for="flexRadioDefault2">No </label>
+                                                    </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2 col-sm-3">
+                                                    <label class="form-label" for="serviceArea">Licensed?</label>
+                                                    <div class="common-flex">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" id="flexRadioDefault3" type="radio" name="flexRadioDefault">
+                                                        <label class="form-check-label" for="flexRadioDefault3">Yes</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" id="flexRadioDefault4" type="radio" name="flexRadioDefault" checked="">
+                                                        <label class="form-check-label" for="flexRadioDefault4">No </label>
+                                                    </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12"> 
+                                                    <label class="form-label" for="additionalInfo">Additional Info</label>
+                                                    <textarea class="form-control" id="additionalInfo" placeholder="You can write anything..." required="" rows="3"></textarea>
+                                                    <div class="invalid-feedback">Please enter a message in the textarea. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% comment %} </form> {% endcomment %}
+                                        {% comment %} <form class="stepper-four row g-3 needs-validation custom-input" novalidate=""> {% endcomment %}
+                                        <div class="stepper-step" data-step="4">
+                                            <div class="row g-3 custom-input">
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="bankName">Bank Name</label>
+                                                    <input class="form-control" id="bankName" type="text" placeholder="Enter your bank name" required="">
+                                                </div>
+                                                <div class="col-sm-6"> 
+                                                    <label class="form-label" for="cardNumber">Card Number</label>
+                                                    <input class="form-control" id="cardNumber" type="number" placeholder="xxxx xxxx xxxx xxxx" required="">
+                                                </div>
+                                                <div class="col-xl-4">
+                                                    <label class="form-label" for="expirationDates01">Expiration(MM/YY)</label>
+                                                    <input class="form-control" id="expirationDates01" type="number" placeholder="xx/xx" required="">
+                                                </div>
+                                                <div class="col-xl-4 col-sm-6">
+                                                    <label class="form-label" for="cvvNumber">CVV Number</label>
+                                                    <input class="form-control" id="cvvNumber" type="number" required="">
+                                                </div>
+                                                <div class="col-xl-4 col-sm-6">
+                                                    <label class="form-label" for="shiftCode">Shift Code</label>
+                                                    <input class="form-control" id="shiftCode" type="text" required="">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% comment %} </form> {% endcomment %}
+                                        {% comment %} <form class="stepper-five row g-3 needs-validation" novalidate=""> {% endcomment %}
+                                        <div class="stepper-step" data-step="5">
+                                            <div  class="successful-form">
+                                                <div class="col-12 m-0"></div>
+                                                <div class="successful-form"><img class="img-fluid" src="{% static 'assets/images/gif/dashboard-8/successful.gif' %}" alt="successful">
+                                                    <h5>Congratulations </h5>
+                                                    <p>Well done! You have successfully completed. </p>
+                                                </div>
+                                            </div>
+                                        {% comment %} </form> {% endcomment %}
+                                    </form>
+                                </div>
+                                <div class="wizard-footer d-flex gap-2 justify-content-end">
+                                    <button class="btn button-light-primary" id="backbtn" onclick="backStep()"> Back</button>
+                                    <button class="btn btn-primary" id="nextbtn" onclick="nextStep()">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="col-12">
+        <ul class="seller-cards"> 
+            <li class="seller-box" data-filter="professional_service"> 
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-1"></use>
+                </svg>
+                <div>
+                <h5>Gadget Grove</h5><span class="f-light">Sabrina Whitney</span>
+                </div>
+            </div>
+            <ul class="seller-profits"> 
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>567</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>45+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$67,980</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="furniture"> 
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-2"></use>
+                </svg>
+                <div>
+                <h5>Wonder Finds</h5><span class="f-light">Dean Summers</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>689</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>100+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$78,986</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="furniture">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-3"></use>
+                </svg>
+                <div>
+                <h5>Kilback</h5><span class="f-light">Frankie Blair</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>210</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>15+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$99,104</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="security">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-4"></use>
+                </svg>
+                <div>
+                <h5>Liourt</h5><span class="f-light">Jordan Snow</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>586</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>486+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$100,104</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="healthcare">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-5"></use>
+                </svg>
+                <div>
+                <h5>Cliinch</h5><span class="f-light">Jadiel Roy</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>140</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>30+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$29,450</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="furniture">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-6"></use>
+                </svg>
+                <div>
+                <h5>Liehook</h5><span class="f-light">Marie King</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>150</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>50+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$18,102</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="travel">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-7"></use>
+                </svg>
+                <div>
+                <h5>Liify</h5><span class="f-light">Angela Dalton</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>240</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>10+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$28,109</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="professional_service">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-8"></use>
+                </svg>
+                <div>
+                <h5>Appzea</h5><span class="f-light">Albert Ballard</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>104</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>14+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$15,240</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="professional_service">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-9"></use>
+                </svg>
+                <div>
+                <h5>Appish</h5><span class="f-light">Johan Compton</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>45</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>10+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$12,109</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="security">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-10"></use>
+                </svg>
+                <div>
+                <h5>Jews</h5><span class="f-light">Jakob Clark</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>78</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>26+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$78,578</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="professional_service">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-11"></use>
+                </svg>
+                <div>
+                <h5>Offspring</h5><span class="f-light">Jake Snyder</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>25</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>30+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$28,454</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="travel">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-12"></use>
+                </svg>
+                <div>
+                <h5>Holoxo</h5><span class="f-light">Daniel Schneider</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>58</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>79+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$472,587</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="furniture">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-13"></use>
+                </svg>
+                <div>
+                <h5>Nomadshol</h5><span class="f-light">Silas Barnet</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>47</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>80+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$102,450</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="professional_service">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-14"></use>
+                </svg>
+                <div>
+                <h5>Olzo</h5><span class="f-light">Silas Barnet</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>15</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>14+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$1,0000</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+            <li class="seller-box" data-filter="travel">
+            <div>
+                <svg>
+                <use href="{% static 'assets/svg/icon-sprite.svg' %}#logo-15"></use>
+                </svg>
+                <div>
+                <h5>Doloh</h5><span class="f-light">Henry Nguyen</span>
+                </div>
+            </div>
+            <ul class="seller-profits">
+                <li>
+                <div class="common-space"><span>Total Orders</span><span>47</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span>Total Products </span><span>59+</span></div>
+                </li>
+                <li> 
+                <div class="common-space"><span> Total Earnings</span><span>$34,789</span></div>
+                </li>
+            </ul><a class="btn btn-primary btn-hover-effect" href="/seller_details">View</a>
+            </li>
+        </ul>
+        </div>
+    </div>
+</div>
+<!-- Container-fluid Ends-->
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+<script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/form-wizard/custom-number-wizard.js' %}"></script>
+<script src="{% static 'assets/js/custom_seller.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+
+    $(document).ready(function() {
+        // Initialize variables
+        const $steps = $('.stepper-step');
+    const $nextBtn = $('#nextbtn');
+    const $backBtn = $('#backbtn');
+    const $stepperItems = $('#stepper1 .step');
+    let currentStep = 0;
+
+    // Initialize
+    showStep(currentStep);
+    $nextBtn.prop('disabled', true);
+    updateStepperUI();
+
+    // Next button click handler
+    $nextBtn.on('click', function() {
+        if (validateStep(currentStep)) {
+            // Mark current step as completed
+            markStepCompleted(currentStep);
+            
+            if (currentStep < $steps.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+                $nextBtn.prop('disabled', true);
+                updateButtonState();
+            } else {
+                $('#multiStepForm').submit();
+            }
+        }
+    });
+
+    // Back button click handler
+    $backBtn.on('click', function() {
+        currentStep--;
+        showStep(currentStep);
+        updateButtonState();
+        updateStepperUI();
+    });
+
+    // Show/hide steps
+    function showStep(stepIndex) {
+        $steps.removeClass('active').hide();
+        $steps.eq(stepIndex).addClass('active').show();
+        $nextBtn.text(stepIndex === $steps.length - 1 ? 'Submit' : 'Next');
+        updateStepperUI();
+    }
+
+    // Validate current step
+    function validateStep(stepIndex) {
+        const $currentStep = $steps.eq(stepIndex);
+        let isValid = true;
+
+        $currentStep.find('[required]').each(function() {
+            const $field = $(this);
+            
+            if ($field.is(':hidden')) return;
+            
+            if ($field.attr('type') === 'radio') {
+                const name = $field.attr('name');
+                if (!$currentStep.find(`input[name="${name}"]:checked`).length) {
+                    isValid = false;
+                }
+            } 
+            else if ($field.is('select') && !$field.val()) {
+                isValid = false;
+            }
+            else if ($field.attr('type') === 'file' && !$field[0].files.length) {
+                isValid = false;
+            }
+            else if (!$field.val()) {
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
+
+    // Update button states
+    function updateButtonState() {
+        $backBtn.prop('disabled', currentStep === 0);
+        $nextBtn.prop('disabled', !validateStep(currentStep));
+    }
+
+    // Mark step as completed in UI
+    function markStepCompleted(stepIndex) {
+        $stepperItems.eq(stepIndex).addClass('completed');
+        updateStepperUI();
+    }
+
+    // Update all stepper visuals with transitions
+    function updateStepperUI() {
+        $stepperItems.removeClass('editing active');
+        
+        // Set current step as active
+        $stepperItems.eq(currentStep).addClass('active editing');
+        
+        // Update connecting lines with transition
+        $stepperItems.each(function(index) {
+            const $step = $(this);
+            const $leftBar = $step.find('.step-bar-left');
+            const $rightBar = $step.find('.step-bar-right');
+            const $circle = $step.find('.step-circle');
+            
+            // Add transition class
+            $circle.addClass('transition');
+            $leftBar.addClass('transition');
+            $rightBar.addClass('transition');
+            
+            if (index < currentStep) {
+                $step.addClass('completed');
+                $leftBar.addClass('completed');
+                $rightBar.addClass('completed');
+            } else if (index === currentStep) {
+                $leftBar.addClass('completed');
+                $rightBar.removeClass('completed');
+            } else {
+                $leftBar.removeClass('completed');
+                $rightBar.removeClass('completed');
+            }
+            
+            // Remove transition class after animation completes
+            setTimeout(() => {
+                $circle.removeClass('transition');
+                $leftBar.removeClass('transition');
+                $rightBar.removeClass('transition');
+            }, 300);
+        });
+    }
+
+    // Validate on any input change
+    $steps.on('input change', '[required]', function() {
+        updateButtonState();
+    });
+
+    // Special handling for select2 if used
+    if ($.fn.select2) {
+        $('.select2').on('change', function() {
+            updateButtonState();
+        });
+    }
+
+    // Special handling for select2 if used
+    if ($.fn.select2) {
+        $('.select2').on('change', function() {
+            updateButtonState();
+        });
+    }
+
+
+        // Fetch User Information
+        $('#user').on('change', function() {
+            const userId = $(this).val();
+            const $form = $(this).closest('form');
+            
+            if (!userId) {
+                clearUserFields();
+                return;
+            }
+            
+            // Enhanced loading state
+            $form.addClass('loading');
+            $('#user').prop('disabled', true).addClass('loading');
+            
+            fetch(`/admin-dashboard/get-user-data/${userId}/`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json();
+                })
+                .then(user => {
+                    // Use the improved name formatting
+                    $('#sellerFirstName').val(formatFullName(user.first_name, user.last_name));
+                    // Keep your existing field mappings
+                    $('#sellerNumber').val(user.phone_number || '');
+                    $('#sellerMail').val(user.email || '');
+                    $('#personal-address').val(user.address || '');
+                    $('#personal-city').val(user.city || '');
+                    $('#postalCode').val(user.postal_code || '');
+                    
+                    // Add state field if exists
+                    if ($('#state').length) $('#state').val(user.state || '');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Failed to load user data');
+                    clearUserFields();
+                })
+                .finally(() => {
+                    $form.removeClass('loading');
+                    $('#user').prop('disabled', false).removeClass('loading');
+                    updateButtonState();
+                });
+        });
+
+        // Add this new helper function while keeping your existing ones
+        function formatFullName(firstName, lastName) {
+            const names = [];
+            if (firstName) names.push(firstName);
+            if (lastName) names.push(lastName);
+            return names.join(' ').trim();
+        }
+
+        function clearUserFields() {
+            $('#sellerNumber, #sellerMail, #sellerFirstName, #personal-address, #personal-city, #postalCode').val('');
+        }
+
+        function showError(message) {
+            // Implement your error display logic here
+            alert(message); // Replace with a better notification system
+        }
+    });
+</script>
+{% endblock %}
