@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from smart.models import *
+from smart.forms import *
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
+import traceback
 from django.views.decorators.http import require_POST
+from django.db.models import Avg, Count
 from django.shortcuts import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -12,7 +15,11 @@ from django.contrib.auth import authenticate, login,logout
 from django.db import transaction
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from itertools import chain
 import datetime
+import random
+import string
+from .utils.utils import get_discounted_price, get_new_arrivals
 
 
 
@@ -21,23 +28,54 @@ import datetime
 
 User = get_user_model()
 
-
 def home(request):
-    sliders = Slider.objects.all().order_by('position')
-    brands = list(ClientBrand.objects.all())
-    banners = CategoryBanner.objects.all()
-    ad_banners= AdvertisingBanner.objects.all()
-    
-    # Group images in pairs
-    brand_pairs = [brands[i:i+2] for i in range(0, len(brands), 2)]
-    
-    context = {
+    sliders       = Slider.objects.all().order_by('position')
+    brands        = list(ClientBrand.objects.all())
+    brand_pairs   = [brands[i:i+2] for i in range(0, len(brands), 2)]
+    banners       = CategoryBanner.objects.all()
+    ad_banners    = AdvertisingBanner.objects.all()
+    offer_banners = OfferBanner.objects.all()
+    product_list  = Product.objects.all()
+
+    # new arrivals
+    new_arrivals  = get_new_arrivals(limit=10)
+    # Attach slides to ad banners
+    attach_products_to_ad_banners(ad_banners)
+
+    return render(request, 'front/index.html', {
         'sliders': sliders,
         'brand_pairs': brand_pairs,
         'banners': banners,
-        'ad_banners': ad_banners
-    }
-    return render(request, 'front/index.html', context)
+        'ad_banners': ad_banners,
+        'offer_banners': offer_banners,
+        'product': product_list,
+        'new_arrivals': new_arrivals,
+    })
+    
+    
+    
+def attach_products_to_ad_banners(ad_banners):
+    for banner in ad_banners:
+        # Get up to 2 categories from the banner
+        categories = list(banner.categories.all())[:2]
+        product_chunks = []
+
+        for category in categories:
+            products = (Product.objects
+                        .filter(category=category, publish_status=1)
+                        .order_by('?')[:4])
+            product_chunks.append(list(products))  # keep separate per category
+
+        # Merge all products into one list (8 total)
+        all_products = list(chain.from_iterable(product_chunks))
+
+        # Split into slides of 2 products each
+        banner.slides = [all_products[i:i+2] for i in range(0, len(all_products), 2)]
+
+        # Debug print (optional)
+        print(f"AdvertisingBanner {banner.id} — Categories: {[c.name for c in categories]}")
+        print(f"Fetched products: {[p.title for p in all_products]}")
+        
 
 
 def aboutUs(request):
@@ -96,23 +134,6 @@ def login_user(request):
         else:
             return JsonResponse({"message": "Invalid credentials."}, status=400)
     return render(request, 'front/pages/login.html')
-
-
-# @require_POST
-# def login_view(request):
-#     username = request.POST.get("login_email")
-#     password = request.POST.get("login_password")
-
-#     user = authenticate(request, username=username, password=password)
-#     if user is not None:
-#         login(request, user)
-#         # send back the URL for the home page
-#         return JsonResponse({
-#             "message": "Login successful.",
-#             "redirect_url": reverse("home")
-#         })
-#     else:
-#         return JsonResponse({"message": "Invalid credentials."}, status=400)
 
 
 @require_POST
@@ -368,6 +389,559 @@ def save_vendor(request):
             'success': False, 
             'message': f'An error occurred: {str(e)}'
         }, status=500)
+        
+
+def product_details(request, slug):
+    product = get_object_or_404(Product, slug=slug)
+    images = product.images.all().order_by('position')
+    
+    # Get the first discount for this product
+    discount = product.discounts.first()
+    
+    # Calculate final price
+    final_price = product.selling_price
+    if discount:
+        if discount.discount_type == 'fixed':
+            final_price = product.selling_price - discount.discount_price
+        elif discount.discount_type == 'percentage':
+            # Convert percentage value (like 500 = 5%, 1000 = 10%)
+            discount_percent = discount.percentage / 1000
+            final_price = product.selling_price - (product.selling_price * discount_percent)
+            
+    # Get related products (same category, exclude current)
+    related_products = Product.objects.filter(
+        category=product.category  # Same category as current product
+    ).exclude(id=product.id).order_by('?')[:6]  # Random 6 products from same category
+    
+    # Split into chunks of 3 for swiper slides
+    related_chunks = [list(related_products)[i:i+3] for i in range(0, len(related_products), 3)]
+    
+   # Reviews handling - modified to work without custom filters
+    reviews = product.reviews.all().order_by('-created_at')
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+    total_reviews = reviews.count()
+    
+    # Calculate rating distribution as a dictionary
+    rating_distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+    for review in reviews:
+        rating_distribution[review.rating] += 1
+    
+    # Calculate percentages and prepare data for template
+    rating_data = []
+    for rating in [5, 4, 3, 2, 1]:
+        count = rating_distribution[rating]
+        percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
+        rating_data.append({
+            'rating': rating,
+            'count': count,
+            'percentage': round(percentage, 1)
+        })
+    
+    # Calculate recommended percentage (4-5 stars)
+    recommended_count = reviews.filter(rating__gte=4).count()
+    recommended_percentage = (recommended_count / total_reviews * 100) if total_reviews > 0 else 0
+    
+    # Review form handling (keep your existing code)
+    if request.method == 'POST' and request.POST.get('review_submit') == '1':
+        review_form = ProductReviewForm(request.POST)
+        if review_form.is_valid():
+            new_review = review_form.save(commit=False)
+            new_review.product = product
+            new_review.save()
+            return redirect('product_details', slug=product.slug)
+    else:
+        review_form = ProductReviewForm()
+    
+    context = {
+        'product': product,
+        'images': images,
+        'discount': discount,
+        'final_price': final_price,
+        'related_products': related_chunks,
+        'reviews': reviews,
+        'avg_rating': round(avg_rating, 1),
+        'total_reviews': total_reviews,
+        'rating_data': rating_data,
+        'recommended_count': recommended_count,
+        'recommended_percentage': round(recommended_percentage, 1),
+        'review_form': review_form,
+    }
+    return render(request, 'front/shop/product_details.html', context)
+
+
+
+def cart(request):
+
+    return render(request, 'front/order/cart.html')
+
+
+def add_to_cart(request):
+    if request.method == "POST":
+        product_id = str(request.POST.get("product_id"))
+        quantity = int(request.POST.get("quantity", 1))
+        product = get_object_or_404(Product, pk=product_id)
+
+        now = timezone.now()
+        original_price = product.selling_price  # Decimal
+        discount_amount = Decimal("0.00")
+
+        discounts = product.discounts.filter(active=True).filter(
+            (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
+            (Q(end_date__gte=now) | Q(end_date__isnull=True))
+        )
+
+        if discounts.exists():
+            discount = discounts.first()
+            if discount.discount_type == ProductDiscount.FIXED and discount.discount_price is not None:
+                discount_amount = discount.discount_price
+            elif discount.discount_type == ProductDiscount.PERCENT and discount.percentage is not None:
+                discount_amount = original_price * (discount.percentage / Decimal("100"))
+            elif discount.discount_type == ProductDiscount.BULK:
+                if discount.bulk_quantity and quantity >= discount.bulk_quantity:
+                    if discount.bulk_discount_type == ProductDiscount.FIXED and discount.bulk_discount_value:
+                        discount_amount = discount.bulk_discount_value
+                    elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
+                        discount_amount = original_price * (discount.bulk_discount_value / Decimal("100"))
+            elif discount.discount_type == ProductDiscount.BOGO:
+                pass  # Implement if needed
+
+        final_price = max(original_price - discount_amount, Decimal("0.00"))
+
+        cart = request.session.get("cart", {})
+
+        if product_id in cart:
+            cart[product_id]["quantity"] += quantity
+            # Optionally update price & discount for existing items too:
+            cart[product_id]["price"] = str(final_price.quantize(Decimal("0.01")))
+            cart[product_id]["discount"] = str(discount_amount.quantize(Decimal("0.01")))
+        else:
+            cart[product_id] = {
+                "title": product.title,
+                "price": str(final_price.quantize(Decimal("0.01"))),
+                "discount": str(discount_amount.quantize(Decimal("0.01"))),
+                "quantity": quantity,
+                "thumbnail": product.thumbnail_image.url if product.thumbnail_image else "",
+            }
+
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        return JsonResponse({
+            "status": "success",
+            "message": f"{product.title} added to cart",
+            "cart_count": sum(item["quantity"] for item in cart.values())
+        })
+
+    return JsonResponse({"status": "error", "message": "Invalid request"})
+
+
+@require_POST
+def update_quantity(request):
+    item_id = request.POST.get('id')
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+        if quantity < 1:
+            quantity = 1
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid quantity'}, status=400)
+
+    cart = request.session.get('cart', {})
+
+    if item_id not in cart:
+        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
+
+    product = get_object_or_404(Product, pk=item_id)
+    now = timezone.now()
+    original_price = product.selling_price  # Decimal
+    discount_amount = Decimal('0.00')
+
+    discounts = product.discounts.filter(active=True).filter(
+        (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
+        (Q(end_date__gte=now) | Q(end_date__isnull=True))
+    )
+
+    if discounts.exists():
+        discount = discounts.first()
+        if discount.discount_type == ProductDiscount.FIXED and discount.discount_price is not None:
+            discount_amount = discount.discount_price
+        elif discount.discount_type == ProductDiscount.PERCENT and discount.percentage is not None:
+            discount_amount = original_price * (discount.percentage / Decimal('100'))
+        elif discount.discount_type == ProductDiscount.BULK:
+            if discount.bulk_quantity and quantity >= discount.bulk_quantity:
+                if discount.bulk_discount_type == ProductDiscount.FIXED and discount.bulk_discount_value:
+                    discount_amount = discount.bulk_discount_value
+                elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
+                    discount_amount = original_price * (discount.bulk_discount_value / Decimal('100'))
+        elif discount.discount_type == ProductDiscount.BOGO:
+            pass  # Implement if needed
+
+    final_price = max(original_price - discount_amount, Decimal('0.00'))
+
+    cart[item_id]['quantity'] = quantity
+    cart[item_id]['price'] = str(final_price.quantize(Decimal('0.01')))
+    cart[item_id]['discount'] = str(discount_amount.quantize(Decimal('0.01')))
+    request.session['cart'] = cart
+    request.session.modified = True
+
+    total_items = sum(int(i.get('quantity', 0)) for i in cart.values())
+    subtotal = sum(Decimal(i.get('price', '0')) * int(i.get('quantity', 0)) for i in cart.values())
+    item_subtotal = final_price * quantity
+
+    return JsonResponse({
+        'success': True,
+        'cart_count': total_items,
+        'subtotal': float(subtotal),
+        'item_subtotal': float(item_subtotal),
+    })
+
+
+@require_POST
+def remove_item(request):
+    item_id = request.POST.get('id')
+    cart = request.session.get('cart', {})
+    if item_id in cart:
+        del cart[item_id]
+    request.session['cart'] = cart
+    request.session.modified = True
+
+    total_items = sum(int(i.get('quantity', 0)) for i in cart.values())
+    subtotal = sum(float(i.get('price', 0)) * int(i.get('quantity', 0)) for i in cart.values())
+
+    return JsonResponse({
+        'success': True,
+        'cart_count': total_items,
+        'subtotal': subtotal,
+    })
+
+
+@require_POST
+def clear_cart(request):
+    request.session['cart'] = {}
+    request.session.modified = True
+    return JsonResponse({
+        'success': True,
+        'cart_count': 0,
+        'subtotal': 0,
+    })
+    
+    
+def create_shipping_address(data):
+    # Assuming your Address model fields, adjust as needed
+    return Address.objects.create(
+        email=data.get("email"),
+        phone=data.get("phone"),
+        firstname=data.get("firstname"),
+        lastname=data.get("lastname"),
+        street_address_1=data.get("street_address_1"),
+        street_address_2=data.get("street_address_2"),
+        town=data.get("town"),
+        zip_code=data.get("zip"),
+    )
+
+def create_order(user, cart_items, subtotal, discount_total, shipping_total, grand_total, shipping_address):
+    order = Order.objects.create(
+        order_number="ORD-" + str(uuid4())[:8].upper(),
+        customer=user,
+        payment_method=0,  # Cash on Delivery
+        subtotal=subtotal,
+        discount_total=discount_total,
+        shipping_total=shipping_total,
+        grand_total=grand_total,
+        shipping_address=shipping_address,
+    )
+    # TODO: create OrderVendor and OrderItem instances here if you want
+    return order
+
+    
+def order_checkout(request):
+    return render(request, 'front/order/checkout.html')
+
+
+@require_POST
+def place_order(request):
+    try:
+        user = request.user if request.user.is_authenticated else None
+        
+        print('************************hit *****************')
+
+        # Get form data
+        phone = request.POST.get('phone', '').strip()
+        firstname = request.POST.get('firstname', '').strip()
+        lastname = request.POST.get('lastname', '').strip()
+        street_address_1 = request.POST.get('street-address-1', '').strip()
+        street_address_2 = request.POST.get('street-address-2', '').strip()
+        town = request.POST.get('town', '').strip()
+        zip_code = request.POST.get('zip', '').strip()
+
+        # Validate required fields (phone, street_address_1, etc)
+        # if not phone:
+        #     return render(request, 'front/order/checkout.html', {'error': 'Phone number is required.'})
+        # if not street_address_1:
+        #     return render(request, 'front/order/checkout.html', {'error': 'Street address is required.'})
+        # # You can add more validation here if needed
+
+        # Compose full street address
+        full_street_address = street_address_1
+        if street_address_2:
+            full_street_address += ", " + street_address_2
+
+        # For now, skipping district and thana - set None
+        district = None
+        thana = None
+
+        print('saving adresss*****************************************')
+        # Create Address
+        address = Address.objects.create(
+            user=user,
+            title="Home",
+            district=district,  # Requires district FK nullable in model
+            thana=thana,        # Requires thana FK nullable in model
+            street_address=full_street_address,
+            postal_code=zip_code or None,
+            phone_number=phone,
+            is_default=True,
+        )
+
+        cart = request.session.get("cart", {})
+        if not cart:
+            return redirect('cart')
+
+        subtotal = Decimal('0.00')
+        discount_total = Decimal('0.00')
+        shipping_total = Decimal("5.00")  # Hardcoded shipping cost
+
+        # Create the Order
+        order = Order.objects.create(
+            customer=user,  # None for guest
+            subtotal=Decimal('0.00'),
+            discount_total=Decimal('0.00'),
+            shipping_total=shipping_total,
+            grand_total=Decimal('0.00'),
+            shipping_address=address,
+            billing_address=address,
+        )
+
+        # Process cart items
+        for product_id, item in cart.items():
+            product = Product.objects.get(pk=product_id)
+            quantity = item.get('quantity', 1)
+
+            price = product.selling_price
+            discount = (
+                product.discounts.filter(active=True)
+                .filter(start_date__lte=timezone.now(), end_date__gte=timezone.now())
+                .first()
+            )
+
+            if discount:
+                if discount.discount_type == ProductDiscount.FIXED and discount.discount_price:
+                    discounted_price = discount.discount_price
+                elif discount.discount_type == ProductDiscount.PERCENT and discount.percentage:
+                    discounted_price = price * (Decimal("1") - discount.percentage / Decimal("100"))
+                else:
+                    discounted_price = price
+            else:
+                discounted_price = price
+
+            base_price = price
+            discount_amount = base_price - discounted_price
+            final_price = discounted_price
+
+            vendor = product.seller
+
+            vendor_order, created = OrderVendor.objects.get_or_create(
+                order=order,
+                vendor=vendor,
+                defaults={
+                    'vendor_subtotal': Decimal('0.00'),
+                    'vendor_discount': Decimal('0.00'),
+                    'vendor_total': Decimal('0.00'),
+                }
+            )
+            
+            print('saving order -----------------------------------')
+
+            OrderItem.objects.create(
+                vendor_order=vendor_order,
+                product=product,
+                quantity=quantity,
+                base_price=base_price,
+                discount_amount=discount_amount,
+                final_price=final_price,
+                discount_applied=discount,
+            )
+
+            vendor_order.vendor_subtotal += base_price * quantity
+            vendor_order.vendor_discount += discount_amount * quantity
+            vendor_order.vendor_total += final_price * quantity
+            vendor_order.save()
+
+            subtotal += base_price * quantity
+            discount_total += discount_amount * quantity
+
+        grand_total = subtotal - discount_total + shipping_total
+
+        order.subtotal = subtotal
+        order.discount_total = discount_total
+        order.shipping_total = shipping_total
+        order.grand_total = grand_total
+        order.save()
+
+        # Clear cart after order saved
+        request.session['cart'] = {}
+
+        return redirect('order_success')
+
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}\n\n{traceback.format_exc()}"
+        print(error_message)
+        return render(request, 'front/order/checkout.html', {'error': error_message})
+    
+    
+def order_success(request):
+    return render(request, 'front/order/order_success.html')
+    
+
+ 
+def product_quickview(request, product_id):
+    product = get_object_or_404(Product, pk=product_id, publish_status=1)
+
+    # Prepare images (thumbnail first, then gallery images)
+    images = []
+    if product.thumbnail_image:
+        images.append(request.build_absolute_uri(product.thumbnail_image.url))
+    gallery_images = [request.build_absolute_uri(img.image.url) for img in product.images.all()]
+    images.extend(gallery_images)
+
+    # Calculate price and discount
+    final_price, discount_value, discount_type = get_discounted_price(product)
+
+    data = {
+        'id': product.id,
+        'title': product.title,
+        'price': str(final_price),
+        'old_price': str(product.selling_price) if discount_value else None,
+        'discount_value': str(discount_value) if discount_value else None,
+        'discount_type': discount_type,
+        'description': product.description or "",
+        'sku': product.sku,
+        'category': product.category.name if product.category else None,
+        'images': images,
+    }
+    return JsonResponse(data)
+
+@login_required
+def create_customer_product(request):
+    if request.method == 'POST':
+        try:
+            # Validate required fields
+            required_fields = ['sku', 'title', 'selling_price', 'stock_quantity']
+            for field in required_fields:
+                if not request.POST.get(field):
+                    return JsonResponse({
+                        'success': False,
+                        'error': f"Missing required field: {field}"
+                    }, status=400)
+
+            # Handle main product data
+            product = Product(
+                seller=request.user,
+                sku=request.POST.get('sku'),
+                title=request.POST.get('title'),
+                description=request.POST.get('description', ''),
+                selling_price=Decimal(request.POST.get('selling_price', 0)),
+                buy_price=Decimal(request.POST.get('initial_price', 0)),
+                stock_quantity=int(request.POST.get('stock_quantity', 0)),
+                stock_availability=request.POST.get('stock_status', 'In stock') == 'In stock',
+                low_stock_level=int(request.POST.get('low_stock_level', 5)),
+                is_digital_product=request.POST.get('is_digital') == 'on',
+                meta_title=request.POST.get('meta_title', ''),
+                meta_keywords=request.POST.get('meta_keywords', ''),
+                meta_description=request.POST.get('meta_description', ''),
+                weight=Decimal(request.POST.get('weight', 0)),
+                length=Decimal(request.POST.get('length', 0)),
+                width=Decimal(request.POST.get('width', 0)),
+                height=Decimal(request.POST.get('height', 0)),
+                publish_status=int(request.POST.get('publish_status', 0)),
+            )
+
+            # Generate unique slug
+            product.slug = slugify(product.title)
+            while Product.objects.filter(slug=product.slug).exists():
+                rand_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+                product.slug = f"{slugify(product.title)}-{rand_str}"
+
+            # Handle thumbnail image
+            if 'thumbnail' in request.FILES:
+                product.thumbnail_image = request.FILES['thumbnail']
+
+            product.save()
+
+            # Handle categories
+            category_ids = request.POST.getlist('categories[]')
+            try:
+                if category_ids:
+                    product.category = Category.objects.get(id=category_ids[0])
+                    if len(category_ids) > 1:
+                        product.sub_category = Category.objects.get(id=category_ids[1])
+                    if len(category_ids) > 2:
+                        product.sub_sub_category = Category.objects.get(id=category_ids[2])
+                    product.save()
+            except Category.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': "Invalid category selected"
+                }, status=400)
+
+            # Handle gallery images
+            if 'gallery[]' in request.FILES:
+                for i, image in enumerate(request.FILES.getlist('gallery[]')):
+                    ProductImage.objects.create(
+                        product=product,
+                        image=image,
+                        position=i
+                    )
+
+            # Handle discounts
+            discount_value = None
+            if request.POST.get('fixed_discount'):
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='fixed',
+                    discount_price=Decimal(request.POST.get('fixed_discount')),
+                )
+            elif request.POST.get('percentage_discount'):
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='percentage',
+                    percentage=Decimal(request.POST.get('percentage_discount')),
+                )
+
+            return JsonResponse({
+                'success': True, 
+                'message': 'Product added successfully',
+                'product_id': product.id
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+    # GET request - show form
+    categories = Category.objects.filter(parent_category__isnull=True)
+    context = {
+        'categories': categories,
+        "breadcrumb": {
+            "title": "Add Product",
+            "parent": "ECommerce", 
+            "child": "Add Product"
+        }
+    }
+    return render(request, 'front/products/create_customer_product.html', context)
+
+
 
 
 
@@ -448,8 +1022,15 @@ def faq(request):
         }
     return render(request, 'front/pages/faq.html',context)
 
+@login_required
 def myAccount(request):
-    return render(request, 'front/profile/my-account.html')
+    # Get orders only for the currently logged-in user
+    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    
+    context = {
+        'orders': orders,
+    }
+    return render(request, 'front/profile/my-account.html', context)
 
 def wishlist(request):
     header=WishlistPageHeader.objects.filter(is_active=True).first()
@@ -461,11 +1042,6 @@ def wishlist(request):
 def compare(request):
     return render(request, 'front/shop/compare.html')
 
-def add_To_cart(request):
-    return render(request, 'front/order/Addcart.html')
-
-def checkOut(request):
-    return render(request, 'front/order/checkout.html')
 
 def orderComplete(request):
     return render(request, 'front/order/orderComplete.html')

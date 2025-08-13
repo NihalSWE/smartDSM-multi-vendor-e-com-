@@ -36,7 +36,7 @@ urlpatterns = [
     # products
     # path('products/', views.product_list, name='product_list'),
     # path('add-product/', views.add_product, name='add_product'),
-    # path('edit-product/', views.edit_product, name='edit_product'),
+    # path('edit-product/<int:id>/', views.edit_product, name='edit_product'),
     # path('delete-product/', views.delete_product, name='delete_product'),
     
     # Category
@@ -47,6 +47,8 @@ urlpatterns = [
     path('product_grid',views.product_grid, name="product_grid"),   
     path('list_products', views.list_products, name="list_products"),
     path('product_details',views.product_details, name="product_details"),
+    path('edit-product/<int:id>/', views.edit_product, name='edit_product'),
+    path('product-review',views.product_review,name='product_review'),
     
     #About Us
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
@@ -114,13 +116,18 @@ urlpatterns = [
     #ad banner
     
     
+    #offer banner
+    path('offerbanner',views.offerbanner,name='offerbanner'),
+    path('add-offer-banner', views.add_offer_banner, name='add_offer_banner'),
+    path('edit-offer-banner/<int:banner_id>/', views.edit_offer_banner, name='edit_offer_banner'),
+    path('delete-offer-banner/<int:banner_id>/', views.delete_offer_banner, name='delete_offer_banner'),
+    #ofer banner
     
     
     
     
     
-    
-    
+    path('products/create/', views.create_product, name='create_product'),
     
     
     

@@ -2,44 +2,12 @@
 
         <!-- Start of Header -->
         <header class="header">
-            <div class="header-top">
-                <div class="container">
-                    <div class="header-left">
-                        <p class="welcome-msg">Welcome to SmartDSM message or remove it!</p>
-                    </div>
-                    <div class="header-right">
-                        <span class="divider d-lg-show"></span>
-                        {% if request.user.is_authenticated %}
-                            <!-- User is logged in -->
-                            <div class="dropdown d-lg-show">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    {{ request.user.username }}
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="{% url 'myAccount' %}">My Account</a></li>
-                                    <li><a href="{% url 'logout_user' %}">Logout</a></li>
-                                </ul>
-                            </div>
-                        {% else %}
-                            <!-- User is not logged in -->
-                            <a href="{% url 'login_user' %}" class="d-lg-show">
-                                <i class="w-icon-account"></i>Sign In/Register
-                            </a>
-                        {% endif %}
-                        <!-- Always visible links -->
-                        <a href="{% url 'blog_list' %}" class="d-lg-show">Blog</a>
-                        <a href="{% url 'contactUs' %}" class="d-lg-show">Contact Us</a>
-                    </div>
-                </div>
-            </div>
-            <!-- End of Header Top -->
-
             <div class="header-middle">
                 <div class="container">
                     <div class="header-left mr-md-4">
                         <a href="#" class="mobile-menu-toggle  w-icon-hamburger" aria-label="menu-toggle">
                         </a>
-                        <a href="demo1.html" class="logo ml-lg-0">
+                        <a href="{% url 'home' %}" class="logo ml-lg-0">
                             <img src="{% static 'front/assets/images/logo.png'%}" alt="logo" width="90" height="45" />
                         </a>
                         <form method="get" action="#"
@@ -65,20 +33,13 @@
                         </form>
                     </div>
                     <div class="header-right ml-4">
-                       
-                        <a class="wishlist label-down link d-xs-show" href="wishlist.html">
-                            <i class="w-icon-heart"></i>
-                            <span class="wishlist-label d-lg-show">Wishlist</span>
-                        </a>
-                        <a class="compare label-down link d-xs-show" href="compare.html">
-                            <i class="w-icon-compare"></i>
-                            <span class="compare-label d-lg-show">Compare</span>
-                        </a>
                         <div class="dropdown cart-dropdown cart-offcanvas mr-0 mr-lg-2">
                             <div class="cart-overlay"></div>
-                            <a href="#" class="cart-toggle label-down link">
+                            <a href="{% url 'cart' %}" class="cart-toggle label-down link">
                                 <i class="w-icon-cart">
-                                    <span class="cart-count">2</span>
+                                    <span class="cart-count">
+                                        {{ cart_items|length }}
+                                    </span>
                                 </i>
                                 <span class="cart-label">Cart</span>
                             </a>
@@ -89,62 +50,69 @@
                                 </div>
 
                                 <div class="products">
-                                    <div class="product product-cart">
-                                        <div class="product-detail">
-                                            <a href="product-default.html" class="product-name">Beige knitted
-                                                elas<br>tic
-                                                runner shoes</a>
-                                            <div class="price-box">
-                                                <span class="product-quantity">1</span>
-                                                <span class="product-price">$25.68</span>
+                                    {% if cart_items %}
+                                        {% for item in cart_items %}
+                                            <div class="product product-cart">
+                                                <div class="product-detail">
+                                                    <a href="{% url 'product_details' item.slug %}" class="product-name">
+                                                        {{ item.name }}
+                                                    </a>
+                                                    <div class="price-box">
+                                                        <span class="product-quantity">{{ item.quantity }}</span>
+                                                        <span class="product-price">${{ item.price }}</span>
+                                                    </div>
+                                                </div>
+                                                <figure class="product-media">
+                                                    <a href="{% url 'product_details' item.slug %}">
+                                                        <img src="{{ item.image }}" alt="{{ item.name }}" height="84" width="94" />
+                                                    </a>
+                                                </figure>
+                                                <button class="btn btn-link btn-close" aria-label="button">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
                                             </div>
-                                        </div>
-                                        <figure class="product-media">
-                                            <a href="product-default.html">
-                                                <img src="{% static 'front/assets/images/cart/product-1.jpg'%}" alt="product" height="84"
-                                                    width="94" />
-                                            </a>
-                                        </figure>
-                                        <button class="btn btn-link btn-close" aria-label="button">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="product product-cart">
-                                        <div class="product-detail">
-                                            <a href="product-default.html" class="product-name">Blue utility
-                                                pina<br>fore
-                                                denim dress</a>
-                                            <div class="price-box">
-                                                <span class="product-quantity">1</span>
-                                                <span class="product-price">$32.99</span>
-                                            </div>
-                                        </div>
-                                        <figure class="product-media">
-                                            <a href="product-default.html">
-                                                <img src="{% static 'front/assets/images/cart/product-2.jpg'%}" alt="product" width="84"
-                                                    height="94" />
-                                            </a>
-                                        </figure>
-                                        <button class="btn btn-link btn-close" aria-label="button">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-center p-3">Your cart is empty.</p>
+                                    {% endif %}
                                 </div>
 
                                 <div class="cart-total">
                                     <label>Subtotal:</label>
-                                    <span class="price">$58.67</span>
+                                    <span class="price">${{ total }}</span>
                                 </div>
 
                                 <div class="cart-action">
-                                    <a href="cart.html" class="btn btn-dark btn-outline btn-rounded">View Cart</a>
-                                    <a href="checkout.html" class="btn btn-primary  btn-rounded">Checkout</a>
+                                    <a href="{% url 'cart_user' %}" class="btn btn-dark btn-outline btn-rounded">View Cart</a>
+                                    <a href="{% url 'order_checkout' %}" class="btn btn-primary btn-rounded">Checkout</a>
                                 </div>
                             </div>
-                            <!-- End of Dropdown Box -->
+                            <!--End of dropdown-->
                         </div>
+                        
+                        
                     </div>
+                    <div class="header-right">
+                        <span class="divider d-lg-show"></span>
+                        {% if request.user.is_authenticated %}
+                            <!-- User is logged in -->
+                            <div class="dropdown d-lg-show">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    <i class="w-icon-account"></i> {{ request.user.username }}
+                                </a>
+                                <ul class="dropdown-menu" style="display: none;">
+                                    <li><a href="{% url 'myAccount' %}">My Account</a></li>
+                                    <li><a href="{% url 'logout_user' %}">Logout</a></li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            <!-- User is not logged in -->
+                            <a href="{% url 'login_user' %}" class="d-lg-show">
+                                <i class="w-icon-account"></i> Sign In/Register
+                            </a>
+                        {% endif %}
+                    </div>
+
                 </div>
             </div>
             <!-- End of Header Middle -->
@@ -648,8 +616,8 @@
                                             <li><a href="{% url 'error404' %}">Error 404</a></li>
                                            
                                             <li><a href="{% url 'wishlist' %}">Wishlist</a></li>
-                                            <li><a href="{% url 'add_To_cart' %}">Cart</a></li>
-                                            <li><a href="{% url 'checkOut' %}">Checkout</a></li>
+                                            <li><a href="{% url 'cart' %}">Cart</a></li>
+                                            <li><a href="{% url 'order_checkout' %}">Checkout</a></li>
                                             <li><a href="{% url 'myAccount' %}">My Account</a></li>
                                             <li><a href="{% url 'compare' %}">Compare</a></li>
                                         </ul>
@@ -667,3 +635,60 @@
             </div>
         </header>
         <!-- End of Header -->
+<style>
+
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        min-width: 220px;           /* Increased width */
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        padding: 8px 0;
+        margin-top: 10px;
+        z-index: 1000;
+        list-style: none;
+        transition: all 0.25s ease;
+    }
+    
+    .dropdown-menu li a {
+        display: block;
+        padding: 10px 20px;
+        text-decoration: none;
+        color: #333333;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
+    
+    .dropdown-menu li a:hover {
+        background-color: #f5f5f5;
+        color: #000000;
+    }
+    
+    
+
+</style>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const dropdownToggle = document.querySelector('.dropdown-toggle');
+                const dropdownMenu = document.querySelector('.dropdown-menu');
+            
+                if (dropdownToggle && dropdownMenu) {
+                    dropdownToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+                    });
+            
+                    // Optional: close the dropdown when clicking outside
+                    document.addEventListener('click', function(event) {
+                        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                            dropdownMenu.style.display = 'none';
+                        }
+                    });
+                }
+            });
+            </script>
+            

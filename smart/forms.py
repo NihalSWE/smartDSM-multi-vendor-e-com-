@@ -33,3 +33,20 @@ class ContactLocationForm(forms.ModelForm):
         image = self.cleaned_data.get('image')
         # Add any image validation here if needed
         return image
+    
+
+class ProductReviewForm(forms.ModelForm):
+    class Meta:
+        model = ProductReview
+        fields = ['name', 'email', 'phone', 'rating', 'text']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Your Name'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'Your Email'}),
+            'phone': forms.TextInput(attrs={'placeholder': 'Your Phone Number'}),
+            'rating': forms.Select(attrs={'style': 'display:none;'}),  # star UI will control this
+            'text': forms.Textarea(attrs={
+                'rows': 6,
+                'placeholder': 'Write Your Review Here...',
+                'class': 'form-control'
+            }),
+        }

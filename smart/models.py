@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 from .utils.slug_utils import generate_unique_slug
+from uuid import uuid4
 from django.utils import timezone
 from django.db.models import F, Q
 from django.core.files.storage import default_storage
@@ -338,6 +339,9 @@ class Category(models.Model):
     
         super().save(*args, **kwargs)
         
+    def __str__(self):
+        return self.name
+        
 
 
 # ——————————————————————————————————————————————
@@ -392,6 +396,7 @@ class Product(models.Model):
 
     # category hierarchy (Category model assumed self-referential)
     category            = models.ForeignKey('Category', related_name='products', on_delete=models.PROTECT)
+    parent_category            = models.ForeignKey('Category', related_name='parent_products', on_delete=models.PROTECT, blank=True, null=True)
     sub_category        = models.ForeignKey('Category', related_name='sub_products', on_delete=models.PROTECT, blank=True, null=True)
     sub_sub_category    = models.ForeignKey('Category', related_name='sub_sub_products', on_delete=models.PROTECT, blank=True, null=True)
 
@@ -429,15 +434,15 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            old_instance = Category.objects.get(pk=self.pk)
-            if old_instance.name != self.name:
-                self.slug = generate_unique_slug(self, Category, 'slug')
+            old_instance = Product.objects.get(pk=self.pk)
+            if old_instance.title != self.title:
+                self.slug = generate_unique_slug(self, Product, 'slug','title')
         else:
-            self.slug = generate_unique_slug(self, Category, 'slug')
+            self.slug = generate_unique_slug(self, Product, 'slug', 'title')
 
         if not self.code:
-            last = Category.objects.order_by('-code').first()
-            self.code = (last.code + 1) if last else 10
+            last = Product.objects.order_by('-code').first()
+            self.code = str(int(last.code) + 1) if last and last.code.isdigit() else '10'
 
         super().save(*args, **kwargs)
 
@@ -674,6 +679,30 @@ class Slider(models.Model):
             super().save(*args, **kwargs)
             
             
+class ProductReview(models.Model):
+    RATING_CHOICES = [
+        (1, "Very Poor"),
+        (2, "Not That Bad"),
+        (3, "Average"),
+        (4, "Good"),
+        (5, "Perfect"),
+    ]
+    
+    product = models.ForeignKey('Product', related_name='reviews', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+    text = models.TextField(verbose_name="Review Text")  # <-- renamed to 'text' for clarity
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.product.name} ({self.rating})"
+            
+            
 
 class contactPageHeader(models.Model):
     page_slug = models.SlugField(unique=True, help_text="e.g., contact-us, become-a-vendor")
@@ -843,3 +872,185 @@ class AdvertisingBanner(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.order})"
+
+#home page middle orrfer card
+class OfferBanner(models.Model):
+    title = models.CharField(max_length=100)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(upload_to='media/offer-banners/')
+    button_text = models.CharField(max_length=50, default='Shop Now')
+    button_link = models.CharField(max_length=255, default='#')  # ← Changed from URLField to CharField
+
+    def __str__(self):
+        return self.title
+    
+
+class District(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Thana(models.Model):
+    district = models.ForeignKey(District, on_delete=models.CASCADE, related_name="thanas")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('district', 'name')
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name}, {self.district.name}"
+
+
+class Address(models.Model):
+    user = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='addresses',
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=50, default="Home")  # "Home", "Office", etc.
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, blank=True, null=True)
+    thana = models.ForeignKey(Thana, on_delete=models.SET_NULL, blank=True, null=True)
+    street_address = models.TextField()
+    postal_code = models.CharField(max_length=10, blank=True, null=True)
+    phone_number = models.CharField(max_length=20)
+    is_default = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} - {self.street_address}, {self.thana}, {self.district}"
+
+# ----------------------------------
+# Order Models
+# ----------------------------------
+
+class Order(models.Model):
+    ORDER_STATUS_CHOICES = [
+        (0, 'Pending'),
+        (1, 'Processing'),
+        (2, 'Shipped'),
+        (3, 'Completed'),
+        (4, 'Cancelled'),
+        (5, 'Refunded'),
+    ]
+
+    PAYMENT_STATUS_CHOICES = [
+        (0, 'Due'),
+        (1, 'Paid'),
+        (2, 'Partially Paid'),
+        (3, 'Failed'),
+        (4, 'Refunded'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        (0, 'Cash on Delivery'),
+        (1, 'Credit/Debit Card'),
+        (2, 'bKash'),
+        (3, 'Nagad'),
+        (4, 'SSL'),
+    ]
+
+    order_number = models.CharField(max_length=20, unique=True, editable=False)
+    customer = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='orders',
+        limit_choices_to={'user_type': 3},
+        null=True,     # allow null for guest users
+        blank=True,    # allow blank in forms/admin
+    )
+
+
+    status = models.PositiveSmallIntegerField(choices=ORDER_STATUS_CHOICES, default=0)
+    payment_status = models.PositiveSmallIntegerField(choices=PAYMENT_STATUS_CHOICES, default=0)
+    payment_method = models.PositiveSmallIntegerField(choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    shipping_address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='shipping_orders')
+    billing_address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='billing_orders', blank=True, null=True)
+
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = "ORD-" + str(uuid4())[:8].upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Order {self.order_number} by {self.customer.email}"
+
+
+class OrderVendor(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='vendor_orders')
+    vendor = models.ForeignKey('User', on_delete=models.CASCADE, limit_choices_to={'user_type': 1}, related_name='vendor_orders')
+
+    vendor_subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vendor_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vendor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vendor_status = models.PositiveSmallIntegerField(choices=Order.ORDER_STATUS_CHOICES, default=0)
+
+    shipped_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.vendor.username} - {self.order.order_number}"
+
+
+class OrderItem(models.Model):
+    vendor_order = models.ForeignKey(OrderVendor, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('Product', on_delete=models.PROTECT, related_name='order_items')
+    variation_option = models.ForeignKey('ProductVariationOption', on_delete=models.SET_NULL, blank=True, null=True, related_name='order_items')
+
+    quantity = models.PositiveIntegerField(default=1)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    final_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_applied = models.ForeignKey('ProductDiscount', on_delete=models.SET_NULL, blank=True, null=True)
+
+    def get_total_price(self):
+        return self.final_price * Decimal(self.quantity)
+
+    def __str__(self):
+        return f"{self.product.title} x {self.quantity}"
+    
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_history')
+    old_status = models.PositiveSmallIntegerField(choices=Order.ORDER_STATUS_CHOICES)
+    new_status = models.PositiveSmallIntegerField(choices=Order.ORDER_STATUS_CHOICES)
+    changed_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+    note = models.TextField(blank=True, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"Order {self.order.order_number} changed from {self.get_old_status_display()} to {self.get_new_status_display()}"
+
+
+
+class OrderPayment(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.PositiveSmallIntegerField(choices=Order.PAYMENT_METHOD_CHOICES)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    is_successful = models.BooleanField(default=False)
+    raw_response = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Payment for {self.order.order_number} - {'Success' if self.is_successful else 'Failed'}"
+
+

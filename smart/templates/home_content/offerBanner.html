@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/dataTables.bootstrap5.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .modal-body{
+        padding-top: 34px !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 22px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        max-height: 200px;
+        opacity: 1;
+    }
+
+    .banner-image {
+        width: 60px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .description-cell {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+
+<div class="container-fluid datatable-init">
+    <div class="row">
+        <!-- Zero Configuration  Starts-->
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header pb-0 card-no-border">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <h1>List of All Offer Banners</h1>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-pill btn-primary btn-lg custom-large-btn" data-bs-toggle="modal" data-bs-target="#addModal">
+                                    <span class="me-6">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </span> Add a New Banner
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive custom-scrollbar">
+                    <table class="display table-striped border" id="basic-1">
+                        <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Subtitle</th>
+                            <th>Button Text</th>
+                            <th>Button Link</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            {% for banner in banners %}
+                                <tr data-id="{{ banner.id }}">
+                                    <td>
+                                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" class="banner-image">
+                                    </td>
+                                    <td>{{ banner.title }}</td>
+                                    <td class="description-cell" title="{{ banner.subtitle }}">{{ banner.subtitle }}</td>
+                                    <td>{{ banner.button_text }}</td>
+                                    <td>{{ banner.button_link }}</td>
+                                    <td> 
+                                        <ul class="action"> 
+                                            <li class="edit">
+                                                <span class="edit-icon-span">
+                                                    <i
+                                                        class="fa-regular fa-pen-to-square edit-icon"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editModal"
+                                                        data-id="{{ banner.id }}"
+                                                        data-title="{{ banner.title }}"
+                                                        data-subtitle="{{ banner.subtitle }}"
+                                                        data-button-text="{{ banner.button_text }}"
+                                                        data-button-link="{{ banner.button_link }}"
+                                                    ></i>
+                                                </span>
+                                            </li>
+                                            <li class="delete" data-id="{{ banner.id }}">
+                                                <span class="delete-icon-span">
+                                                    <i class="fa-solid fa-trash-can delete-icon" data-id="{{ banner.id }}" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-whatever="@getbootstrap"></i>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Zero Configuration  Ends-->
+    </div>
+</div>
+
+<!--Add modal-->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="">
+                    <h1 class="text-center">Add a New Offer Banner</h1>
+                </div>
+                <div class="modal-toggle-wrapper">  
+                    <div class="card">
+                        <form class="form theme-form dark-inputs" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="title">Banner Title</label>
+                                            <input class="form-control btn-pill" id="title" name="title" type="text" placeholder="Enter banner title" maxlength="100" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="subtitle">Subtitle (Optional)</label>
+                                            <input class="form-control btn-pill" id="subtitle" name="subtitle" type="text" placeholder="Enter banner subtitle" maxlength="255">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="button_text">Button Text</label>
+                                            <input class="form-control btn-pill" id="button_text" name="button_text" type="text" placeholder="Enter button text" maxlength="50" value="Shop Now" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="button_link">Button Link</label>
+                                            <input class="form-control btn-pill" id="button_link" name="button_link" type="text" placeholder="Enter button link" maxlength="255" value="#" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="image">Banner Image</label>
+                                            <input class="form-control btn-pill" id="image" name="image" type="file" accept="image/*" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                                <div class="error-success-div p-6"></div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button class="btn btn-primary custom-large-btn me-3" type="submit">Submit</button>
+                                <button class="btn btn-danger" type="button" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Add modal-->
+
+<!--Edit modal-->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="">
+                    <h1 class="text-center">Edit Offer Banner</h1>
+                </div>
+                <div class="modal-toggle-wrapper">  
+                    <div class="card">
+                        <form class="form theme-form dark-inputs" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="edit-title">Banner Title</label>
+                                            <input class="form-control btn-pill" id="edit-title" name="edit_title" type="text" placeholder="Enter banner title" maxlength="100" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="edit-subtitle">Subtitle (Optional)</label>
+                                            <input class="form-control btn-pill" id="edit-subtitle" name="edit_subtitle" type="text" placeholder="Enter banner subtitle" maxlength="255">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="edit-button_text">Button Text</label>
+                                            <input class="form-control btn-pill" id="edit-button_text" name="edit_button_text" type="text" placeholder="Enter button text" maxlength="50" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="edit-button_link">Button Link</label>
+                                            <input class="form-control btn-pill" id="edit-button_link" name="edit_button_link" type="text" placeholder="Enter button link" maxlength="255" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="edit-image">Banner Image</label>
+                                            <input class="form-control btn-pill" id="edit-image" name="edit_image" type="file" accept="image/*">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                                <div class="error-success-div p-6"></div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button class="btn btn-primary custom-large-btn me-3" type="submit">Update</button>
+                                <button class="btn btn-danger custom-delete-btn" type="button" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Edit modal-->
+
+<!--Delete Modal-->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-toggle-wrapper text-start dark-sign-up">
+                <div class="modal-body">
+                    <!-- Trash SVG -->
+                    <div class="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
+                            <path fill="#ce2222" d="M10 5h4a2 2 0 1 0-4 0M8.5 5a3.5 3.5 0 1 1 7 0h5.75a.75.75 0 0 1 0 1.5h-1.32l-1.17 12.111A3.75 3.75 0 0 1 15.026 22H8.974a3.75 3.75 0 0 1-3.733-3.389L4.07 6.5H2.75a.75.75 0 0 1 0-1.5zm2 4.75a.75.75 0 0 0-1.5 0v7.5a.75.75 0 0 0 1.5 0zM14.25 9a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5a.75.75 0 0 0-.75-.75" stroke-width="0.8" stroke="#ce2222" />
+                        </svg>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="mb-3 text-center">Are you sure?</h4>
+                        <p class="mb-4 text-center">This action will permanently delete the offer banner.</p>
+                        <div class="card-footer text-end">
+                            <div class="d-flex justify-content-center gap-2">
+                            <button id="confirm-delete" class="btn btn-danger">Yes</button>
+                            <button class="btn btn-secondary close-btn" type="button" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Delete Modal-->
+
+<!-- Success Modal -->
+<div class="modal fade" id="deleteSuccessModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 text-center p-4">
+        <!-- Animated Checkmark SVG -->
+        <div class="text-center">
+            <img src="{% static 'assets/images/tick_anim.gif' %}" alt="Success" class="success-media" style="width: 150px; height: 150px;"/>
+        </div>
+        <h5 class="mt-3">Deleted successfully!</h5>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables1.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom2.js' %}"></script>
+
+<script>
+    let editId = null;
+
+    function showMessage(type, message) {
+        const div = $(".error-success-div");
+
+        function expand() {
+            div
+            .removeClass("error-message success-message")
+            .addClass(type + "-message")
+            .text(message);
+
+            requestAnimationFrame(() => {
+                div.addClass("show");
+            });
+
+            if (type === "success") {
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        if (div.hasClass("show")) {
+            div.removeClass("show");
+            div.one("transitionend", expand);
+        } else {
+            expand();
+        }
+    }
+
+    // ADD
+    $("#addModal form").on("submit", function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('image', $("#image")[0].files[0]);
+        formData.append('title', $("#title").val());
+        formData.append('subtitle', $("#subtitle").val());
+        formData.append('button_text', $("#button_text").val());
+        formData.append('button_link', $("#button_link").val());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'add_offer_banner' %}", {
+            method: "POST",
+            body: formData
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showMessage("success", "Banner added successfully!");
+            } else {
+                showMessage("error", d.error || "An error occurred");
+            }
+        })
+        .catch(err => {
+            showMessage("error", "An error occurred while adding the banner");
+        });
+    });
+
+    // EDIT: populate edit modal
+    $(document).on("click", ".edit-icon", function() {
+        const data = this.dataset;
+        editId = data.id;
+        $("#edit-title").val(data.title);
+        $("#edit-subtitle").val(data.subtitle);
+        $("#edit-button_text").val(data.buttonText);
+        $("#edit-button_link").val(data.buttonLink);
+    });
+
+    $("#editModal form").on("submit", function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        if ($("#edit-image")[0].files[0]) {
+            formData.append('image', $("#edit-image")[0].files[0]);
+        }
+        formData.append('title', $("#edit-title").val());
+        formData.append('subtitle', $("#edit-subtitle").val());
+        formData.append('button_text', $("#edit-button_text").val());
+        formData.append('button_link', $("#edit-button_link").val());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`{% url 'edit_offer_banner' 0 %}`.replace('0', editId), {
+            method: "POST",
+            body: formData
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showMessage("success", "Banner updated successfully!");
+            } else {
+                showMessage("error", d.error || "An error occurred");
+            }
+        })
+        .catch(err => {
+            showMessage("error", "An error occurred while updating the banner");
+        });
+    });
+
+    // DELETE
+    let pendingDeleteId = null;
+
+    $(document).on("click", ".delete-icon", function() {
+        pendingDeleteId = this.dataset.id;
+        new bootstrap.Modal($("#deleteConfirmationModal")[0]).show();
+    });
+
+    $("#confirm-delete").on("click", function() {
+        fetch(`{% url 'delete_offer_banner' 0 %}`.replace('0', pendingDeleteId), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                bootstrap.Modal.getInstance($("#deleteConfirmationModal")[0]).hide();
+                
+                const successModal = new bootstrap.Modal($("#deleteSuccessModal")[0]);
+                successModal.show();
+                
+                setTimeout(() => {
+                    successModal.hide();
+                    location.reload();
+                }, 1500);
+            } else {
+                showMessage("error", d.error || "Failed to delete banner");
+            }
+        })
+        .catch(err => {
+            showMessage("error", "An error occurred while deleting the banner");
+        });
+    });
+
+    $(document).on("click", ".close-btn", function() {
+        const modalEl = document.getElementById("deleteConfirmationModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+        document.querySelectorAll(".modal-backdrop").forEach(bg => bg.remove());
+    });
+</script>
+
+{% endblock %}

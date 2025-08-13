@@ -1,0 +1,533 @@
+{% extends "front/base.html" %}
+{% load static %}
+
+{% block custom_css %}
+<style>
+    .original-price {
+        font-size: 0.9em;
+        margin-right: 5px;
+    }
+    .discounted-price {
+        color: #28a745;
+    }
+    .discount-badge {
+        background-color: #f0fff4;
+        padding: 2px 5px;
+        border-radius: 3px;
+        display: inline-block;
+        margin-top: 2px;
+    }
+    .cart-item-summary {
+        padding: 5px 0;
+        border-bottom: 1px dashed #eee;
+    }
+    .order-total {
+        font-size: 1.1em;
+        padding: 10px 0;
+        border-top: 1px solid #ddd;
+        margin-top: 10px;
+    }
+
+    .cart-discount {
+        color: #28a745 !important;
+        font-weight: 500;
+    }
+    
+    .cart-discount .summary-discount {
+        font-weight: bold;
+        color: #28a745 !important;
+    }
+    
+    .cart-discount label {
+        color: #28a745 !important;
+    }
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<!-- Start of Breadcrumb -->
+<nav class="breadcrumb-nav">
+    <div class="container">
+        <ul class="breadcrumb shop-breadcrumb bb-no">
+            <li class="active"><a href="cart.html">Shopping Cart</a></li>
+            <li><a href="checkout.html">Checkout</a></li>
+            <li><a href="order.html">Order Complete</a></li>
+        </ul>
+    </div>
+</nav>
+<!-- End of Breadcrumb -->
+
+<!-- Start of PageContent -->
+<div class="page-content">
+    <div class="container">
+        <div class="row gutter-lg mb-10">
+            <div class="col-lg-8 pr-lg-4 mb-6">
+                <table class="shop-table cart-table">
+                    <thead>
+                        <tr>
+                            <th class="product-name text-left"><span>Product</span></th>
+                            <th></th>
+                            <th class="product-price text-right"><span>Price</span></th>
+                            <th class="product-price text-right"><span>Discount</span></th>
+                            <th class="product-quantity text-center"><span>Quantity</span></th>
+                            {% comment %} <th class="product-subtotal text-right"><span>Subtotal</span></th> {% endcomment %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if cart_items %}
+                            {% for item in cart_items %}
+                            <tr>
+                                <td class="product-thumbnail">
+                                    <div class="p-relative">
+                                        <a href="{% url 'product_details' item.slug %}">
+                                            <figure>
+                                                <img src="{{ item.image }}" alt="{{ item.name }}" width="300" height="338">
+                                            </figure>
+                                        </a>
+                                        <button type="button" class="btn btn-close remove-item" data-id="{{ item.id }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="product-name">
+                                    <a href="{% url 'product_details' item.slug %}">{{ item.name }}</a>
+                                </td>
+                                <td class="product-price text-right"><span class="amount">${{ item.price }}</span></td>
+                                <td class="product-price text-right">
+                                    <span class="amount">${% if item.discount_amount %}{{ item.discount_amount|floatformat:2 }}{% else %}0.00{% endif %}</span>
+                                </td>
+                                <td class="product-quantity text-center">
+                                    <div class="input-group">
+                                        <input class="form-control update-qty-field"
+                                            type="number"
+                                            min="1"
+                                            max="100000"
+                                            value="{{ item.quantity }}"
+                                            data-id="{{ item.id }}">
+                                        <button class="quantity-increase w-icon-plus" data-id="{{ item.id }}"></button>
+                                        <button class="quantity-decrease w-icon-minus" data-id="{{ item.id }}"></button>
+                                    </div>
+                                </td>
+                                {% comment %} <td class="product-subtotal text-right">
+                                    <span class="amount">${{ item.subtotal|floatformat:2 }}</span>
+                                </td> {% endcomment %}
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">Your cart is empty.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                <div class="cart-action mb-6">
+                    <a href="#" class="btn btn-dark btn-rounded btn-icon-left btn-shopping mr-auto"><i class="w-icon-long-arrow-left"></i>Continue Shopping</a>
+                    <button type="submit" class="btn btn-rounded btn-default btn-clear" name="clear_cart" value="Clear Cart">Clear Cart</button> 
+                    <button type="submit" class="btn btn-rounded btn-update disabled" name="update_cart" value="Update Cart">Update Cart</button>
+                </div>
+
+                <form class="coupon">
+                    <h5 class="title coupon-title font-weight-bold text-uppercase">Coupon Discount</h5>
+                    <input type="text" class="form-control mb-4" placeholder="Enter coupon code here..." required />
+                    <button class="btn btn-dark btn-outline btn-rounded">Apply Coupon</button>
+                </form>
+            </div>
+            <div class="col-lg-4 sticky-sidebar-wrapper">
+                <div class="sticky-sidebar">
+                    <div class="cart-summary mb-4">
+                        <h3 class="cart-title text-uppercase">Cart Total</h3>
+                        
+                        <!-- Cart Items Summary -->
+                        <div class="cart-items-summary mb-3">
+                            {% for item in cart_items %}
+                            <div class="cart-item-summary mb-2" data-item-id="{{ item.id }}">
+                                <div class="d-flex justify-content-between">
+                                    <span class="item-name">{{ item.name }}</span>
+                                    <span class="item-calculation">
+                                        <span class="text-dark">${{ item.price }} * <span class="qty-display">{{ item.quantity }}</span> = $<span class="line-total">{% widthratio item.price 1 item.quantity %}</span></span>
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <hr class="divider">
+
+                        <!-- Subtotal -->
+                        <div class="cart-subtotal d-flex align-items-center justify-content-between mb-2">
+                            <label class="ls-25">Subtotal</label>
+                            <span class="summary-subtotal">${{ cart_total|floatformat:2 }}</span>
+                        </div>
+
+
+                        <!-- Total -->
+                        <div class="order-total d-flex justify-content-between align-items-center">
+                            <label class="font-weight-bold">Total</label>
+                            <span class="summary-total">${{ cart_total|floatformat:2 }}</span>
+                        </div>
+                        
+                        <a href="{% url 'order_checkout' %}" class="btn btn-block btn-dark btn-icon-right btn-rounded btn-checkout mt-3">
+                            Proceed to checkout<i class="w-icon-long-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End of PageContent -->
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+function getCSRFToken() {
+    let name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function postForm(url, dataObj) {
+    const body = new URLSearchParams();
+    Object.keys(dataObj).forEach(k => body.append(k, dataObj[k]));
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: body
+    }).then(res => res.json());
+}
+
+// Function to calculate total discount amount
+function calculateTotalDiscount() {
+    let totalDiscount = 0;
+    document.querySelectorAll('.cart-item-summary').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        const row = document.querySelector(`tr .remove-item[data-id="${itemId}"]`)?.closest('tr');
+        if (row) {
+            const discountCell = row.querySelector('.product-price:nth-child(4) .amount');
+            const qtyInput = row.querySelector('.update-qty-field');
+            if (discountCell && qtyInput) {
+                const discountAmount = parseFloat(discountCell.textContent.replace('$', '')) || 0;
+                const quantity = parseInt(qtyInput.value) || 1;
+                totalDiscount += discountAmount * quantity;
+            }
+        }
+    });
+    return totalDiscount;
+}
+
+// Function to calculate original total (without discount)
+function calculateOriginalTotal() {
+    let originalTotal = 0;
+    document.querySelectorAll('.cart-item-summary').forEach(item => {
+        const itemId = item.getAttribute('data-item-id');
+        const row = document.querySelector(`tr .remove-item[data-id="${itemId}"]`)?.closest('tr');
+        if (row) {
+            const priceCell = row.querySelector('.product-price:nth-child(3) .amount');
+            const qtyInput = row.querySelector('.update-qty-field');
+            if (priceCell && qtyInput) {
+                const price = parseFloat(priceCell.textContent.replace('$', '')) || 0;
+                const quantity = parseInt(qtyInput.value) || 1;
+                originalTotal += price * quantity;
+            }
+        }
+    });
+    return originalTotal;
+}
+
+// Enhanced function to update cart summary with discount information
+function updateCartSummaryWithDiscount() {
+    const originalTotal = calculateOriginalTotal();
+    const totalDiscount = calculateTotalDiscount();
+    const finalTotal = originalTotal - totalDiscount;
+    
+    // Update subtotal (original total)
+    const subtotalElem = document.querySelector('.summary-subtotal');
+    if (subtotalElem) {
+        subtotalElem.textContent = '$' + originalTotal.toFixed(2);
+    }
+    
+    // Add or update discount row
+    let discountRow = document.querySelector('.cart-discount');
+    const subtotalRow = document.querySelector('.cart-subtotal');
+    
+    if (totalDiscount > 0) {
+        if (!discountRow) {
+            // Create discount row if it doesn't exist
+            discountRow = document.createElement('div');
+            discountRow.className = 'cart-discount d-flex align-items-center justify-content-between mb-2 text-success';
+            discountRow.innerHTML = `
+                <label class="ls-25">Total Discount</label>
+                <span class="summary-discount">-$${totalDiscount.toFixed(2)}</span>
+            `;
+            // Insert after subtotal row
+            subtotalRow.parentNode.insertBefore(discountRow, subtotalRow.nextSibling);
+        } else {
+            // Update existing discount row
+            const discountSpan = discountRow.querySelector('.summary-discount');
+            if (discountSpan) {
+                discountSpan.textContent = '-$' + totalDiscount.toFixed(2);
+            }
+        }
+    } else if (discountRow) {
+        // Remove discount row if no discount
+        discountRow.remove();
+    }
+    
+    // Update final total
+    const totalElem = document.querySelector('.summary-total');
+    if (totalElem) {
+        totalElem.textContent = '$' + finalTotal.toFixed(2);
+    }
+    
+    // Update cart count
+    let cartCount = 0;
+    document.querySelectorAll('.update-qty-field').forEach(input => {
+        cartCount += parseInt(input.value) || 0;
+    });
+    
+    const cartCountElem = document.querySelector('.cart-count');
+    if (cartCountElem) {
+        cartCountElem.textContent = cartCount;
+    }
+}
+
+// Enhanced function to update individual item in summary with discount
+function updateItemInSummaryWithDiscount(itemId, quantity, originalPrice, discountAmount = 0) {
+    const summaryItem = document.querySelector(`[data-item-id="${itemId}"]`);
+    if (summaryItem) {
+        const qtyDisplay = summaryItem.querySelector('.qty-display');
+        if (qtyDisplay) {
+            qtyDisplay.textContent = quantity;
+        }
+        
+        const lineTotal = summaryItem.querySelector('.line-total');
+        if (lineTotal) {
+            const itemTotal = (parseFloat(originalPrice) * parseInt(quantity));
+            lineTotal.textContent = itemTotal.toFixed(2);
+        }
+    }
+}
+
+// Keep original functions for backward compatibility
+function updateCartSummary(subtotal, cartCount) {
+    updateCartSummaryWithDiscount();
+}
+
+function updateItemInSummary(itemId, quantity, originalPrice) {
+    // Get discount amount from DOM
+    const row = document.querySelector(`tr .remove-item[data-id="${itemId}"]`)?.closest('tr');
+    let discountAmount = 0;
+    if (row) {
+        const discountCell = row.querySelector('.product-price:nth-child(4) .amount');
+        if (discountCell) {
+            discountAmount = parseFloat(discountCell.textContent.replace('$', '')) || 0;
+        }
+    }
+    updateItemInSummaryWithDiscount(itemId, quantity, originalPrice, discountAmount);
+}
+
+// Function to initialize discount display on page load
+function initializeDiscountDisplay() {
+    setTimeout(() => {
+        updateCartSummaryWithDiscount();
+        
+        // Update each item summary with discount info
+        document.querySelectorAll('.cart-item-summary').forEach(item => {
+            const itemId = item.getAttribute('data-item-id');
+            const row = document.querySelector(`tr .remove-item[data-id="${itemId}"]`)?.closest('tr');
+            if (row) {
+                const priceCell = row.querySelector('.product-price:nth-child(3) .amount');
+                const discountCell = row.querySelector('.product-price:nth-child(4) .amount');
+                const qtyInput = row.querySelector('.update-qty-field');
+                
+                if (priceCell && qtyInput) {
+                    const price = priceCell.textContent.replace('$', '');
+                    const discount = discountCell ? discountCell.textContent.replace('$', '') : '0';
+                    const quantity = qtyInput.value;
+                    
+                    updateItemInSummaryWithDiscount(itemId, quantity, price, discount);
+                }
+            }
+        });
+    }, 100);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    let ignoreNextChange = false;
+
+    // Quantity plus and minus buttons
+    document.addEventListener('click', function(e) {
+        let plusBtn = e.target.closest('.quantity-increase');
+        let minusBtn = e.target.closest('.quantity-decrease');
+
+        if (plusBtn || minusBtn) {
+            e.preventDefault();
+            let btn = plusBtn || minusBtn;
+            let input = btn.closest('.input-group').querySelector('.update-qty-field');
+            if (!input) return;
+
+            let qty = parseInt(input.value) || 1;
+            qty = plusBtn ? qty + 1 : Math.max(1, qty - 1);
+            
+            ignoreNextChange = true;
+            input.value = qty;
+
+            let id = input.dataset.id;
+            let row = input.closest('tr');
+
+            postForm("{% url 'update_quantity' %}", { id: id, quantity: qty })
+            .then(data => {
+                if (data.success) {
+                    let subtotalElem = row.querySelector('.product-subtotal .amount');
+                    if (subtotalElem) subtotalElem.textContent = '$' + data.item_subtotal.toFixed(2);
+
+                    let cartTotalElem = document.querySelector('.cart-total .price');
+                    if (cartTotalElem) cartTotalElem.textContent = '$' + data.subtotal.toFixed(2);
+
+                    let cartCountElem = document.querySelector('.cart-count');
+                    if (cartCountElem) cartCountElem.textContent = data.cart_count;
+
+                    // Enhanced update with discount
+                    updateCartSummaryWithDiscount();
+                    
+                    let originalPriceText = row.querySelector('.product-price:nth-child(3) .amount').textContent;
+                    let discountPriceText = row.querySelector('.product-price:nth-child(4) .amount').textContent;
+                    let originalPrice = originalPriceText.replace('$', '');
+                    let discountPrice = discountPriceText.replace('$', '');
+                    updateItemInSummaryWithDiscount(id, qty, originalPrice, discountPrice);
+                } else {
+                    console.error('Update quantity failed:', data);
+                }
+            }).catch(console.error);
+        }
+    });
+
+    // Handle direct input quantity change
+    document.querySelectorAll('.update-qty-field').forEach(input => {
+        input.addEventListener('change', function() {
+            if (ignoreNextChange) {
+                ignoreNextChange = false;
+                return;
+            }
+
+            let qty = parseInt(this.value) || 1;
+            if (qty < 1) qty = 1;
+            this.value = qty;
+            let id = this.dataset.id;
+            let row = this.closest('tr');
+
+            postForm("{% url 'update_quantity' %}", { id: id, quantity: qty })
+            .then(data => {
+                if (data.success) {
+                    let subtotalElem = row.querySelector('.product-subtotal .amount');
+                    if (subtotalElem) subtotalElem.textContent = '$' + data.item_subtotal.toFixed(2);
+
+                    let cartTotalElem = document.querySelector('.cart-total .price');
+                    if (cartTotalElem) cartTotalElem.textContent = '$' + data.subtotal.toFixed(2);
+
+                    let cartCountElem = document.querySelector('.cart-count');
+                    if (cartCountElem) cartCountElem.textContent = data.cart_count;
+
+                    // Enhanced update with discount
+                    updateCartSummaryWithDiscount();
+                    
+                    let originalPriceText = row.querySelector('.product-price:nth-child(3) .amount').textContent;
+                    let discountPriceText = row.querySelector('.product-price:nth-child(4) .amount').textContent;
+                    let originalPrice = originalPriceText.replace('$', '');
+                    let discountPrice = discountPriceText.replace('$', '');
+                    updateItemInSummaryWithDiscount(id, qty, originalPrice, discountPrice);
+                } else {
+                    console.error('Update quantity failed:', data);
+                }
+            }).catch(console.error);
+        });
+    });
+
+    // Remove item
+    document.addEventListener('click', function(e) {
+        let remBtn = e.target.closest('.remove-item');
+        if (remBtn) {
+            e.preventDefault();
+            let row = remBtn.closest('tr');
+            let id = remBtn.dataset.id;
+
+            postForm("{% url 'remove_item' %}", { id: id })
+            .then(data => {
+                if (data.success) {
+                    if (row) row.remove();
+
+                    let cartTotalElem = document.querySelector('.cart-total .price');
+                    if (cartTotalElem) cartTotalElem.textContent = '$' + data.subtotal.toFixed(2);
+
+                    let cartCountElem = document.querySelector('.cart-count');
+                    if (cartCountElem) cartCountElem.textContent = data.cart_count;
+
+                    // Enhanced update with discount
+                    updateCartSummaryWithDiscount();
+                    
+                    let summaryItem = document.querySelector(`[data-item-id="${id}"]`);
+                    if (summaryItem) summaryItem.remove();
+
+                    if (data.cart_count === 0) {
+                        let tbody = document.querySelector('table.cart-table tbody');
+                        if (tbody) {
+                            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Your cart is empty.</td></tr>';
+                        }
+                    }
+                } else {
+                    console.error('Remove failed:', data);
+                }
+            }).catch(console.error);
+        }
+    });
+
+    // Clear cart button
+    let clearBtn = document.querySelector('.btn-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            postForm("{% url 'clear_cart' %}", {})
+            .then(data => {
+                if (data.success) {
+                    let tbody = document.querySelector('table.cart-table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Your cart is empty.</td></tr>';
+                    }
+
+                    let cartTotalElem = document.querySelector('.cart-total .price');
+                    if (cartTotalElem) cartTotalElem.textContent = '$0.00';
+
+                    let cartCountElem = document.querySelector('.cart-count');
+                    if (cartCountElem) cartCountElem.textContent = 0;
+
+                    // Enhanced update with discount
+                    updateCartSummaryWithDiscount();
+                    
+                    document.querySelectorAll('.cart-item-summary').forEach(item => item.remove());
+                } else {
+                    console.error('Clear cart failed:', data);
+                }
+            }).catch(console.error);
+        });
+    }
+
+    // Initialize discount display on page load
+    initializeDiscountDisplay();
+});
+</script>
+{% endblock custom_js %}

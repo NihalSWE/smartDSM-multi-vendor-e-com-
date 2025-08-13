@@ -13,6 +13,8 @@ from django.contrib.auth import login,logout,authenticate
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .forms import *
+import traceback
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 import datetime
 import string
@@ -544,131 +546,116 @@ def delete_user_account(request):
 
 
 
-def product_list(request):
-    # products = Product.objects.all()
-    # regions = Region.objects.all()
-    # user_accounts = UserAccount.objects.all()
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Product, Category
+
+@login_required(login_url="/admin-dashboard/login_home")
+def list_products(request):
+    products = Product.objects.all()
+    categories = Category.objects.all()
     
     context = {
-        # 'products': products,
-        # 'regions': regions,
-        # 'user_accounts': user_accounts
+        "products": products,
+        "categories": categories,
+        "breadcrumb": {
+            "title": "Product List",
+            "parent": "Ecommerce", 
+            "child": "Product List"
+        }
     }
-    
     return render(request, 'products/product_list.html', context)
 
 
-def add_product(request):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        variant_name = request.POST.get('variant_name')
-        product_url = request.POST.get('product_url')
-        user_account_id = request.POST.get('user_account')
-        region_ids = request.POST.getlist('regions[]')
 
-        # Validate required fields
-        if not name or not product_url:
-            return JsonResponse({'success': False, 'status': 'error', 'message': 'All required fields must be filled.'}, status=400)
-        
-        # Validate product_url format
-        url_validator = URLValidator()
+@login_required(login_url="/admin-dashboard/login_home")
+def edit_product(request, id):  # Changed from slug to id
+    product = get_object_or_404(Product, id=id)  # Changed to lookup by id
+    categories = Category.objects.all()
+
+    if request.method == 'POST':
         try:
-            url_validator(product_url)
-        except ValidationError:
-            return JsonResponse({'success': False, 'status': 'error', 'message': 'Invalid product URL format.'}, status=400)
-        
-        # Validate user account
-        # try:
-        #     user_account = UserAccount.objects.get(id=user_account_id)
-        # except UserAccount.DoesNotExist:
-        #     return JsonResponse({'success': False, 'status': 'error', 'message': 'Selected region is invalid.'}, status=400)
+            # Update basic fields
+            product.sku = request.POST.get('sku')
+            product.title = request.POST.get('title')
+            product.description = request.POST.get('description')
+            
+            # Update category fields
+            category_id = request.POST.get('category')
+            if category_id:
+                product.category = Category.objects.get(id=category_id)
+            
+            sub_category_id = request.POST.get('sub_category')
+            if sub_category_id:
+                product.sub_category = Category.objects.get(id=sub_category_id)
+            
+            sub_sub_category_id = request.POST.get('sub_sub_category')
+            if sub_sub_category_id:
+                product.sub_sub_category = Category.objects.get(id=sub_sub_category_id)
+            
+            # Update pricing
+            product.initial_price = request.POST.get('initial_price', 0) or 0
+            product.selling_price = request.POST.get('selling_price', 0) or 0
+            
+            # Update shipping
+            product.weight = request.POST.get('weight', 0) or 0
+            product.length = request.POST.get('length', 0) or 0
+            product.width = request.POST.get('width', 0) or 0
+            product.height = request.POST.get('height', 0) or 0
+            
+            # Update SEO
+            product.meta_title = request.POST.get('meta_title')
+            product.meta_keywords = request.POST.get('meta_keywords')
+            product.meta_description = request.POST.get('meta_description')
+            
+            # Update status
+            product.status = request.POST.get('publish_status', 'draft')
+            
+            # Handle thumbnail image
+            if 'thumbnail' in request.FILES:
+                product.thumbnail_image = request.FILES['thumbnail']
+            
+            # Handle gallery images
+            if 'gallery[]' in request.FILES:
+                # First delete existing images if needed
+                product.images.all().delete()
+                for image in request.FILES.getlist('gallery[]'):
+                    ProductImage.objects.create(product=product, image=image)
+            
+            # Save the product
+            product.save()
+            
+            # Handle tags
+            tag_list = json.loads(request.POST.get('tags', '[]'))
+            for tag_obj in tag_list:
+                tag_name = tag_obj.get('value')
+                if tag_name:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name)
+                    product.tags.add(tag)
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Product updated successfully!'
+            })
+            
+        except Exception as e:
+            print(traceback.format_exc())
+            return JsonResponse({
+                'success': False,
+                'message': str(e),
+                'errors': {'server_error': [str(e)]}
+            })
 
-        # Validate regions list
-        # Filter out any non‑integer or invalid IDs
-        # Validate regions
-        # valid_regions = Region.objects.filter(id__in=region_ids)
-        # if not valid_regions.exists():
-        #     return JsonResponse({
-        #         'success': False,
-        #         'status': 'error',
-        #         'message': 'At least one valid region must be selected.'
-        #     }, status=400)
-
-        # # Save user
-        # product = Product.objects.create(
-        #     name=name,
-        #     variant_name=variant_name,
-        #     product_url=product_url,
-        #     user_account=user_account,
-        # )
-        
-        # product.regions.set(valid_regions)
-        
-        return JsonResponse({'success': True, 'status': 'success', 'message': 'User account created successfully.'})
-
-    # For GET or other methods, render the form page
-    # user_accounts = UserAccount.objects.all()
-    # # regions = Region.objects.all()
-    # regions = [{'value': r.id, 'name': r.name} for r in Region.objects.all()]
-    
     context = {
-        # 'user_accounts': user_accounts,
-        # 'regions': mark_safe(json.dumps(regions)),
+        "product": product,
+        "categories": categories,
+        "breadcrumb": {
+            "title": "Edit Product",
+            "parent": "Ecommerce", 
+            "child": "Edit Product"
+        }
     }
-    
-    return render(request, 'products/add_product.html', context)
-
-
-def edit_product(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('id')
-        name = request.POST.get('name')
-        variant_name = request.POST.get('variant_name')
-        product_url = request.POST.get('product_url')
-        user_account_id = request.POST.get('user_account')
-        region_id = request.POST.get('region')
-        
-        url_validator = URLValidator()
-
-        # === Validation ===
-
-        # if not all([name, product_url]):
-        #     return JsonResponse({'success': False, 'message': 'Email, Password, Key, and Region are required.'}, status=400)
-    
-        # try:
-        #     url_validator(product_url)
-        # except ValidationError:
-        #     return JsonResponse({'success': False, 'status': 'error', 'message': 'Invalid product URL format.'}, status=400)
-        
-        # if not UserAccount.objects.filter(id=user_account_id).exists():
-        #     return JsonResponse({'success': False, 'message': 'Selected region is invalid.'}, status=400)
-
-        # if not Region.objects.filter(id=region_id).exists():
-        #     return JsonResponse({'success': False, 'message': 'Selected region is invalid.'}, status=400)
-
-        # try:
-        #     product = Product.objects.get(id=product_id)
-        # except Product.DoesNotExist:
-        #     return JsonResponse({'success': False, 'message': 'User not found.'}, status=404)
-
-        # # Check for duplicate email (excluding current user)
-        # if Product.objects.filter(product_url=product_url).exclude(id=product_id).exists():
-        #     return JsonResponse({'success': False, 'message': 'This email is already in use.'}, status=400)
-        
-        # user_account = UserAccount.objects.filter(id=user_account_id).first()
-        # region = Region.objects.filter(id=region_id).first()
-
-        # # === Update fields ===
-        # product.name = name
-        # product.variant_name = variant_name
-        # product.product_url = product_url
-        # product.user_account = user_account
-        # product.region = region
-        # product.save()
-
-        return JsonResponse({'success': True, 'message': 'User updated successfully.'})
-    
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+    return render(request, 'products/edit_products.html', context)
 
 
 def delete_product(request):
@@ -689,6 +676,142 @@ def delete_product(request):
         return JsonResponse({'success': True, 'message': 'User account deleted successfully.'})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+
+#--------------------------new add product--------
+
+
+def create_product(request):
+    if request.method != "POST":
+        return JsonResponse({'success': False, 'errors': {'request': 'Invalid request method'}})
+
+    data = request.POST
+    files = request.FILES
+    
+    print('data for product saving: ', data)
+
+    try:
+        errors = {}
+
+        # Required fields
+        sku = data.get('sku')
+        title = data.get('title')
+        selling_price = data.get('selling_price')
+        category_id = data.get('category')
+
+        if not sku:
+            errors['sku'] = "SKU is required."
+        if not title:
+            errors['title'] = "Title is required."
+        if not selling_price:
+            errors['selling_price'] = "Selling price is required."
+        if not category_id:
+            errors['category'] = "Category is required."
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors})
+
+        description = data.get('description', '')
+        thumbnail = files.get('thumbnail') if 'thumbnail' in files else None
+        gallery_files = files.getlist('gallery[]')
+
+        sub_category_id = data.get('sub_category') or None
+        sub_sub_category_id = data.get('sub_sub_category') or None
+
+        meta_title = data.get('meta_title')
+        meta_keywords = data.get('meta_keywords')
+        meta_description = data.get('meta_description')
+
+        shipping_class_name = data.get('shipping_class')
+        shipping_class = ShippingClass.objects.filter(name=shipping_class_name).first() if shipping_class_name else None
+
+        publish_status = data.get('publish_status') or 0
+        publish_date = parse_datetime(data.get('publish_date')) if data.get('publish_date') else None
+        
+        if 'thumbnail' in files:
+            thumbnail = files['thumbnail']
+            # further details:
+            print("Thumbnail name:", thumbnail.name)
+            print("Thumbnail size:", thumbnail.size)
+            print("Thumbnail content-type:", thumbnail.content_type)
+        else:
+            thumbnail = None
+            print("No thumbnail received from frontend")
+
+        
+        
+        if sub_sub_category_id:
+            main_category_id = sub_sub_category_id
+        elif sub_category_id:
+            main_category_id = sub_category_id
+        else:
+            main_category_id = category_id
+
+        # Create product
+        product = Product.objects.create(
+            sku=sku,
+            title=title,
+            description=description,
+            thumbnail_image=thumbnail,
+            selling_price=selling_price,
+            category_id=main_category_id,
+            parent_category_id=category_id,
+            sub_category_id=sub_category_id,
+            sub_sub_category_id=sub_sub_category_id,
+            meta_title=meta_title,
+            meta_keywords=meta_keywords,
+            meta_description=meta_description,
+            shipping_class=shipping_class,
+            publish_status=publish_status,
+            publish_date=publish_date,
+            seller=request.user  # replace or mock this as needed
+        )
+
+        # Tags (JSON list of objects)
+        tag_list = json.loads(data.get('tags', '[]'))
+        for tag_obj in tag_list:
+            tag_name = tag_obj.get('value')
+            if tag_name:
+                tag, _ = Tag.objects.get_or_create(name=tag_name)
+                product.tags.add(tag)
+
+        # Save gallery images
+        for i, image in enumerate(gallery_files):
+            if image:
+                ProductImage.objects.create(product=product, image=image, position=i)
+
+        # Discount
+        discount_type = data.get('discount_Type')
+        if discount_type == 'Fixed Price':
+            fixed_price = data.get('fixed_discount')
+            if fixed_price:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='fixed',
+                    discount_price=fixed_price,
+                    active=True
+                )
+        elif discount_type == 'Percentage':
+            percentage = data.get('discount_percentage')
+            if percentage:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='percentage',
+                    percentage=percentage,
+                    active=True
+                )
+
+        return JsonResponse({'success': True, 'message': "Product created successfully!"})
+
+    except Exception as e:
+        print("Exception occurred:", str(e))
+        print(traceback.format_exc())  # <-- This prints the full traceback in terminal
+        return JsonResponse({'success': False, 'errors': {'exception': str(e)}}, status=500)
+
+
+
+
+
 
 
 def update_contact_header(request):
@@ -1052,7 +1175,7 @@ def add_products(request):
             }, status=500)
 
     # GET request - show form
-    categories = Category.objects.all()
+    categories = Category.objects.filter(parent_category__isnull=True)
     context = {
         'categories': categories,
         "breadcrumb": {
@@ -1061,13 +1184,79 @@ def add_products(request):
             "child": "Add Product"
         }
     }
-    return render(request, "products/add_product.html", context)
+    return render(request, "products/add_products.html", context)
 
 
 @login_required(login_url="/admin-dashboard/login_home")
 def product_details(request):
     context = { "breadcrumb":{"title":"Product Details","parent":"Ecommerce", "child":"Product Details"}}
     return render(request,"products/product-details.html",context)
+
+
+def product_review(request):
+    review=ProductReview.objects.all()
+    context={
+        'review':review,
+    }
+    return render (request,'products/product_review.html',context) 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1078,18 +1267,6 @@ def product_details(request):
 def product_grid(request):
     context = { "breadcrumb":{"title":"Product Grid","parent":"Ecommerce", "child":"Product Grid"}}
     return render(request,"applications/ecommerce/products/product-grid.html",context)
-
-
-@login_required(login_url="/admin-dashboard/login_home")
-def list_products(request):
-    context = { "breadcrumb":{"title":"Product List","parent":"Ecommerce", "child":"Product List"}}
-    return render(request,"applications/ecommerce/products/list-products.html",context)
-
-
-@login_required(login_url="/admin-dashboard/login_home")
-def product_details(request):
-    context = { "breadcrumb":{"title":"Product Details","parent":"Ecommerce", "child":"Product Details"}}
-    return render(request,"applications/ecommerce/products/product-details.html",context)
 
 
 def get_subcategories(request, parent_id):
@@ -3046,6 +3223,71 @@ def edit_ad_banner(request, banner_id):
 def delete_ad_banner(request, banner_id):
     if request.method == "POST":
         banner = get_object_or_404(AdvertisingBanner, pk=banner_id)
+        banner.delete()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Only POST allowed.'})
+
+
+#home page middle section orrfer card
+
+def offerbanner(request):
+    banners = OfferBanner.objects.all()
+    return render(request, 'home_content/offerBanner.html', {'banners': banners})
+
+def add_offer_banner(request):
+    if request.method == "POST":
+        image = request.FILES.get('image')
+        title = request.POST.get('title')
+        subtitle = request.POST.get('subtitle')
+        button_text = request.POST.get('button_text')
+        button_link = request.POST.get('button_link')
+
+        if not (image and title and button_text and button_link):
+            return JsonResponse({'success': False, 'error': 'All fields except subtitle are required.'})
+
+        banner = OfferBanner(
+            image=image,
+            title=title,
+            subtitle=subtitle,
+            button_text=button_text,
+            button_link=button_link
+        )
+        banner.save()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Only POST allowed.'})
+
+
+def edit_offer_banner(request, banner_id):
+    banner = get_object_or_404(OfferBanner, pk=banner_id)
+
+    if request.method == "POST":
+        title = request.POST.get('title')
+        subtitle = request.POST.get('subtitle')
+        button_text = request.POST.get('button_text')
+        button_link = request.POST.get('button_link')
+
+        if not (title and button_text and button_link):
+            return JsonResponse({'success': False, 'error': 'All fields except subtitle are required.'})
+
+        banner.title = title
+        banner.subtitle = subtitle
+        banner.button_text = button_text
+        banner.button_link = button_link
+
+        if 'image' in request.FILES:
+            banner.image = request.FILES['image']
+
+        banner.save()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'error': 'Only POST allowed.'})
+
+
+def delete_offer_banner(request, banner_id):
+    if request.method == "POST":
+        banner = get_object_or_404(OfferBanner, pk=banner_id)
         banner.delete()
         return JsonResponse({'success': True})
 

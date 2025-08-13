@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>Smart DSM</title>
 
@@ -136,7 +137,7 @@
                 </div>
 
                 <div class="cart-action">
-                    <a href="cart.html" class="btn btn-dark btn-outline btn-rounded">View Cart</a>
+                    <a href="{% url 'cart_user' %}" class="btn btn-dark btn-outline btn-rounded">View Cart</a>
                     <a href="checkout.html" class="btn btn-primary  btn-rounded">Checkout</a>
                 </div>
             </div>
@@ -652,7 +653,7 @@
     </div>
     <!-- End of Newsletter popup -->
 
-   <!-- Start of Quick View -->
+<!-- Start of Quick View -->
 <div class="product product-single product-popup">
     <div class="row gutter-lg">
         <div class="col-md-6 mb-4 mb-md-0">
@@ -756,7 +757,8 @@
 
                 <hr class="product-divider">
 
-                <div class="product-form product-variation-form product-color-swatch">
+                <!--Variant Selection-->
+                <!--<div class="product-form product-variation-form product-color-swatch">
                     <label>Color:</label>
                     <div class="d-flex align-items-center product-variations">
                         <a href="#" class="color" style="background-color: #ffcc01"></a>
@@ -779,7 +781,7 @@
 
                 <div class="product-variation-price">
                     <span></span>
-                </div>
+                </div>-->
 
                 <div class="product-form">
                     <div class="product-qty-form">
@@ -789,7 +791,7 @@
                             <button class="quantity-minus w-icon-minus"></button>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-cart">
+                    <button class="btn btn-primary btn-cart" data-product-id="">
                         <i class="w-icon-cart"></i>
                         <span>Add to Cart</span>
                     </button>
@@ -833,6 +835,111 @@
 
 <!-- Swiper JS -->
 <script src="{% static 'front/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+
+
+<script>
+    document.addEventListener("click", function(e) {
+        let btn = e.target.closest(".btn-cart");
+        if (!btn) return;
+
+        let productId = btn.getAttribute("data-product-id");
+
+        fetch("{% url 'add_to_cart' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                // Update the cart count in the header
+                const cartCountElement = document.querySelector(".cart-count");
+                if (cartCountElement) {
+                    cartCountElement.textContent = data.cart_count;
+                }
+
+                // Optionally show a small confirmation
+                console.log(data.message);
+            }
+        })
+        .catch(error => console.error("Error adding to cart:", error));
+    });
+</script>
+
+<script>
+document.addEventListener('click', function (e) {
+    let quickBtn = e.target.closest('.btn-quickview');
+    if (!quickBtn) return;
+
+    e.preventDefault();
+    let productId = quickBtn.dataset.productId;
+
+    fetch(`/quickview/${productId}/`)
+        .then(res => res.json())
+        .then(data => {
+            // Title
+            document.querySelector('.product-popup .product-title').textContent = data.title;
+
+            // Price & Discount
+            let priceHTML = `$${data.price}`;
+            if (data.old_price) {
+                priceHTML = `<ins class="new-price">$${data.price}</ins>
+                             <del class="old-price">$${data.old_price}</del>`;
+            }
+            document.querySelector('.product-popup .product-price').innerHTML = priceHTML;
+
+            // Category
+            document.querySelector('.product-popup .product-category a').textContent = data.category || '';
+
+            // SKU
+            document.querySelector('.product-popup .product-sku span').textContent = data.sku || '';
+
+            // Description
+            document.querySelector('.product-popup .product-short-desc').innerHTML = data.description || '';
+
+            // ===== Main Swiper Images =====
+            let swiperWrapper = document.querySelector('.product-popup .product-single-swiper .swiper-wrapper');
+            swiperWrapper.innerHTML = '';
+            data.images.forEach(img => {
+                swiperWrapper.innerHTML += `
+                    <div class="swiper-slide">
+                        <figure class="product-image">
+                            <img src="${img}" alt="${data.title}" width="800" height="900">
+                        </figure>
+                    </div>`;
+            });
+
+            // ===== Thumbnails =====
+            let thumbWrapper = document.querySelector('.product-popup .product-thumbs');
+            thumbWrapper.innerHTML = '';
+            data.images.forEach(img => {
+                thumbWrapper.innerHTML += `
+                    <div class="product-thumb swiper-slide swiper-slide-visible">
+                        <img src="${img}" alt="Product Thumb" width="103" height="116">
+                    </div>`;
+            });
+
+            // ===== Re-init Swipers (important for dynamic HTML) =====
+            if (window.productMainSwiper) {
+                window.productMainSwiper.update();
+            }
+            if (window.productThumbSwiper) {
+                window.productThumbSwiper.update();
+            }
+
+            // Show the modal
+            document.querySelector('.product-popup').classList.add('active');
+        })
+        .catch(err => console.error(err));
+});
+</script>
 
 {% block page_js %}
 

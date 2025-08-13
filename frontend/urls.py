@@ -21,12 +21,12 @@ urlpatterns = [
     
     #logout
     
-    #shop#
+    #shop
     path('shop',views.shop,name='shop'),
-    path('productDetails',views.productDetails,name='productDetails'),
+    path('product-details/<slug:slug>/', views.product_details, name='product_details'),
     path('wishlist',views.wishlist,name="wishlist"),
     path('compare',views.compare,name="compare"),
-    #shop#
+    #shop
     
     #vendor
     path('single_vendor',views.single_vendor,name='single_vendor'),
@@ -46,12 +46,25 @@ urlpatterns = [
     
     
     #cart
-    path('add_To_cart',views.add_To_cart,name='add_To_cart'),
-    path('checkOut',views.checkOut,name='checkOut'),
+    path("add/", views.add_to_cart, name="add_to_cart"),
+    path('cart/', views.cart, name='cart_user'),
+    path('checkout',views.order_checkout,name='order_checkout'),
     path('orderComplete',views.orderComplete,name='orderComplete'),
+    path('place_order',views.place_order,name='place_order'),
+    path('order_success',views.order_success,name='order_success'),
+    path('update-quantity/', views.update_quantity, name='update_quantity'),
+    path('remove-item/', views.remove_item, name='remove_item'),
+    path('clear-cart/', views.clear_cart, name='clear_cart'),
+    
+
     #cart
     
+    # product modal
+    path('quickview/<int:product_id>/', views.product_quickview, name='product_quickview'),
     
+    
+    # products
+    path('create-product/', views.create_customer_product, name='create_customer_product')
     
 ]
 

@@ -1,27 +1,36 @@
 {% extends "front/base.html" %}
 {% load static %}
 
-{% block custom_css %}{% endblock custom_css %}
+{% block custom_css %}
+<style>
+    .tab-vertical .nav-product {
+        position: relative;
+        padding-left: 2.2rem;
+        padding-right: 2rem;
+        text-align: left;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .nav-product {
+        display: block;
+        position: relative;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: inherit;
+        line-height: 1;
+        letter-spacing: 0;
+        text-align: center;
+        text-transform: uppercase;
+        border-radius: 0;
+        border: 0;
+        padding: 1.5rem 2.85rem;
+        -webkit-transition: border 0.3s, color 0.3s, background-color 0.3s;
+        transition: border 0.3s, color 0.3s, background-color 0.3s;
+    }
+</style>
+{% endblock custom_css %}
 
 {% block content %}
-            <!-- Start of Page Header -->
-
-            <section class="page-header text-white text-center" style="
-            background-image: url('{% static 'front/assets/images/shop/banner1.jpg' %}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            padding: 80px 0;
-        ">
-            <div class="container">
-                <h1 class="page-title mb-0">My Account</h1>
-            </div>
-        </section>
-
-
-           
-            <!-- End of Page Header -->
-
             <!-- Start of Breadcrumb -->
             <nav class="breadcrumb-nav">
                 <div class="container">
@@ -44,15 +53,20 @@
                             <li class="nav-item">
                                 <a href="#account-orders" class="nav-link">Orders</a>
                             </li>
+
                             <li class="nav-item">
-                                <a href="#account-downloads" class="nav-link">Downloads</a>
+                                <a href="{% url 'create_customer_product' %}" class="nav-product">Add Products</a>
                             </li>
-                            <li class="nav-item">
+                            
+                            {% comment %} <li class="nav-item">
+                                <a href="#account-downloads" class="nav-link">Downloads</a>
+                            </li> {% endcomment %}
+                            {% comment %} <li class="nav-item">
                                 <a href="#account-addresses" class="nav-link">Addresses</a>
                             </li>
                             <li class="nav-item">
                                 <a href="#account-details" class="nav-link">Account details</a>
-                            </li>
+                            </li> {% endcomment %}
                             <li class="nav-item">
                                 <a href="wishlist.html">Wishlist</a>
                             </li>
@@ -183,58 +197,27 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {% for order in orders %}
                                         <tr>
-                                            <td class="order-id">#2321</td>
-                                            <td class="order-date">August 20, 2021</td>
-                                            <td class="order-status">Processing</td>
+                                            <td class="order-id">#{{ order.order_number }}</td>
+                                            <td class="order-date">{{ order.created_at|date:"F d, Y" }}</td>
+                                            <td class="order-status">
+                                                <span class="status-badge status-{{ order.get_status_display|lower }}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </td>
                                             <td class="order-total">
-                                                <span class="order-price">$121.00</span> for
-                                                <span class="order-quantity"> 1</span> item
+                                                <span class="order-price">${{ order.grand_total|floatformat:2 }}</span>
                                             </td>
                                             <td class="order-action">
-                                                <a href="#"
-                                                    class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
+                                                <a href="#" class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
                                             </td>
                                         </tr>
+                                        {% empty %}
                                         <tr>
-                                            <td class="order-id">#2321</td>
-                                            <td class="order-date">August 20, 2021</td>
-                                            <td class="order-status">Processing</td>
-                                            <td class="order-total">
-                                                <span class="order-price">$150.00</span> for
-                                                <span class="order-quantity"> 1</span> item
-                                            </td>
-                                            <td class="order-action">
-                                                <a href="#"
-                                                    class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
-                                            </td>
+                                            <td colspan="5" class="text-center">You haven't placed any orders yet.</td>
                                         </tr>
-                                        <tr>
-                                            <td class="order-id">#2319</td>
-                                            <td class="order-date">August 20, 2021</td>
-                                            <td class="order-status">Processing</td>
-                                            <td class="order-total">
-                                                <span class="order-price">$201.00</span> for
-                                                <span class="order-quantity"> 1</span> item
-                                            </td>
-                                            <td class="order-action">
-                                                <a href="#"
-                                                    class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="order-id">#2318</td>
-                                            <td class="order-date">August 20, 2021</td>
-                                            <td class="order-status">Processing</td>
-                                            <td class="order-total">
-                                                <span class="order-price">$321.00</span> for
-                                                <span class="order-quantity"> 1</span> item
-                                            </td>
-                                            <td class="order-action">
-                                                <a href="#"
-                                                    class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
-                                            </td>
-                                        </tr>
+                                        {% endfor %}
                                     </tbody>
                                 </table>
 

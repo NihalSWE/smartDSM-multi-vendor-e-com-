@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from .models import *
 
 
@@ -161,23 +163,41 @@ class CategoryAdmin(admin.ModelAdmin):
     )
     ordering = ('position', 'name')
     
-from django.utils.safestring import mark_safe
+
 @admin.register(AdvertisingBanner)
 class AdvertisingBannerAdmin(admin.ModelAdmin):
-    list_display = ('title', 'order', 'button_text', 'button_link', 'get_categories', 'preview_image')
-    list_editable = ('order',)
+    # Columns to show in the changelist
+    list_display = ('title', 'order', 'category_list', 'preview_image')
+    
+    # Enable filtering by category
+    list_filter = ('categories',)
+    
+    # Make title & description searchable
     search_fields = ('title', 'description')
-    exclude = ('categories',)  # <-- hides the field from the form
-
-    def get_categories(self, obj):
-        return ", ".join([cat.name for cat in obj.categories.all()])
-    get_categories.short_description = "Categories"
-
+    
+    # Honor the model’s Meta.ordering by default
+    ordering = ('order',)
+    
+    # Use a nicer widget for the M2M field
+    filter_horizontal = ('categories',)
+    
+    # If you want to be able to edit order right from the list view:
+    list_editable = ('order',)
+    
+    # Optional: show comma-separated categories
+    def category_list(self, obj):
+        return ", ".join(cat.name for cat in obj.categories.all())
+    category_list.short_description = 'Categories'
+    
+    # Optional: render a small thumbnail of the banner image
     def preview_image(self, obj):
         if obj.image:
-            return mark_safe(f"<img src='{obj.image.url}' width='100' height='auto' />")
+            return format_html(
+                '<img src="{}" style="height: 50px; object-fit: contain;" />',
+                obj.image.url
+            )
         return "-"
-    preview_image.short_description = "Image Preview"
+    preview_image.short_description = 'Preview'
 
 # -----------------------------------------------------------------------------
 # New Models from your request
@@ -368,3 +388,81 @@ class SliderAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('created_at',)
     ordering = ('position',)
+    
+    
+
+@admin.register(District)
+class DistrictAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+
+@admin.register(Thana)
+class ThanaAdmin(admin.ModelAdmin):
+    list_display = ('name', 'district')
+    list_filter = ('district',)
+    search_fields = ('name', 'district__name')
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'title', 'district', 'thana', 'street_address', 'is_default')
+    list_filter = ('district', 'thana', 'is_default')
+    search_fields = ('user__username', 'street_address', 'phone_number')
+
+
+# ------------------------
+# Order Inlines
+# ------------------------
+class OrderVendorInline(admin.TabularInline):
+    model = OrderVendor
+    extra = 0
+    readonly_fields = ('vendor', 'vendor_total', 'vendor_status')
+    show_change_link = True
+
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    readonly_fields = ('product', 'variation_option', 'quantity', 'final_price')
+    show_change_link = True
+
+
+# ------------------------
+# Order Admin
+# ------------------------
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('order_number', 'customer', 'status', 'payment_status', 'grand_total', 'created_at')
+    list_filter = ('status', 'payment_status', 'payment_method', 'created_at')
+    search_fields = ('order_number', 'customer__username', 'customer__email')
+    inlines = [OrderVendorInline]
+
+
+@admin.register(OrderVendor)
+class OrderVendorAdmin(admin.ModelAdmin):
+    list_display = ('order', 'vendor', 'vendor_total', 'vendor_status', 'shipped_at')
+    list_filter = ('vendor_status', 'shipped_at')
+    search_fields = ('order__order_number', 'vendor__username')
+    inlines = [OrderItemInline]
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ('vendor_order', 'product', 'variation_option', 'quantity', 'final_price')
+    list_filter = ('vendor_order__vendor_status', 'product')
+    search_fields = ('product__title', 'vendor_order__order__order_number')
+
+
+@admin.register(OrderStatusHistory)
+class OrderStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ('order', 'old_status', 'new_status', 'changed_by', 'changed_at')
+    list_filter = ('old_status', 'new_status', 'changed_at')
+    search_fields = ('order__order_number',)
+
+
+@admin.register(OrderPayment)
+class OrderPaymentAdmin(admin.ModelAdmin):
+    list_display = ('order', 'transaction_id', 'amount', 'payment_method', 'is_successful', 'paid_at')
+    list_filter = ('payment_method', 'is_successful', 'paid_at')
+    search_fields = ('order__order_number', 'transaction_id')
