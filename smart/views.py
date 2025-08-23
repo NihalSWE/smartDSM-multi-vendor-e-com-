@@ -23,7 +23,7 @@ import json
 import os
 import re
 from .models import *
-
+from django.utils import timezone
 
 
 
@@ -1093,7 +1093,9 @@ def add_products(request):
                 seller=request.user,
                 sku=request.POST.get('sku'),
                 title=request.POST.get('title'),
+                model=request.POST.get('model', ''),
                 description=request.POST.get('description', ''),
+                short_description=request.POST.get('short_description', ''),
                 selling_price=Decimal(request.POST.get('selling_price', 0)),
                 buy_price=Decimal(request.POST.get('initial_price', 0)),
                 stock_quantity=int(request.POST.get('stock_quantity', 0)),
@@ -1109,6 +1111,7 @@ def add_products(request):
                 height=Decimal(request.POST.get('height', 0)),
                 publish_status=int(request.POST.get('publish_status', 0)),
             )
+            print('================1=================',product)
 
             # Generate unique slug
             product.slug = slugify(product.title)
@@ -1121,6 +1124,9 @@ def add_products(request):
                 product.thumbnail_image = request.FILES['thumbnail']
 
             product.save()
+            print('===============2==================',product)
+
+            
 
             # Handle categories
             category_ids = request.POST.getlist('categories[]')
@@ -1190,7 +1196,7 @@ def add_products(request):
 @login_required(login_url="/admin-dashboard/login_home")
 def product_details(request):
     context = { "breadcrumb":{"title":"Product Details","parent":"Ecommerce", "child":"Product Details"}}
-    return render(request,"products/product-details.html",context)
+    return render(request,"products/product_details.html",context)
 
 
 def product_review(request):
@@ -1765,22 +1771,257 @@ def category(request):
 
 
 
+@login_required(login_url="/admin-dashboard/login_home")
+def order_history(request):
+    orders = Order.objects.all().order_by('-created_at')
+     # ADD ONLY THIS LINE:
+    unviewed_count = OrderNotification.objects.filter(is_viewed=False).count()
+     # ADD ONLY THIS LINE:
+    unviewed_ids = list(OrderNotification.objects.filter(is_viewed=False).values_list("order_id", flat=True))
+    context = {
+        "breadcrumb": {"title": "Order History", "parent": "Ecommerce", "child": "Order History"},
+        "orders": orders,
+        "unviewed_count": unviewed_count  ,# ADD ONLY THIS LINE
+        "unviewed_ids": unviewed_ids,  # ADD ONLY THIS LINE
+    }
+    return render(request, "orders/order-history.html", context)
+
+
+@login_required(login_url="/admin-dashboard/login_home")
+def order_details(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    # ADD ONLY THIS BLOCK:
+    try:
+        notification = OrderNotification.objects.get(order=order)
+        if not notification.is_viewed:
+            notification.is_viewed = True
+            notification.viewed_by = request.user
+            notification.viewed_at = timezone.now()
+            notification.save()
+    except OrderNotification.DoesNotExist:
+        OrderNotification.objects.create(
+            order=order,
+            is_viewed=True,
+            viewed_by=request.user,
+            viewed_at=timezone.now()
+        )
+    order_items = []
+    for vendor_order in order.vendor_orders.all():
+        for item in vendor_order.items.all():
+            item.total_price = item.final_price * item.quantity
+            item.vendor = vendor_order.vendor  # 🔥 attach vendor here
+            order_items.append(item)
+
+    context = {
+        "breadcrumb": {"title": "Order Details", "parent": "Ecommerce", "child": "Order Details"},
+        "order": order,
+        "order_items": order_items,
+    }
+    return render(request, "orders/order-details.html", context)
 
 
 
 
+@login_required(login_url="/admin-dashboard/login_home")
+def get_order_count(request):
+    unviewed_count = OrderNotification.objects.filter(is_viewed=False).count()
+    return JsonResponse({'count': unviewed_count})
 
 
 
+@require_POST
+@login_required(login_url="/admin-dashboard/login_home")
+def mark_order_viewed(request):
+    order_id = request.POST.get("order_id")
+    if order_id:
+        OrderNotification.objects.filter(order_id=order_id, is_viewed=False).update(is_viewed=True)
+    return JsonResponse({"status": "ok"})
 
+@login_required(login_url="/admin-dashboard/login_home")
+def edit_order(request, order_id):
+    """Display order edit form"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Get all order items through vendor_orders (your actual structure)
+    order_items = []
+    for vendor_order in order.vendor_orders.all():
+        for item in vendor_order.items.all():
+            item.total_price = item.final_price * item.quantity
+            item.vendor = vendor_order.vendor
+            item.vendor_order_id = vendor_order.id
+            order_items.append(item)
+    
+    # Get all products for adding new items (using publish_status instead of is_active)
+    available_products = Product.objects.filter(publish_status=1).select_related('seller')  # 4 = Approved
+    
+    context = {
+        "breadcrumb": {"title": "Edit Order", "parent": "Ecommerce", "child": "Edit Order"},
+        "order": order,
+        "order_items": order_items,
+        "available_products": available_products,
+    }
+    return render(request, "orders/edit-order.html", context)
 
+@login_required(login_url="/admin-dashboard/login_home")
+@require_POST
+def update_order(request, order_id):
+    """Update existing order with modified items"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    try:
+        with transaction.atomic():
+            # Get the updated items data from form
+            items_data = json.loads(request.POST.get('items_data', '[]'))
+            
+            print(f"Received items_data: {items_data}")  # Debug line
+            
+            if not items_data:
+                messages.error(request, 'No items data received. Please try again.')
+                return redirect('edit_order', order_id=order.id)
+            
+            # Store original total for comparison
+            original_total = order.grand_total
+            
+            # CLEAR existing items but keep the SAME order
+            # Delete all existing vendor orders and their items
+            for vendor_order in order.vendor_orders.all():
+                vendor_order.items.all().delete()
+            order.vendor_orders.all().delete()
+            
+            # Group items by vendor to recreate vendor orders
+            vendor_items = {}
+            
+            for item_data in items_data:
+                product_id = item_data['product_id']
+                quantity = int(item_data['quantity'])
+                
+                if quantity <= 0:
+                    continue  # Skip items with 0 or negative quantity
+                
+                try:
+                    product = Product.objects.get(id=product_id)
+                except Product.DoesNotExist:
+                    continue  # Skip if product doesn't exist
+                
+                vendor = product.seller
+                
+                if vendor.id not in vendor_items:
+                    vendor_items[vendor.id] = {
+                        'vendor': vendor,
+                        'items': []
+                    }
+                
+                # Use selling_price based on your template
+                price = product.selling_price
+                
+                vendor_items[vendor.id]['items'].append({
+                    'product': product,
+                    'quantity': quantity,
+                    'price': price
+                })
+            
+            # Recreate vendor orders and items for the SAME main order
+            total_subtotal = 0
+            
+            for vendor_id, vendor_data in vendor_items.items():
+                # Calculate vendor totals
+                vendor_subtotal = 0
+                
+                # Create OrderVendor (not Order) linked to the SAME main order
+                vendor_order = OrderVendor.objects.create(
+                    order=order,  # Link to the SAME existing order
+                    vendor=vendor_data['vendor'],
+                    vendor_status=order.status
+                )
+                
+                # Create order items for this vendor order
+                for item_info in vendor_data['items']:
+                    order_item = OrderItem.objects.create(
+                        vendor_order=vendor_order,  # Link to vendor order
+                        product=item_info['product'],
+                        quantity=item_info['quantity'],
+                        base_price=item_info['price'],
+                        final_price=item_info['price']
+                    )
+                    
+                    # Calculate subtotals
+                    item_total = item_info['price'] * item_info['quantity']
+                    vendor_subtotal += item_total
+                    total_subtotal += item_total
+                
+                # Update vendor order totals
+                vendor_order.vendor_subtotal = vendor_subtotal
+                vendor_order.vendor_total = vendor_subtotal  # Assuming no vendor-specific discounts
+                vendor_order.save()
+            
+            # UPDATE the SAME order record - don't create new one
+            order.subtotal = total_subtotal
+            order.grand_total = total_subtotal - (order.discount_total or 0) + (order.shipping_total or 0)
+            order.updated_at = timezone.now()  # Update timestamp
+            
+            # Add admin note about the edit
+            admin_note = f"Order edited by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+            if hasattr(order, 'admin_notes'):
+                if order.admin_notes:
+                    order.admin_notes = f"{order.admin_notes}\n{admin_note}"
+                else:
+                    order.admin_notes = admin_note
+            
+            # SAVE the updated order (same record, just modified)
+            order.save()
+            
+            print(f"Order updated successfully. New total: {order.grand_total}")  # Debug line
+            
+            messages.success(request, f'Order #{order.order_number} has been updated successfully! New total: ${order.grand_total:.2f}')
+            return redirect('order_details', order_id=order.id)
+            
+    except Exception as e:
+        print(f"Error updating order: {str(e)}")  # Debug line
+        messages.error(request, f'Error updating order: {str(e)}')
+        return redirect('edit_order', order_id=order.id)
 
-
-
-
-
-
-
+@login_required(login_url="/admin-dashboard/login_home")
+@require_POST
+def remove_order_item(request, order_id, item_id):
+    """AJAX endpoint to remove a specific order item"""
+    try:
+        order = get_object_or_404(Order, id=order_id)
+        
+        # Find and remove the item from vendor orders
+        item_removed = False
+        for vendor_order in order.vendor_orders.all():
+            if vendor_order.items.filter(id=item_id).exists():
+                vendor_order.items.get(id=item_id).delete()
+                item_removed = True
+                
+                # If vendor order has no more items, remove it
+                if not vendor_order.items.exists():
+                    vendor_order.delete()
+                else:
+                    # Recalculate vendor order totals
+                    vendor_subtotal = sum(
+                        item.final_price * item.quantity 
+                        for item in vendor_order.items.all()
+                    )
+                    vendor_order.vendor_subtotal = vendor_subtotal
+                    vendor_order.vendor_total = vendor_subtotal
+                    vendor_order.save()
+                break
+        
+        if not item_removed:
+            return JsonResponse({'success': False, 'error': 'Item not found'})
+        
+        # Recalculate main order totals
+        order.recalculate_totals()
+        
+        return JsonResponse({
+            'success': True,
+            'new_total': float(order.grand_total),
+            'new_subtotal': float(order.subtotal)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 
@@ -1965,16 +2206,7 @@ def seller_details(request):
     return render(request,"applications/ecommerce/seller/seller-details.html",context)
 
 
-@login_required(login_url="/admin-dashboard/login_home")
-def order_history(request):
-    context = { "breadcrumb":{"title":"Order History","parent":"Ecommerce", "child":"Order History"}}
-    return render(request,"applications/ecommerce/orders/order-history.html",context)
 
-
-@login_required(login_url="/admin-dashboard/login_home")
-def order_details(request):
-    context = { "breadcrumb":{"title":"Order Details","parent":"Ecommerce", "child":"Order Details"}}
-    return render(request,"applications/ecommerce/orders/order-details.html",context)
        
            
 @login_required(login_url="/admin-dashboard/login_home")           

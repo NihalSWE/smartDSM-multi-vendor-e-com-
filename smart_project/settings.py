@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'sass_processor',
     'frontend',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -122,7 +123,7 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Dhaka'
 
 USE_I18N = True
 

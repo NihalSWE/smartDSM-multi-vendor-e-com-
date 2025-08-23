@@ -80,3 +80,47 @@ def get_new_arrivals(limit=10):
                 products.append(product)
 
     return products
+
+
+
+
+
+
+# utils.py (or inside views.py above your views)
+
+
+
+STATUS_PENDING = '0'
+STATUS_APPROVED = '1'
+STATUS_REJECTED = '2'
+
+def get_vendor_status(user):
+    # Gracefully handle missing verification row: treat as Pending
+    vv = VendorVerification.objects.filter(user=user).first()
+    return vv.status if vv else STATUS_PENDING
+
+def get_upload_limit(user):
+    """
+    Returns:
+      0     -> no uploads allowed
+      2     -> two uploads allowed
+      None  -> unlimited
+    """
+    # User Type 0 (Root): No uploads
+    if getattr(user, 'user_type', None) == 0:
+        return 0
+
+    # User Type 3 (Client): 2 uploads
+    if user.user_type == 3:
+        return 2
+
+    # User Type 1 (Vendor): depends on verification
+    if user.user_type == 1:
+        status = get_vendor_status(user)
+        if status in (STATUS_PENDING, STATUS_REJECTED):
+            return 2
+        # Approved vendors: unlimited
+        return None
+
+    # Others (e.g., Staff=2): unlimited
+    return None

@@ -52,7 +52,7 @@
                                 <div class="products">
                                     {% if cart_items %}
                                         {% for item in cart_items %}
-                                            <div class="product product-cart">
+                                            <div class="product product-cart" data-cart-id="{{ item.id }}">
                                                 <div class="product-detail">
                                                     <a href="{% url 'product_details' item.slug %}" class="product-name">
                                                         {{ item.name }}
@@ -77,9 +77,19 @@
                                     {% endif %}
                                 </div>
 
-                                <div class="cart-total">
+                                <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
                                     <label>Subtotal:</label>
-                                    <span class="price">${{ total }}</span>
+                                    <span class="price subtotal">${{ subtotal }}</span>
+                                </div>
+
+                                <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
+                                    <label>Discount:</label>
+                                    <span class="price discount">${{ discount_total }}</span>
+                                </div>
+
+                                <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
+                                    <label>Total:</label>
+                                    <span class="price grand-total">${{ grand_total }}</span>
                                 </div>
 
                                 <div class="cart-action">

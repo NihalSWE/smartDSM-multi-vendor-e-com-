@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<style>
+  .edit-order-btn {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+  .edit-order-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+    color: white;
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+<!-- Container-fluid starts-->
+<div class="container-fluid">
+  <div class="row">
+    <!-- Left Section -->
+    <div class="col-xxl-9 col-xl-8">
+      <div class="row"> 
+        <!-- Order Status -->
+        <div class="col-12"> 
+          <div class="card">
+            <div class="card-header">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5>Order Status</h5>
+                <!-- 🔥 Edit Button -->
+                <a href="{% url 'edit_order' order.id %}" class="btn edit-order-btn btn-sm">
+                  <i class="fa fa-edit me-1"></i>Edit Order
+                </a>
+              </div>
+            </div>
+            <div class="card-body track-order-details">
+              <div id="order-status-timeline">
+                <div class="status-bar progress step-three"></div>
+                <div class="main-status-line">
+                  <ul>
+                    <li>
+                      <div class="order-process {% if order.status >= 0 %}active{% endif %}"><span>1</span></div>
+                      <h6>Order Received</h6>
+                    </li>
+                    <li>
+                      <div class="order-process {% if order.status >= 1 %}active{% endif %}"><span>2</span></div>
+                      <h6>Processing</h6>
+                    </li>
+                    <li>
+                      <div class="order-process {% if order.status >= 2 %}active{% endif %}"><span>3</span></div>
+                      <h6>Order Packed</h6>
+                    </li>
+                    <li>
+                      <div class="order-process {% if order.status >= 3 %}active{% endif %}"><span>4</span></div>
+                      <h6>Shipped</h6>
+                    </li>
+                    <li>
+                      <div class="order-process {% if order.status >= 4 %}active{% endif %}"><span>5</span></div>
+                      <h6>Delivered</h6>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Products -->
+        <div class="col-12"> 
+          <div class="card">
+            <div class="card-header card-no-border">
+              <div class="header-top"> 
+                <h5>Order Number: #{{ order.order_number }}</h5>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-light text-dark">{{ order.get_status_display }}</span>
+                  <!-- 🔥 Additional Edit Button in header -->
+                  <a href="{% url 'edit_order' order.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-edit"></i> Modify
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body order-details-product pt-0">
+              <div class="table-responsive custom-scrollbar">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Image</th>
+                      <th scope="col">Product</th>
+                      <th scope="col">Vendor</th>
+                      <th scope="col">Price</th>
+                      <th scope="col">Qty</th>
+                      <th scope="col">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                      <td><img class="img-fluid" src="{{ item.product.thumbnail_image.url }}" alt="{{ item.product.name }}"></td>
+                      <td>{{ item.product.title }}</td>
+                      <td>{{ item.product.seller }}</td>
+                      <td>${{ item.base_price|floatformat:2 }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>${{ item.total_price|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Section -->
+    <div class="col-xxl-3 col-xl-4"> 
+      <div class="row"> 
+        <!-- Summary -->
+        <div class="col-12"> 
+          <div class="card">
+            <div class="card-header card-no-border">
+              <div class="header-top summary-header">
+                <h5>Summary</h5>
+                <div class="card-header-right-icon">
+                  <a class="btn btn-primary" href="/invoice/{{ order.id }}/" target="_blank">
+                    <i class="fa-regular fa-file-lines pe-2 f-14"></i>Invoice
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body pt-0">
+              <ul class="tracking-total"> 
+                <li><h6>Subtotal</h6><span>${{ order.subtotal }}</span></li>
+                <li><h6>Coupon Discount</h6><span>(-){{ order.discount_total }}</span></li>
+                <li>
+                  <h6>Shipping</h6>
+                  <span class="txt-primary">
+                    {% if order.shipping_total == 0 %}Free{% else %}${{ order.shipping_total }}{% endif %}
+                  </span>
+                </li>
+                <li><h6>Total</h6><span>${{ order.grand_total }}</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Details -->
+        <div class="col-12"> 
+          <div class="card"> 
+            <div class="card-header card-no-border">
+              <div class="header-top"> 
+                <h5>Customer Details</h5>
+              </div>
+            </div>
+            <div class="card-body pt-0">
+              <ul class="customer-details"> 
+                <li><h6>Name</h6><span>{{ order.customer}}</span></li>
+                <li><h6>Email Address:</h6><span>{{ order.customer.email }}</span></li>
+                <li><h6>Billing Address:</h6><span>{{ order.billing_address }}</span></li>
+                <li><h6>Shipping Address:</h6><span>{{ order.shipping_address }}</span></li>
+                <li><h6>Delivery Slot:</h6><span>Standard Delivery | Approx 5 to 7 Days</span></li>
+                <li><h6>Payment Mode:</h6><span>{{ order.get_payment_method_display }}</span></li>
+                <li><h6>Payment Status:</h6><span>{{ order.get_payment_status_display }}</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔥 Admin Actions Card -->
+        <div class="col-12"> 
+          <div class="card border-primary"> 
+            <div class="card-header bg-light">
+              <h6 class="text-primary mb-0">
+                <i class="fa fa-tools"></i> Admin Actions
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-primary">
+                  <i class="fa fa-edit"></i> Edit Order Items
+                </a>
+                <button class="btn btn-outline-success btn-sm" onclick="updateOrderStatus()">
+                  <i class="fa fa-check"></i> Update Status
+                </button>
+                <button class="btn btn-outline-info btn-sm" onclick="sendNotification()">
+                  <i class="fa fa-bell"></i> Notify Customer
+                </button>
+              </div>
+              <hr>
+              <small class="text-muted">
+                <i class="fa fa-info-circle"></i>
+                Edit order to modify items, quantities, or add new products based on customer requests.
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🔥 Confirmation Modal -->
+<div class="modal fade" id="editConfirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Order Edit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to edit this order?</p>
+        <div class="alert alert-warning">
+          <strong>Note:</strong> Customer will be automatically notified of any changes via email.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="{% url 'edit_order' order.id %}" class="btn btn-primary">Yes, Edit Order</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Container-fluid Ends-->
+{% endblock %}
+
+{% block scriptcontent %} 
+<script>
+function updateOrderStatus() {
+    // Add your order status update logic here
+    alert('Order status update functionality - implement as needed');
+}
+
+function sendNotification() {
+    // Add customer notification logic here
+    alert('Customer notification functionality - implement as needed');
+}
+
+// Optional: Add confirmation before editing
+document.querySelectorAll('a[href*="edit_order"]').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const modal = new bootstrap.Modal(document.getElementById('editConfirmModal'));
+        modal.show();
+        
+        // Update the modal's confirm button href
+        document.querySelector('#editConfirmModal .btn-primary').href = this.href;
+    });
+});
+</script>
+
+{% endblock %}

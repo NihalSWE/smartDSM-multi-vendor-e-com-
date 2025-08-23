@@ -34,7 +34,7 @@
                                     </div>
                                     <div class="col-xs-6">
                                         <label>Phone Number *</label>
-                                        <input type="number" class="form-control form-control-md" name="email" required>
+                                        <input type="number" class="form-control form-control-md" name="phone" required>
                                     </div>
                                 </div>
                                 <div class="row gutter-sm">
@@ -58,12 +58,12 @@
                                     <input type="text" placeholder="House number and street name"
                                         class="form-control form-control-md mb-2" name="street-address-1" required>
                                     <input type="text" placeholder="Apartment, suite, unit, etc. (optional)"
-                                        class="form-control form-control-md" name="street-address-2" required>
+                                        class="form-control form-control-md" name="street-address-2">
                                 </div>
                                 <div class="row gutter-sm">
                                     <div class="form-group col-6">
                                         <label>Town / City *</label>
-                                        <input type="text" class="form-control form-control-md" name="town" required>
+                                        <input type="text" class="form-control form-control-md" name="city" required>
                                     </div>
                                     <div class="form-group col-6">
                                         <label>ZIP *</label>
@@ -90,7 +90,7 @@
                                                     <td class="product-name">
                                                         {{ item.name }} <i class="fas fa-times"></i> <span class="product-quantity">{{ item.quantity }}</span>
                                                     </td>
-                                                    <td class="product-total">${{ item.subtotal|floatformat:2 }}</td>
+                                                    <td class="product-total">৳ {{ item.subtotal|floatformat:2 }}</td>
                                                 </tr>
                                                 {% endfor %}
                                                 <tr class="cart-subtotal bb-no">
@@ -110,39 +110,7 @@
                                             </tbody>
                                             <tfoot>
                                                 <tr class="shipping-methods">
-                                                    <td colspan="2" class="text-left">
-                                                        <h4 class="title title-simple bb-no mb-1 pb-0 pt-3">Shipping
-                                                        </h4>
-                                                        <ul id="shipping-method" class="mb-4">
-                                                            <li>
-                                                                <div class="custom-radio">
-                                                                    <input type="radio" id="free-shipping"
-                                                                        class="custom-control-input" name="shipping">
-                                                                    <label for="free-shipping"
-                                                                        class="custom-control-label color-dark">Free
-                                                                        Shipping</label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div class="custom-radio">
-                                                                    <input type="radio" id="local-pickup"
-                                                                        class="custom-control-input" name="shipping">
-                                                                    <label for="local-pickup"
-                                                                        class="custom-control-label color-dark">Local
-                                                                        Pickup</label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div class="custom-radio">
-                                                                    <input type="radio" id="flat-rate"
-                                                                        class="custom-control-input" name="shipping">
-                                                                    <label for="flat-rate"
-                                                                        class="custom-control-label color-dark">Flat
-                                                                        rate: $5.00</label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </td>
+                                                    
                                                 </tr>
                                                 <tr class="order-total">
                                                     <th>
@@ -170,16 +138,7 @@
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div class="card">
-                                                    <div class="card-header">
-                                                        <a href="#payment" class="expand">Check Payments</a>
-                                                    </div>
-                                                    <div id="payment" class="card-body collapsed">
-                                                        <p class="mb-0">
-                                                            Please send a check to Store Name, Store Street, Store Town, Store State / County, Store Postcode.
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                                
                                                 <div class="card">
                                                     <div class="card-header">
                                                         <a href="#delivery" class="expand">Cash on delivery</a>
@@ -190,28 +149,21 @@
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div class="card p-relative">
-                                                    <div class="card-header">
-                                                        <a href="#paypal" class="expand">Paypal</a>
-                                                    </div>
-                                                    <a href="https://www.paypal.com/us/webapps/mpp/paypal-popup" class="text-primary paypal-que" 
-                                                        onclick="javascript:window.open('https://www.paypal.com/us/webapps/mpp/paypal-popup','WIPaypal',
-                                                        'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, width=1060, height=700'); 
-                                                        return false;">What is PayPal?
-                                                    </a>
-                                                    <div id="paypal" class="card-body collapsed">
-                                                        <p class="mb-0">
-                                                            Pay via PayPal, you can pay with your credit cart if you
-                                                            don't have a PayPal account.
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                               
                                             </div>
                                         </div>
 
-                                        <div class="form-group place-order pt-6">
-                                            <button type="submit" class="btn btn-dark btn-block btn-rounded">Place Order</button>
-                                        </div>
+                                        {% if has_own_products %}
+                                            <div style="background-color: rgba(255, 0, 0, 0.1); color: red; padding: 10px; border-radius: 5px;">
+                                                You have your own products in the cart. Please remove them to proceed to checkout.
+                                            </div>
+                                        {% else %}
+                                            <div class="form-group place-order pt-6">
+                                                <button type="submit" class="btn btn-dark btn-block btn-rounded">Place Order</button>
+                                            </div>
+                                        {% endif %}
+
+                                        
                                     </div>
                                 </div>
                             </div>

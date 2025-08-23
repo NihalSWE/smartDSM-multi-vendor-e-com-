@@ -373,20 +373,38 @@ class ShippingClass(models.Model):
 # Core Product Models
 # ——————————————————————————————————————————————
 
+class ProductQuerySet(models.QuerySet):
+    def approved(self):
+        return self.filter(status="approved")
+
+    def pending(self):
+        return self.filter(status="pending")
+
+    def rejected(self):
+        return self.filter(status="rejected")
+    
+    
+    
 class Product(models.Model):
     PUBLISH_STATUS = (
         (0, 'Draft'),
         (1, 'Published'),
+        (2, 'Pending'),
+        (3, 'Rejected'),
+        (4, 'Approved'),
     )
 
     sku                 = models.CharField(max_length=50, unique=True)
     title               = models.CharField(max_length=255)
+    model               = models.CharField(max_length=255, blank=True, null=True)
     slug                = models.SlugField(max_length=255, unique=True)
     description         = models.TextField(blank=True, null=True)
+    short_description   = models.TextField(max_length=200,blank=True, null=True)
     
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', help_text="Who is selling this item")
 
     thumbnail_image     = models.ImageField(upload_to='products/thumbnails/')
+    thumbnail_small = models.ImageField(upload_to='products/thumbnails/small/', blank=True, null=True)
     # gallery of additional images
     # see ProductImage below
 
@@ -423,22 +441,38 @@ class Product(models.Model):
     shipping_class      = models.ForeignKey(ShippingClass, on_delete=models.SET_NULL, blank=True, null=True)
 
     # publish controls
-    publish_status      = models.IntegerField(choices=PUBLISH_STATUS, default=0)
+    publish_status      = models.IntegerField(choices=PUBLISH_STATUS, default=2)
+    rejection_reason    = models.TextField(blank=True, null=True, help_text="Reason for rejection (required if rejected)")
+    is_new              = models.BooleanField(default=True, help_text="True if product is newly uploaded or updated")
     publish_date        = models.DateTimeField(blank=True, null=True)
 
     created_at          = models.DateTimeField(auto_now_add=True)
     updated_at          = models.DateTimeField(auto_now=True)
+    
+    objects = ProductQuerySet.as_manager()
 
     class Meta:
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
+        # Slug + product code logic
         if self.pk:
             old_instance = Product.objects.get(pk=self.pk)
+            
+            # check if anything important changed → mark as new
+            tracked_fields = ["title", "description", "short_description", "selling_price", "thumbnail_image"]
+            for field in tracked_fields:
+                if getattr(old_instance, field) != getattr(self, field):
+                    self.is_new = True
+                    break
+            else:
+                self.is_new = False
+                
             if old_instance.title != self.title:
-                self.slug = generate_unique_slug(self, Product, 'slug','title')
+                self.slug = generate_unique_slug(self, Product, 'slug', 'title')
         else:
             self.slug = generate_unique_slug(self, Product, 'slug', 'title')
+            self.is_new = True
 
         if not self.code:
             last = Product.objects.order_by('-code').first()
@@ -446,20 +480,72 @@ class Product(models.Model):
 
         super().save(*args, **kwargs)
 
+        # === Thumbnail optimization ===
+        if self.thumbnail_image:
+            img_path = self.thumbnail_image.path
+            img = Image.open(img_path)
+
+            # generate small (250x250) thumbnail
+            min_side = min(img.width, img.height)
+            left = (img.width - min_side) / 2
+            top = (img.height - min_side) / 2
+            right = (img.width + min_side) / 2
+            bottom = (img.height + min_side) / 2
+            img = img.crop((left, top, right, bottom))
+            img = img.resize((250, 250), Image.LANCZOS)
+
+            # Save in memory → file
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", optimize=True, quality=70)
+            file_name = f"{self.pk}_thumb250.jpg"
+            self.thumbnail_small.save(file_name, ContentFile(buffer.getvalue()), save=False)
+
+            buffer.close()
+            super().save(update_fields=["thumbnail_small"])
+
     def __str__(self):
         return self.title
 
 
 class ProductImage(models.Model):
-    product     = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
-    image       = models.ImageField(upload_to='products/images/')
-    position    = models.PositiveIntegerField(default=0)
+    product = models.ForeignKey(
+        'Product',
+        related_name='images',
+        on_delete=models.CASCADE
+    )
+    image = models.ImageField(upload_to='products/images/')
+    position = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['position']
 
     def __str__(self):
         return f"{self.product.title} Image #{self.position}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Save first to get the file path
+
+        img_path = self.image.path
+        img = Image.open(img_path)
+
+        # Always crop to square (center crop)
+        min_side = min(img.width, img.height)
+        left = (img.width - min_side) / 2
+        top = (img.height - min_side) / 2
+        right = (img.width + min_side) / 2
+        bottom = (img.height + min_side) / 2
+        img = img.crop((left, top, right, bottom))
+
+        # Only shrink if larger than 800
+        if img.width > 800:
+            img = img.resize((800, 800), Image.LANCZOS)
+
+        # Convert to RGB if needed
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        # Save optimized (smaller file size)
+        img.save(img_path, format="JPEG", optimize=True, quality=70)
     
     
 # example best seller, new arrival
@@ -700,7 +786,7 @@ class ProductReview(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.name} - {self.product.name} ({self.rating})"
+        return f"{self.name} - {self.product.title} ({self.rating})"
             
             
 
@@ -921,10 +1007,13 @@ class Address(models.Model):
     street_address = models.TextField()
     postal_code = models.CharField(max_length=10, blank=True, null=True)
     phone_number = models.CharField(max_length=20)
+    city = models.CharField(max_length=50, blank=True, null=True)
     is_default = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.title} - {self.street_address}, {self.thana}, {self.district}"
+    
+    
 
 # ----------------------------------
 # Order Models
@@ -990,6 +1079,58 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.order_number} by {self.customer.email}"
+    
+    def recalculate_totals(self):
+        """Recalculate order totals based on current items through vendor_orders"""
+        subtotal = 0
+        
+        # Calculate subtotal from all vendor orders and their items
+        for vendor_order in self.vendor_orders.all():
+            vendor_subtotal = 0
+            for item in vendor_order.items.all():
+                item_total = item.final_price * item.quantity
+                subtotal += item_total
+                vendor_subtotal += item_total
+            
+            # Update vendor order totals
+            vendor_order.vendor_subtotal = vendor_subtotal
+            vendor_order.vendor_total = vendor_subtotal
+            vendor_order.save()
+        
+        self.subtotal = subtotal
+        
+        # Recalculate grand total (keeping existing discount and shipping)
+        discount = self.discount_total or 0
+        shipping = self.shipping_total or 0
+        
+        self.grand_total = subtotal - discount + shipping
+        self.updated_at = timezone.now()
+        
+        self.save()
+        
+        return self.grand_total
+
+    def add_admin_note(self, note, user):
+        """Add an admin note to the order"""
+        timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+        new_note = f"[{timestamp}] {user.username}: {note}"
+        
+        if hasattr(self, 'admin_notes') and self.admin_notes:
+            self.admin_notes = f"{self.admin_notes}\n{new_note}"
+        else:
+            self.admin_notes = new_note
+        
+        self.save()
+
+    def get_total_items_count(self):
+        """Get total number of items in the order through vendor_orders"""
+        total = 0
+        for vendor_order in self.vendor_orders.all():
+            total += vendor_order.items.aggregate(
+                total=models.Sum('quantity')
+            )['total'] or 0
+        return total
+
 
 
 class OrderVendor(models.Model):
@@ -1054,3 +1195,31 @@ class OrderPayment(models.Model):
         return f"Payment for {self.order.order_number} - {'Success' if self.is_successful else 'Failed'}"
 
 
+
+
+
+
+#order notification
+class OrderNotification(models.Model):
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='notification')
+    is_viewed = models.BooleanField(default=False)
+    viewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for Order #{self.order.order_number}"
+
+
+# STEP 2: Add this signal at the bottom of your models.py or create signals.py
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Order)
+def create_order_notification(sender, instance, created, **kwargs):
+    if created:
+        OrderNotification.objects.create(order=instance)

@@ -259,7 +259,7 @@ class VariantOptionSelectionInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'title', 'sku', 'seller', 'category', 'selling_price', 'stock_quantity',
+        'title', 'sku','model', 'seller', 'short_description','category', 'selling_price', 'stock_quantity',
         'publish_status', 'is_digital_product', 'created_at'
     )
     list_filter = (
@@ -273,7 +273,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('title', 'slug', 'sku', 'description', 'seller', 'thumbnail_image')
+            'fields': ('title', 'slug', 'sku', 'model','short_description','description', 'seller', 'thumbnail_image')
         }),
         ('Pricing & Inventory', {
             'fields': ('buy_price', 'selling_price', 'stock_availability',

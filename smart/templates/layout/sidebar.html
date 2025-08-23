@@ -150,6 +150,61 @@
                 </li>
                 <!--products-->
 
+                 <!--Orders-->
+<li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+    <a class="sidebar-link sidebar-title" href="#">
+        <svg class="stroke-icon">
+            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+        </svg>
+        <svg class="fill-icon">
+            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+        </svg><span class="">Orders</span></a>
+    <ul class="sidebar-submenu">
+        <li><a href="{% url 'order_history' %}">Order History</a></li> 
+    </ul>
+    <!-- ADD ONLY THIS LINE TO YOUR EXISTING SIDEBAR: -->
+    {% if unviewed_count > 0 %}
+        <span class="notification-badge">{{ unviewed_count }}</span>
+    {% endif %}
+    <!-- END OF ADDITION -->
+</li>
+<!--Orders-->
+<!-- ADD THIS CSS TO YOUR BASE TEMPLATE OR MAIN CSS FILE: -->
+<style>
+    .notification-badge {
+        position: absolute;
+        top: 0px;
+        right: 145px;
+        background: #ff4757;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulse 2s infinite;
+        z-index: 999;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .sidebar-list {
+        position: relative;
+    }
+    
+    .notification-badge.hide {
+        display: none !important;
+    }
+    </style>
+
+
                 <!--Home Content-->
                 <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
                     <a class="sidebar-link sidebar-title" href="#">

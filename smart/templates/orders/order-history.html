@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select.bootstrap5.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}">
+
+<style>
+  .notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  .sidebar-list {
+    position: relative;
+  }
+  
+  .notification-badge.hide {
+    display: none;
+  }
+</style>
+
+{% endblock css %}
+
+{% block content %}
+
+<!-- Container-fluid starts-->
+<div class="container-fluid common-order-history">
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3 custom-input">
+              <div class="col-xl col-md-6"> 
+                <label class="form-label" for="datetime-local">From: </label>
+                <div class="input-group flatpicker-calender">
+                  <input class="form-control" id="datetime-local" placeholder="dd/mm/yyyy">
+                </div>
+              </div>
+              <div class="col-xl col-md-6"> 
+                <label class="form-label" for="datetime-local3">To: </label>
+                <div class="input-group flatpicker-calender">
+                  <input class="form-control" id="datetime-local3" placeholder="dd/mm/yyyy">
+                </div>
+              </div>
+              <div class="col-xl col-md-6">
+                <label class="form-label">Payment Status</label>
+                <select class="form-select">
+                  <option selected="">All</option>
+                  <option value="0">Due</option>
+                  <option value="1">Paid</option>
+                  <option value="2">Partially Paid</option>
+                  <option value="3">Failed</option>
+                  <option value="4">Refunded</option>
+                </select>
+              </div>
+              <div class="col-xl col-md-6">
+                <label class="form-label">Payment Methods</label>
+                <select class="form-select">
+                  <option selected="">All</option>
+                  <option value="0">Cash on Delivery</option>
+                  <option value="1">Credit/Debit Card</option>
+                  <option value="2">bKash</option>
+                  <option value="3">Nagad</option>
+                  <option value="4">SSL</option>
+                </select>
+              </div>
+              <div class="col d-flex justify-content-start align-items-center m-t-40"><a class="btn btn-primary f-w-500" href="#!">Submit</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-12">
+        <div class="card heading-space">
+          <div class="card-header card-no-border">
+            <div class="header-top">
+              <!-- ONLY UPDATE THIS H5 TAG: -->
+              <h5>New Orders 
+                {% if unviewed_count > 0 %}
+                  <span class="badge bg-danger ms-2" id="order-count-badge">{{ unviewed_count }}</span>
+                {% endif %}
+              </h5>
+              <!-- END OF H5 UPDATE -->
+            </div>
+          </div>
+          <div class="card-body pt-0 px-0">
+            <div class="row"> 
+              <div class="col-12">
+                <div class="order-history-wrapper">
+                  <div class="recent-table table-responsive custom-scrollbar">
+                    <table class="table" id="order-history-table">
+                      <thead> 
+                        <tr> 
+                          <th></th>
+                          <th> <span class="f-light f-w-600">Order Number</span></th>
+                          <th> <span class="f-light f-w-600">Order Date</span></th>
+                          <th> <span class="f-light f-w-600">Customer Name</span></th>
+                          <th> <span class="f-light f-w-600">Total Amount</span></th>
+                          <th> <span class="f-light f-w-600">Status</span></th>
+                          <th> <span class="f-light f-w-600">Payment Status</span></th>
+                          <th> <span class="f-light f-w-600">Payment Method</span></th>
+                          <th> <span class="f-light f-w-600">Action</span></th>
+                        </tr>
+                      </thead>
+                      <tbody> 
+                        {% for order in orders %}
+                        <tr class="inbox-data {% if order.id in unviewed_ids %}table-warning new-order{% endif %}">
+
+                          <td></td>
+                          <td> <a href="#">#{{ order.order_number }}</a></td>
+                          <td> 
+                            <p class="c-o-light">{{ order.created_at|date:"d M Y h:i A" }}</p>
+                          </td>
+                          <td> 
+                            <p class="c-o-light">
+                              {% if order.customer %}
+                                {{ order.customer.get_full_name|default:order.customer.email }}
+                              {% else %}
+                                Guest User
+                              {% endif %}
+                            </p>
+                          </td>
+                          <td> 
+                            <p class="c-o-light">${{ order.grand_total }}</p>
+                          </td>
+                          <td> 
+                            <p class="c-o-light">{{ order.get_status_display }}</p>
+
+                          </td>
+                          <td>
+                            {% if order.payment_status == 0 %}
+                              <span class="badge badge-light-warning">Due</span>
+                            {% elif order.payment_status == 1 %}
+                              <span class="badge badge-light-success">Paid</span>
+                            {% elif order.payment_status == 2 %}
+                              <span class="badge badge-light-primary">Partially Paid</span>
+                            {% elif order.payment_status == 3 %}
+                              <span class="badge badge-light-danger">Failed</span>
+                            {% elif order.payment_status == 4 %}
+                              <span class="badge badge-light-info">Refunded</span>
+                            {% endif %}
+                          </td>
+                          <td> 
+                            <p class="c-o-light">
+                              {% if order.payment_method == 0 %}
+                                COD
+                              {% elif order.payment_method == 1 %}
+                                Credit Card
+                              {% elif order.payment_method == 2 %}
+                                bKash
+                              {% elif order.payment_method == 3 %}
+                                Nagad
+                              {% elif order.payment_method == 4 %}
+                                SSL
+                              {% else %}
+                                N/A
+                              {% endif %}
+                            </p>
+                          </td>
+                          <td> 
+                            <div class="common-align gap-2 justify-content-start"> 
+                               <!-- ONLY ADD order-view-btn CLASS TO EXISTING VIEW LINK: -->
+                               <a class="square-white order-view-btn" href="{% url 'order_details' order.id %}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View">
+                                <svg>
+                                  <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-view"></use>
+                                </svg>
+                              </a>
+                              <!-- END OF UPDATE -->
+                              <a class="square-white trash-3" href="#!" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
+                                <svg>
+                                  <use href="{% static 'assets/svg/icon-sprite.svg' %}#trash1"></use>
+                                </svg>
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.select.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/select.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+<script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/flat-pickr/custom-flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/trash.js' %}"></script>
+<script src="{% static 'assets/js/tooltip-init.js' %}"></script>
+    
+
+
+
+
+
+<!-- ADD ONLY THIS SCRIPT BLOCK (don't change existing scripts) -->
+<script>
+  $(document).ready(function() {
+      let currentCount = {{ unviewed_count|default:0 }};
+      
+      function updateCountDisplay(count) {
+          const badge = $('#order-count-badge');
+          const sidebarBadge = $('.notification-badge');
+          
+          if (count > 0) {
+              if (badge.length === 0) {
+                  $('h5').append(`<span class="badge bg-danger ms-2" id="order-count-badge">${count}</span>`);
+              } else {
+                  badge.text(count).show();
+              }
+              
+              if (sidebarBadge.length === 0) {
+                  $('.sidebar-list:has(a[href*="order"])').append(`<span class="notification-badge">${count}</span>`);
+              } else {
+                  sidebarBadge.text(count).removeClass('hide');
+              }
+          } else {
+              badge.hide();
+              sidebarBadge.addClass('hide');
+          }
+      }
+      
+      function fetchOrderCount() {
+          $.ajax({
+              url: '{% url "get_order_count" %}',
+              type: 'GET',
+              success: function(data) {
+                  if (data.count !== currentCount) {
+                      currentCount = data.count;
+                      updateCountDisplay(currentCount);
+                  }
+              }
+          });
+      }
+      
+      $('.order-view-btn').click(function(e) {
+          e.preventDefault();
+          if (currentCount > 0) {
+              currentCount--;
+              updateCountDisplay(currentCount);
+          }
+          // ADD ONLY THIS AJAX CALL:
+          $.ajax({
+            url: '{% url "mark_order_viewed" %}',  
+            type: 'POST',
+            data: {
+                'order_id': $(this).attr('href').split('/').pop(),
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            }
+        });
+          window.location.href = $(this).attr('href');
+      });
+      
+      setInterval(fetchOrderCount, 5000);
+      updateCountDisplay(currentCount);
+  });
+  </script>
+  <!-- END OF SCRIPT ADDITION -->
+
+
+
+{% endblock %}

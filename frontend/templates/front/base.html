@@ -859,13 +859,58 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === "success") {
-                // Update the cart count in the header
+                // Update cart count in header
                 const cartCountElement = document.querySelector(".cart-count");
                 if (cartCountElement) {
                     cartCountElement.textContent = data.cart_count;
                 }
 
-                // Optionally show a small confirmation
+                // Update totals
+                document.querySelector(".subtotal").textContent = "$" + data.subtotal;
+                document.querySelector(".discount").textContent = "$" + data.discount_total;
+                document.querySelector(".grand-total").textContent = "$" + data.grand_total;
+
+                // Update products list
+                const productsDiv = document.querySelector(".products");
+                if (productsDiv) {
+                    // remove "Your cart is empty" message if exists
+                    const emptyMsg = productsDiv.querySelector(".text-center");
+                    if (emptyMsg) emptyMsg.remove();
+
+                    // check if product already exists in cart DOM
+                    let existingItem = productsDiv.querySelector(`[data-cart-id="${data.product.id}"]`);
+
+                    if (existingItem) {
+                        // just update quantity & price
+                        existingItem.querySelector(".product-quantity").textContent = data.product.quantity;
+                        existingItem.querySelector(".product-price").textContent = "$" + data.product.price;
+                    } else {
+                        // build product HTML
+                        let productHtml = `
+                            <div class="product product-cart" data-cart-id="${data.product.id}">
+                                <div class="product-detail">
+                                    <a href="/product/${data.product.slug}/" class="product-name">
+                                        ${data.product.title}
+                                    </a>
+                                    <div class="price-box">
+                                        <span class="product-quantity">${data.product.quantity}</span>
+                                        <span class="product-price">$${data.product.price}</span>
+                                    </div>
+                                </div>
+                                <figure class="product-media">
+                                    <a href="/product/${data.product.slug}/">
+                                        <img src="${data.product.image}" alt="${data.product.title}" height="84" width="94" />
+                                    </a>
+                                </figure>
+                                <button class="btn btn-link btn-close" aria-label="button">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                        productsDiv.insertAdjacentHTML("beforeend", productHtml);
+                    }
+                }
+
                 console.log(data.message);
             }
         })

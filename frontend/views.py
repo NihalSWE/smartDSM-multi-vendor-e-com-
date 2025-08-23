@@ -525,16 +525,37 @@ def add_to_cart(request):
 
         request.session["cart"] = cart
         request.session.modified = True
+        
+        subtotal = sum(Decimal(item["price"]) * item["quantity"] + Decimal(item["discount"]) * item["quantity"] for item in cart.values())
+        discount_total = sum(Decimal(item["discount"]) * item["quantity"] for item in cart.values())
+        grand_total = subtotal - discount_total
 
+        # return JsonResponse({
+        #     "status": "success",
+        #     "message": f"{product.title} added to cart",
+        #     "cart_count": sum(item["quantity"] for item in cart.values())
+        # })
+        
         return JsonResponse({
             "status": "success",
             "message": f"{product.title} added to cart",
-            "cart_count": sum(item["quantity"] for item in cart.values())
+            "cart_count": sum(item["quantity"] for item in cart.values()),
+            "product": {
+                "id": product.id,
+                "slug": product.slug,
+                "title": product.title,
+                "price": str(final_price.quantize(Decimal("0.01"))),
+                "quantity": cart[product_id]["quantity"],
+                "image": product.thumbnail_image.url if product.thumbnail_image else "",
+            },
+            "subtotal": str(subtotal.quantize(Decimal("0.01"))),
+            "discount_total": str(discount_total.quantize(Decimal("0.01"))),
+            "grand_total": str(grand_total.quantize(Decimal("0.01"))),
         })
 
     return JsonResponse({"status": "error", "message": "Invalid request"})
 
-
+ 
 @require_POST
 def update_quantity(request):
     item_id = request.POST.get('id')
@@ -653,8 +674,202 @@ def create_order(user, cart_items, subtotal, discount_total, shipping_total, gra
     return order
 
     
+# def order_checkout(request):
+#     cart_data = cart_context(request)
+#     shipping_cost = Decimal("100.00")
+    
+#     # ADD THESE LINES:
+#     user_addresses = []
+#     if request.user.is_authenticated:
+#         user_addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-id')
+    
+
+
+#     context = {
+#         "cart_items": cart_data["cart_items"],
+#         "total_price_without_discount": cart_data["subtotal"],
+#         "cart_discount_total": cart_data["discount_total"],
+#         "shipping_cost": shipping_cost,
+#         "cart_total": (cart_data["grand_total"] + shipping_cost).quantize(Decimal("0.01")),
+#         # ADD THESE LINES:
+       
+#         "user_addresses": user_addresses,
+#         "has_own_products": cart_data.get("has_own_products", False),
+#     }
+
+#     return render(request, 'front/order/checkout.html', context)
+
+# from django.views.decorators.http import require_http_methods
+# import json
+# @require_http_methods(["POST"])
+# def check_phone_number(request):
+#     """AJAX endpoint to check if phone number exists and return user data"""
+#     try:
+#         data = json.loads(request.body)
+#         phone_number = data.get('phone_number', '').strip()
+        
+#         if not phone_number:
+#             return JsonResponse({'exists': False})
+        
+#         address = Address.objects.filter(phone_number=phone_number).first()
+        
+#         if address:
+#             response_data = {
+#                 'exists': True,
+#                 'data': {
+#                     'email': address.user.email if address.user else '',
+#                     'firstname': address.user.first_name if address.user else '',
+#                     'lastname': address.user.last_name if address.user else '',
+#                     # 'district': address.district or '',  # COMMENTED OUT
+#                     # 'thana': address.thana or '',        # COMMENTED OUT
+#                     'street_address_1': address.street_address.split('\n')[0] if address.street_address else '',
+#                     'street_address_2': address.street_address.split('\n')[1] if '\n' in address.street_address else '',
+#                     'city': address.title,
+#                     'zip': address.postal_code or '',
+#                 }
+#             }
+#             return JsonResponse(response_data)
+        
+#         return JsonResponse({'exists': False})
+        
+#     except Exception as e:
+#         return JsonResponse({'exists': False, 'error': str(e)})
+
+# @login_required
+# @require_http_methods(["POST"])
+# def save_address(request):
+#     """AJAX endpoint to save a new address"""
+#     try:
+#         data = json.loads(request.body)
+        
+#         # UPDATED REQUIRED FIELDS WITHOUT DISTRICT AND THANA
+#         required_fields = ['phone_number', 'firstname', 'lastname', 'street_address_1', 'city']
+#         for field in required_fields:
+#             if not data.get(field, '').strip():
+#                 return JsonResponse({'success': False, 'error': f'{field} is required'})
+        
+#         street_address = data['street_address_1'].strip()
+#         if data.get('street_address_2', '').strip():
+#             street_address += '\n' + data['street_address_2'].strip()
+        
+#         address = Address.objects.create(
+#             user=request.user,
+#             title=data['city'].strip(),
+#             # district=data['district'].strip(),  # COMMENTED OUT - Now storing as string
+#             # thana=data['thana'].strip(),        # COMMENTED OUT - Now storing as string
+#             street_address=street_address,
+#             postal_code=data.get('zip', '').strip(),
+#             phone_number=data['phone_number'].strip(),
+#             is_default=False
+#         )
+        
+#         # UPDATE USER INFO ONLY IF IT'S DIFFERENT AND WON'T CAUSE CONFLICTS
+#         user_updated = False
+#         try:
+#             if data.get('email') and data.get('email').strip() != request.user.email:
+#                 # Check if email already exists for another user
+#                 from django.contrib.auth.models import User
+#                 if not User.objects.filter(email=data.get('email').strip()).exclude(id=request.user.id).exists():
+#                     request.user.email = data['email'].strip()
+#                     user_updated = True
+            
+#             if data.get('firstname') and data.get('firstname').strip() != request.user.first_name:
+#                 request.user.first_name = data['firstname'].strip()
+#                 user_updated = True
+                
+#             if data.get('lastname') and data.get('lastname').strip() != request.user.last_name:
+#                 request.user.last_name = data['lastname'].strip()
+#                 user_updated = True
+            
+#             if user_updated:
+#                 request.user.save()
+#         except Exception as user_update_error:
+#             # If user update fails, still return success for address creation
+#             print(f"User update failed: {user_update_error}")
+#             pass
+        
+#         return JsonResponse({
+#             'success': True,
+#             'address': {
+#                 'id': address.id,
+#                 'title': address.title,
+#                 'full_address': str(address),
+#                 'phone_number': address.phone_number,
+#             }
+#         })
+        
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
+# @login_required
+# @require_http_methods(["POST"])
+# def select_address(request):
+#     """AJAX endpoint to get selected address details"""
+#     try:
+#         data = json.loads(request.body)
+#         address_id = data.get('address_id')
+        
+#         if not address_id:
+#             return JsonResponse({'success': False, 'error': 'Address ID required'})
+        
+#         address = get_object_or_404(Address, id=address_id, user=request.user)
+        
+#         response_data = {
+#             'success': True,
+#             'data': {
+#                 'phone_number': address.phone_number,
+#                 'email': address.user.email if address.user else '',
+#                 'firstname': address.user.first_name if address.user else '',
+#                 'lastname': address.user.last_name if address.user else '',
+#                 # 'district': address.district or '',  # COMMENTED OUT
+#                 # 'thana': address.thana or '',        # COMMENTED OUT
+#                 'street_address_1': address.street_address.split('\n')[0] if address.street_address else '',
+#                 'street_address_2': address.street_address.split('\n')[1] if '\n' in address.street_address else '',
+#                 'city': address.title,
+#                 'zip': address.postal_code or '',
+#             }
+#         }
+        
+#         return JsonResponse(response_data)
+        
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
+# # ADD NEW DELETE ADDRESS VIEW
+# @login_required
+# @require_http_methods(["POST"])
+# def delete_address(request):
+#     """AJAX endpoint to delete an address"""
+#     try:
+#         data = json.loads(request.body)
+#         address_id = data.get('address_id')
+        
+#         if not address_id:
+#             return JsonResponse({'success': False, 'error': 'Address ID required'})
+        
+#         address = get_object_or_404(Address, id=address_id, user=request.user)
+#         address.delete()
+        
+#         return JsonResponse({'success': True, 'message': 'Address deleted successfully'})
+        
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
+
+
 def order_checkout(request):
-    return render(request, 'front/order/checkout.html')
+    cart_data = cart_context(request)
+    shipping_cost = Decimal("100.00")  # fixed shipping cost, or calculate dynamically
+
+    context = {
+        "cart_items": cart_data["cart_items"],
+        "total_price_without_discount": cart_data["subtotal"],
+        "cart_discount_total": cart_data["discount_total"],
+        "shipping_cost": shipping_cost,
+        "cart_total": (cart_data["grand_total"] + shipping_cost).quantize(Decimal("0.01")),
+    }
+
+    return render(request, 'front/order/checkout.html', context)
 
 
 @require_POST
@@ -669,6 +884,7 @@ def place_order(request):
         firstname = request.POST.get('firstname', '').strip()
         lastname = request.POST.get('lastname', '').strip()
         street_address_1 = request.POST.get('street-address-1', '').strip()
+        city = request.POST.get('city', '').strip()
         street_address_2 = request.POST.get('street-address-2', '').strip()
         town = request.POST.get('town', '').strip()
         zip_code = request.POST.get('zip', '').strip()
@@ -699,6 +915,7 @@ def place_order(request):
             street_address=full_street_address,
             postal_code=zip_code or None,
             phone_number=phone,
+            city=city,
             is_default=True,
         )
 
@@ -708,7 +925,7 @@ def place_order(request):
 
         subtotal = Decimal('0.00')
         discount_total = Decimal('0.00')
-        shipping_total = Decimal("5.00")  # Hardcoded shipping cost
+        shipping_total = Decimal("100.00")  # Hardcoded shipping cost
 
         # Create the Order
         order = Order.objects.create(
@@ -788,7 +1005,8 @@ def place_order(request):
         order.save()
 
         # Clear cart after order saved
-        request.session['cart'] = {}
+        request.session['clear_cart_after_success'] = True
+
 
         return redirect('order_success')
 
@@ -798,8 +1016,42 @@ def place_order(request):
         return render(request, 'front/order/checkout.html', {'error': error_message})
     
     
+from .context_processors import cart_context
+
 def order_success(request):
-    return render(request, 'front/order/order_success.html')
+    if request.user.is_authenticated:
+        order = Order.objects.filter(customer=request.user).order_by('-created_at').first()
+    else:
+        order = Order.objects.order_by('-created_at').first()
+
+    if not order:
+        return redirect('home')
+
+    cart_data = cart_context(request)
+    
+    shipping_cost = 100
+
+    context = {
+        'order': order,
+        'cart_items': cart_data['cart_items'],
+        'total_price_without_discount': cart_data['subtotal'],
+        'cart_discount_total': cart_data['discount_total'],
+        'shipping_cost': shipping_cost,     
+        'grand_total': cart_data['grand_total'] + shipping_cost, 
+    }
+
+    # Render the page
+    response = render(request, 'front/order/order_success.html', context)
+
+    # Clear cart after page is generated
+    if request.session.get('clear_cart_after_success'):
+        request.session['cart'] = {}
+        del request.session['clear_cart_after_success']
+
+    return response
+
+
+
     
 
  
@@ -832,6 +1084,25 @@ def product_quickview(request, product_id):
 
 @login_required
 def create_customer_product(request):
+    # ===== New: enforce upload limit before processing =====
+    vendor_verification = VendorVerification.objects.filter(user=request.user).first()
+    vendor_status = vendor_verification.status if vendor_verification else '0'
+    product_count = Product.objects.filter(seller=request.user).count()
+
+    if request.user.user_type == 0:
+        return JsonResponse({
+            'success': False,
+            'error': "Your account type isn't allowed to upload products."
+        }, status=403)
+
+    if request.user.user_type == 3 or (request.user.user_type == 1 and vendor_status in ['0', '2']):
+        if product_count >= 2:
+            return JsonResponse({
+                'success': False,
+                'error': "Update your package  — your 2-product limit is finished."
+            }, status=403)
+    # ========================================================
+
     if request.method == 'POST':
         try:
             # Validate required fields
@@ -903,7 +1174,6 @@ def create_customer_product(request):
                     )
 
             # Handle discounts
-            discount_value = None
             if request.POST.get('fixed_discount'):
                 ProductDiscount.objects.create(
                     product=product,
@@ -940,6 +1210,7 @@ def create_customer_product(request):
         }
     }
     return render(request, 'front/products/create_customer_product.html', context)
+
 
 
 
@@ -1024,13 +1295,31 @@ def faq(request):
 
 @login_required
 def myAccount(request):
-    # Get orders only for the currently logged-in user
+    # Get orders for the current user
     orders = Order.objects.filter(customer=request.user).order_by('-created_at')
     
+    # Get products uploaded by the current user (using seller field)
+    products = Product.objects.filter(seller=request.user).order_by('-created_at')
+    
+    # ===== New: determine if the user can upload more products =====
+    vendor_verification = VendorVerification.objects.filter(user=request.user).first()
+    vendor_status = vendor_verification.status if vendor_verification else '0'
+    product_count = products.count()
+
+    if request.user.user_type == 0:
+        can_upload = False
+    elif request.user.user_type == 3 or (request.user.user_type == 1 and vendor_status in ['0', '2']):
+        can_upload = product_count < 2
+    else:
+        can_upload = True
+
     context = {
         'orders': orders,
+        'products': products,
+        'can_upload': can_upload,  # pass to template for "Add Products" link visibility
     }
     return render(request, 'front/profile/my-account.html', context)
+
 
 def wishlist(request):
     header=WishlistPageHeader.objects.filter(is_active=True).first()

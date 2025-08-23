@@ -80,7 +80,7 @@ urlpatterns = [
     # blogs
     path('blogList_header',views.blogList_header,name="blogList_header"),
     path('blog_header',views.blog_header,name="blog_header"),
-    
+     
     # packages
     path('packages/', views.packages, name='packages'),
     
@@ -181,7 +181,19 @@ urlpatterns = [
     path('seller_details', views.seller_details, name="seller_details"),
     
     path('order_history', views.order_history, name="order_history"),
-    path('order_details', views.order_details, name="order_details"),
+    path('orders/<int:order_id>/details/', views.order_details, name='order_details'),
+    
+    # 🔥 NEW URLs for order editing
+    path('orders/<int:order_id>/edit/', views.edit_order, name='edit_order'),
+    path('orders/<int:order_id>/update/', views.update_order, name='update_order'),
+    path('orders/<int:order_id>/remove-item/<int:item_id>/', views.remove_order_item, name='remove_order_item'),
+
+    
+    
+    path('api/order-count/', views.get_order_count, name='get_order_count'),
+    path("orders/mark-viewed/", views.mark_order_viewed, name="mark_order_viewed"),
+
+
     
     path('invoice_1', views.invoice_1, name="invoice_1"),
     path('invoice_2', views.invoice_2, name="invoice_2"),

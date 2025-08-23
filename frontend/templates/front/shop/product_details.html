@@ -106,11 +106,8 @@
                                     <div class="product-details" data-sticky-options="{'minWidth': 767}">
                                         <h1 class="product-title">{{ product.title }}</h1>
                                         <div class="product-bm-wrapper">
-                                            <figure class="brand">
-                                                <img src="{% static 'front/assets/images/products/brand/brand-1.jpg'%}" alt="Brand"
-                                                    width="102" height="48" />
-                                            </figure>
                                             <div class="product-meta">
+                                                <div class="product-categories"> Model: <span class="product-category">{{ product.model }}</span></div>
                                                 <div class="product-categories">
                                                     Category:
                                                     <span class="product-category"><a href="#">{{ product.category }}</a></span>
@@ -156,9 +153,8 @@
 
                                         <div class="product-short-desc">
                                             <ul class="list-type-check list-style-none">
-                                                <li>Ultrices eros in cursus turpis massa cursus mattis.</li>
-                                                <li>Volutpat ac tincidunt vitae semper quis lectus.</li>
-                                                <li>Aliquam id diam maecenas ultricies mi eget mauris.</li>
+                                                <li>{{ product.short_description }}</li>
+                                                
                                             </ul>
                                         </div>
 

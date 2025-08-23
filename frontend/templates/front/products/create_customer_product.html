@@ -290,6 +290,23 @@
 
 {% block content %}
 
+
+
+{% if request.user.user_type == 3 %}
+<div class="container-fluid mb-3">
+    <div class="row">
+        <div class="col-12">
+            <button onclick="window.history.back()" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+                Back
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
     <!-- Container-fluid starts -->
     <div class="container-fluid">
         <div class="row">
@@ -397,6 +414,30 @@
                                                         <label class="form-label" for="validationProductTitle">Product Title</label>
                                                         <input class="form-control" id="validationProductTitle" type="text" placeholder="Title" name="title" required />
                                                     </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" for="validationProductModel">Product Model</label>
+                                                        <input class="form-control" id="validationProductModel" type="text" placeholder="Product Model" name="model" />
+                                                    </div>
+
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Short Description</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar2">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor5"></div>
+                                                            <textarea name="short_description" id="short-description" style="display: none"></textarea>
+                                                        </div>
+                                                    </div>
+
                                                     <div class="col-md-12">
                                                         <label class="form-label">Product Description</label>
                                                         <div class="toolbar-box">
@@ -1070,6 +1111,12 @@
             theme: 'snow',
             modules: { toolbar: '#toolbar4' }
         })
+
+        // Initialize editors
+        const shortDescriptionEditor = new Quill('#editor5', {
+            theme: 'snow',
+            modules: { toolbar: '#toolbar4' }
+        })
         
         // Initialize Tagify
         new Tagify(document.querySelector('input[name="tags"]'))
@@ -1190,7 +1237,10 @@
 
             function updateHiddenDescription() {
                 const description = document.querySelector('#product-description');
+                const short_description = document.querySelector('#short-description');
+
                 description.value = quillEditor.root.innerHTML;
+                short_description.value = quillEditor.root.innerHTML;
             }
 
             function checkFieldsFilled() {

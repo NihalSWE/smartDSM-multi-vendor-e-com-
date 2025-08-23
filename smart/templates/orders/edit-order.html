@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+  .edit-item-row {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+  }
+  .quantity-input {
+    width: 80px;
+  }
+  .remove-item-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 18px;
+  }
+  .add-product-section {
+    background: #e7f3ff;
+    border: 1px dashed #007bff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .product-select {
+    min-width: 200px;
+  }
+  .total-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    position: sticky;
+    top: 20px;
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5>Edit Order #{{ order.order_number }}</h5>
+            <div>
+              <a href="{% url 'order_details' order.id %}" class="btn btn-secondary btn-sm">
+                <i class="fa fa-arrow-left"></i> Back to Details
+              </a>
+              <span class="badge bg-{{ order.status|yesno:'success,warning,danger' }} ms-2">
+                {{ order.get_status_display }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- Alert for admins -->
+          <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i>
+            <strong>Admin Note:</strong> You can modify quantities, remove items, or add new products to this order. 
+            All changes will recalculate totals automatically.
+          </div>
+
+          <form id="editOrderForm" method="post" action="{% url 'update_order' order.id %}">
+            {% csrf_token %}
+            
+            <div class="row">
+              <!-- Left Section - Order Items -->
+              <div class="col-lg-8">
+                
+                <!-- Add New Product Section -->
+                <div class="add-product-section">
+                  <h6><i class="fa fa-plus-circle text-primary"></i> Add New Product</h6>
+                  <div class="row align-items-end">
+                    <div class="col-md-6">
+                      <label>Select Product</label>
+                      <select id="newProductSelect" class="form-select product-select">
+                        <option value="">Choose a product...</option>
+                        {% for product in available_products %}
+                          <option
+                            value="{{ product.id }}"
+                            data-price="{{ product.selling_price }}"
+                            data-vendor="{{ product.seller }}"
+                            data-title="{{ product.title|escapejs }}"
+                          >
+                            {{ product.title }} -- Tk.{{ product.selling_price }} ({{ product.seller }})
+                          </option>
+                        {% endfor %}
+                      </select>
+                      
+                    </div>
+                    <div class="col-md-3">
+                      <label>Quantity</label>
+                      <input type="number" id="newProductQty" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="col-md-3">
+                      <button type="button" id="addProductBtn" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Add Product
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Current Order Items -->
+                <div class="card">
+                  <div class="card-header">
+                    <h6>Order Items</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table" id="orderItemsTable">
+                        <thead>
+                          <tr>
+                            <th>Image</th>
+                            <th>Product</th>
+                            <th>Vendor</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                          {% for item in order_items %}
+                          <tr class="item-row" data-product-id="{{ item.product.id }}">
+                            <td>
+                              <img class="img-fluid" src="{{ item.product.thumbnail_image.url }}" 
+                                   alt="{{ item.product.name }}" style="max-width: 50px;">
+                            </td>
+                            <td>{{ item.product.title }}</td>
+                            <td>{{ item.product.seller }}</td>
+                            <td class="item-price" data-price="{{ item.final_price }}">${{ item.final_price|floatformat:2 }}</td>
+                            <td>
+                              <input type="number" class="form-control quantity-input item-quantity" 
+                                     value="{{ item.quantity }}" min="1" data-item-id="{{ item.id }}">
+                            </td>
+                            <td class="item-subtotal">${{ item.total_price|floatformat:2 }}</td>
+                            <td>
+                              <button type="button" class="remove-item-btn" data-item-id="{{ item.id }}" title="Remove Item">
+                                <i class="fa fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Section - Summary -->
+              <div class="col-lg-4">
+                <div class="total-section">
+                  <h6>Order Summary</h6>
+                  <hr>
+                  <div class="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span id="orderSubtotal">${{ order.subtotal|floatformat:2 }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Discount:</span>
+                    <span class="text-success">-${{ order.discount_total|floatformat:2 }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Shipping:</span>
+                    <span>{% if order.shipping_total == 0 %}Free{% else %}-${{ order.shipping_total|floatformat:2 }}{% endif %}</span>
+                  </div>
+                  <hr>
+                  <div class="d-flex justify-content-between fw-bold">
+                    <span>Grand Total:</span>
+                    <span id="orderGrandTotal">${{ order.grand_total|floatformat:2 }}</span>
+                  </div>
+                  
+                  <div class="mt-4">
+                    <button type="submit" class="btn btn-success w-100">
+                      <i class="fa fa-save"></i> Update Order
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                      Customer will be notified of changes via email
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Hidden field to store items data -->
+            <input type="hidden" id="itemsData" name="items_data" value="">
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add new product functionality
+    document.getElementById('addProductBtn').addEventListener('click', function() {
+        const productSelect = document.getElementById('newProductSelect');
+        const qtyInput = document.getElementById('newProductQty');
+        
+        if (!productSelect.value || qtyInput.value <= 0) {
+            alert('Please select a product and enter valid quantity');
+            return;
+        }
+        
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const productId = productSelect.value;
+        const productTitle = selectedOption.getAttribute('data-title');
+
+
+        const price = parseFloat(selectedOption.dataset.price);
+        const vendor = selectedOption.dataset.vendor;
+        const quantity = parseInt(qtyInput.value);
+        
+        // Check if product already exists
+        const existingRow = document.querySelector(`tr[data-product-id="${productId}"]`);
+        if (existingRow) {
+            const qtyInput = existingRow.querySelector('.item-quantity');
+            qtyInput.value = parseInt(qtyInput.value) + quantity;
+            updateItemSubtotal(existingRow);
+        } else {
+            addNewItemRow(productId, productTitle, vendor, price, quantity);
+        }
+        
+        // Reset form
+        productSelect.value = '';
+        qtyInput.value = 1;
+        
+        updateOrderTotals();
+    });
+    
+    // Remove item functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-item-btn')) {
+            const row = e.target.closest('tr');
+            row.remove();
+            updateOrderTotals();
+        }
+    });
+    
+    // Quantity change functionality
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('item-quantity')) {
+            const row = e.target.closest('tr');
+            updateItemSubtotal(row);
+            updateOrderTotals();
+        }
+    });
+    
+    // Form submission
+    document.getElementById('editOrderForm').addEventListener('submit', function(e) {
+        const itemsData = collectItemsData();
+        document.getElementById('itemsData').value = JSON.stringify(itemsData);
+    });
+    
+    function addNewItemRow(productId, title, vendor, price, quantity) {
+        const tbody = document.getElementById('itemsTableBody');
+        const subtotal = price * quantity;
+        
+        const row = document.createElement('tr');
+        row.className = 'item-row edit-item-row';
+        row.setAttribute('data-product-id', productId);
+        
+        row.innerHTML = `
+            <td><div class="bg-light p-2 text-center" style="width:50px;height:50px;">IMG</div></td>
+            <td>${title}</td>
+            <td>${vendor}</td>
+            <td class="item-price" data-price="${price}">$${price.toFixed(2)}</td>
+            <td>
+                <input type="number" class="form-control quantity-input item-quantity" 
+                       value="${quantity}" min="1">
+            </td>
+            <td class="item-subtotal">$${subtotal.toFixed(2)}</td>
+            <td>
+                <button type="button" class="remove-item-btn" title="Remove Item">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    }
+    
+    function updateItemSubtotal(row) {
+        const price = parseFloat(row.querySelector('.item-price').dataset.price);
+        const quantity = parseInt(row.querySelector('.item-quantity').value) || 0;
+        const subtotal = price * quantity;
+        
+        row.querySelector('.item-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+    }
+    
+    function updateOrderTotals() {
+        let subtotal = 0;
+  
+        document.querySelectorAll('.item-row').forEach(row => {
+          const price = parseFloat(row.querySelector('.item-price').dataset.price) || 0;
+          const quantity = parseInt(row.querySelector('.item-quantity').value) || 0;
+          subtotal += price * quantity;
+        });
+  
+        document.getElementById('orderSubtotal').textContent = `Tk.${subtotal.toFixed(2)}`;
+  
+        const discount = parseFloat('{{ order.discount_total|default_if_none:0 }}') || 0;
+        const shipping = parseFloat('{{ order.shipping_total|default_if_none:0 }}') || 0;
+        const grandTotal = subtotal - discount + shipping;
+  
+        document.getElementById('orderGrandTotal').textContent = `Tk.${grandTotal.toFixed(2)}`;
+      }
+    
+    function collectItemsData() {
+        const items = [];
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const productId = row.getAttribute('data-product-id');
+            const quantity = parseInt(row.querySelector('.item-quantity').value) || 0;
+            
+            if (quantity > 0) {
+                items.push({
+                    product_id: productId,
+                    quantity: quantity
+                });
+            }
+        });
+        
+        return items;
+    }
+});
+</script>
+{% endblock %}
+
+{% block scriptcontent %}
+{% endblock %}

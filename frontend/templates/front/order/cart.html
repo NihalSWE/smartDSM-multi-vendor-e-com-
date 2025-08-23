@@ -1,6 +1,6 @@
 {% extends "front/base.html" %}
 {% load static %}
-
+{% load humanize %}
 {% block custom_css %}
 <style>
     .original-price {
@@ -49,9 +49,9 @@
 <nav class="breadcrumb-nav">
     <div class="container">
         <ul class="breadcrumb shop-breadcrumb bb-no">
-            <li class="active"><a href="cart.html">Shopping Cart</a></li>
-            <li><a href="checkout.html">Checkout</a></li>
-            <li><a href="order.html">Order Complete</a></li>
+            <li class="active" style="pointer-events: none;"><a href="cart.html">Shopping Cart</a></li>
+            <li><a href="checkout.html" style="pointer-events: none;">Checkout</a></li>
+            <li><a href="order.html" style="pointer-events: none;">Order Complete</a></li>
         </ul>
     </div>
 </nav>
@@ -67,8 +67,8 @@
                         <tr>
                             <th class="product-name text-left"><span>Product</span></th>
                             <th></th>
-                            <th class="product-price text-right"><span>Price</span></th>
-                            <th class="product-price text-right"><span>Discount</span></th>
+                            <th class="product-price text-right"><span>Price(৳)</span></th>
+                            <th class="product-price text-right"><span>Discount(৳)</span></th>
                             <th class="product-quantity text-center"><span>Quantity</span></th>
                             {% comment %} <th class="product-subtotal text-right"><span>Subtotal</span></th> {% endcomment %}
                         </tr>
@@ -92,9 +92,9 @@
                                 <td class="product-name">
                                     <a href="{% url 'product_details' item.slug %}">{{ item.name }}</a>
                                 </td>
-                                <td class="product-price text-right"><span class="amount">${{ item.price }}</span></td>
+                                <td class="product-price text-right"><span class="amount">{{ item.price }}</span></td>
                                 <td class="product-price text-right">
-                                    <span class="amount">${% if item.discount_amount %}{{ item.discount_amount|floatformat:2 }}{% else %}0.00{% endif %}</span>
+                                    <span class="amount">{% if item.discount_amount %}{{ item.discount_amount|floatformat:2 }}{% else %}0.00{% endif %}</span>
                                 </td>
                                 <td class="product-quantity text-center">
                                     <div class="input-group">
@@ -127,11 +127,11 @@
                     <button type="submit" class="btn btn-rounded btn-update disabled" name="update_cart" value="Update Cart">Update Cart</button>
                 </div>
 
-                <form class="coupon">
+                {% comment %} <form class="coupon">
                     <h5 class="title coupon-title font-weight-bold text-uppercase">Coupon Discount</h5>
                     <input type="text" class="form-control mb-4" placeholder="Enter coupon code here..." required />
                     <button class="btn btn-dark btn-outline btn-rounded">Apply Coupon</button>
-                </form>
+                </form> {% endcomment %}
             </div>
             <div class="col-lg-4 sticky-sidebar-wrapper">
                 <div class="sticky-sidebar">
@@ -145,7 +145,7 @@
                                 <div class="d-flex justify-content-between">
                                     <span class="item-name">{{ item.name }}</span>
                                     <span class="item-calculation">
-                                        <span class="text-dark">${{ item.price }} * <span class="qty-display">{{ item.quantity }}</span> = $<span class="line-total">{% widthratio item.price 1 item.quantity %}</span></span>
+                                        <span class="text-dark">৳{{ item.price }} * <span class="qty-display">{{ item.quantity }}</span> = ৳<span class="line-total">{% widthratio item.price 1 item.quantity %}</span></span>
                                     </span>
                                 </div>
                             </div>
@@ -157,19 +157,30 @@
                         <!-- Subtotal -->
                         <div class="cart-subtotal d-flex align-items-center justify-content-between mb-2">
                             <label class="ls-25">Subtotal</label>
-                            <span class="summary-subtotal">${{ cart_total|floatformat:2 }}</span>
+                            <span class="summary-subtotal">৳{{ cart_total|floatformat:2|intcomma }}</span>
                         </div>
 
 
                         <!-- Total -->
                         <div class="order-total d-flex justify-content-between align-items-center">
                             <label class="font-weight-bold">Total</label>
-                            <span class="summary-total">${{ cart_total|floatformat:2 }}</span>
+                          
+                            <span class="summary-total">৳{{ cart_total|floatformat:2|intcomma }}</span>
                         </div>
                         
-                        <a href="{% url 'order_checkout' %}" class="btn btn-block btn-dark btn-icon-right btn-rounded btn-checkout mt-3">
+                        {% comment %} <a href="{% url 'order_checkout' %}" class="btn btn-block btn-dark btn-icon-right btn-rounded btn-checkout mt-3">
                             Proceed to checkout<i class="w-icon-long-arrow-right"></i>
-                        </a>
+                        </a> {% endcomment %}
+
+                        {% if has_own_products %}
+                            <div style="background-color: rgba(255, 0, 0, 0.1); color: red; padding: 10px; border-radius: 5px;">
+                                You have your own products in the cart. Please remove them to proceed to checkout.
+                            </div>
+                        {% else %}
+                            <a href="{% url 'order_checkout' %}" class="btn btn-block btn-dark btn-icon-right btn-rounded btn-checkout mt-3">
+                                Proceed to checkout <i class="w-icon-long-arrow-right"></i>
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -257,7 +268,7 @@ function updateCartSummaryWithDiscount() {
     // Update subtotal (original total)
     const subtotalElem = document.querySelector('.summary-subtotal');
     if (subtotalElem) {
-        subtotalElem.textContent = '$' + originalTotal.toFixed(2);
+        subtotalElem.textContent = '৳' + originalTotal.toFixed(2);
     }
     
     // Add or update discount row
@@ -271,7 +282,7 @@ function updateCartSummaryWithDiscount() {
             discountRow.className = 'cart-discount d-flex align-items-center justify-content-between mb-2 text-success';
             discountRow.innerHTML = `
                 <label class="ls-25">Total Discount</label>
-                <span class="summary-discount">-$${totalDiscount.toFixed(2)}</span>
+                <span class="summary-discount">-৳${totalDiscount.toFixed(2)}</span>
             `;
             // Insert after subtotal row
             subtotalRow.parentNode.insertBefore(discountRow, subtotalRow.nextSibling);
@@ -279,7 +290,7 @@ function updateCartSummaryWithDiscount() {
             // Update existing discount row
             const discountSpan = discountRow.querySelector('.summary-discount');
             if (discountSpan) {
-                discountSpan.textContent = '-$' + totalDiscount.toFixed(2);
+                discountSpan.textContent = '-৳' + totalDiscount.toFixed(2);
             }
         }
     } else if (discountRow) {
@@ -290,7 +301,7 @@ function updateCartSummaryWithDiscount() {
     // Update final total
     const totalElem = document.querySelector('.summary-total');
     if (totalElem) {
-        totalElem.textContent = '$' + finalTotal.toFixed(2);
+        totalElem.textContent = '৳' + finalTotal.toFixed(2);
     }
     
     // Update cart count
