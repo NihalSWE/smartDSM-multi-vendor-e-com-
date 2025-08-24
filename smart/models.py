@@ -288,7 +288,7 @@ class CategoryType(models.Model):
             
         super().save(*args, **kwargs)
 
-
+import os
 class Category(models.Model):
     STATUS_CHOICES = (
         (0, 'Inactive'),
@@ -309,10 +309,13 @@ class Category(models.Model):
     )
     
     status = models.IntegerField(choices=STATUS_CHOICES, default=1)
-    image = models.ImageField(upload_to='categories/images/', blank=True, null=True)
-    icon = models.ImageField(upload_to='categories/icons/', blank=True, null=True)
+
+    # 🔹 Image fields
+    banner = models.ImageField(upload_to='categories/banners/', blank=True, null=True)  # 1244x257
+    thumbnail_small = models.ImageField(upload_to='categories/thumbnails/', blank=True, null=True)  # 400x400
+    icon = models.ImageField(upload_to='categories/icons/', blank=True, null=True)  # small icon
+
     position = models.PositiveIntegerField(default=0)
-    
     code = models.PositiveIntegerField(unique=True, editable=False)  # Will auto-increment starting from 10
 
     meta_key = models.CharField(max_length=255, blank=True, null=True)
@@ -338,7 +341,18 @@ class Category(models.Model):
             self.code = (last.code + 1) if last else 10
     
         super().save(*args, **kwargs)
-        
+
+        # 🔹 Resize images after saving
+        self.resize_image(self.banner, (1244, 257))
+        self.resize_image(self.thumbnail_small, (400, 400))
+
+    def resize_image(self, image_field, size):
+        """Resize uploaded image to exact size (if provided)."""
+        if image_field and os.path.isfile(image_field.path):
+            img = Image.open(image_field.path)
+            img = img.resize(size, Image.Resampling.LANCZOS)
+            img.save(image_field.path)
+
     def __str__(self):
         return self.name
         

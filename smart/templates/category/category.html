@@ -80,7 +80,7 @@
                     <div class="modal-body p-0 custom-input">
                       <div class="text-start">
                         <div class="p-20">
-                          <form class="row g-3 needs-validation common-form" method="post" novalidate>
+                          <form class="row g-3 needs-validation common-form" method="post" novalidate enctype="multipart/form-data">
                             {% csrf_token %}
                             
                             <div class="col-md-6">
@@ -126,6 +126,22 @@
                               <textarea class="form-control" name="description" placeholder="Category description"></textarea>
                             </div>
                           
+                            <!-- Image fields added here -->
+                            <div class="col-md-6">
+                                <label class="form-label">Banner Image (1244x257)</label>
+                                <input class="form-control" name="banner" type="file" accept="image/*">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Thumbnail (400x400)</label>
+                                <input class="form-control" name="thumbnail_small" type="file" accept="image/*">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Icon</label>
+                                <input class="form-control" name="icon" type="file" accept="image/*">
+                            </div>
+                          
                             <div class="col-md-6">
                               <label class="form-label">Meta Title</label>
                               <input class="form-control" name="meta_title" type="text" placeholder="Enter meta title">
@@ -164,7 +180,7 @@
                     <div class="modal-body p-0 custom-input">
                       <div class="text-start">
                         <div class="p-20">
-                          <form id="editCategoryForm" class="row g-3 needs-validation" novalidate>
+                          <form id="editCategoryForm" class="row g-3 needs-validation" novalidate enctype="multipart/form-data">
                             {% csrf_token %}
                             <input type="hidden" id="edit_category_slug" name="category_slug">
                             
@@ -209,6 +225,25 @@
                             <div class="col-md-12">
                               <label class="form-label">Category Description</label>
                               <textarea class="form-control" id="edit_description" name="description" placeholder="Category description"></textarea>
+                            </div>
+                          
+                            <!-- Image fields added here -->
+                            <div class="col-md-6">
+                                <label class="form-label">Banner Image (1244x257)</label>
+                                <input class="form-control" id="edit_banner" name="banner" type="file" accept="image/*">
+                                <div id="current_banner" class="mt-2"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Thumbnail (400x400)</label>
+                                <input class="form-control" id="edit_thumbnail_small" name="thumbnail_small" type="file" accept="image/*">
+                                <div id="current_thumbnail_small" class="mt-2"></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Icon</label>
+                                <input class="form-control" id="edit_icon" name="icon" type="file" accept="image/*">
+                                <div id="current_icon" class="mt-2"></div>
                             </div>
                           
                             <div class="col-md-6">
@@ -385,6 +420,25 @@ $(document).ready(function() {
                     $('#edit_meta_title').val(data.meta_title);
                     $('#edit_meta_key').val(data.meta_key);
                     $('#edit_meta_description').val(data.meta_description);
+                    
+                    // Show current images
+                    if (data.banner) {
+                        $('#current_banner').html(`<small>Current: <a href="${data.banner}" target="_blank">View Banner</a></small>`);
+                    } else {
+                        $('#current_banner').html('<small>No banner uploaded</small>');
+                    }
+                    
+                    if (data.thumbnail_small) {
+                        $('#current_thumbnail_small').html(`<small>Current: <a href="${data.thumbnail_small}" target="_blank">View Thumbnail</a></small>`);
+                    } else {
+                        $('#current_thumbnail_small').html('<small>No thumbnail uploaded</small>');
+                    }
+                    
+                    if (data.icon) {
+                        $('#current_icon').html(`<small>Current: <a href="${data.icon}" target="_blank">View Icon</a></small>`);
+                    } else {
+                        $('#current_icon').html('<small>No icon uploaded</small>');
+                    }
                 } else {
                     Swal.fire('Error!', response.error || 'Failed to fetch category data', 'error');
                 }
@@ -403,12 +457,16 @@ $(document).ready(function() {
         e.preventDefault();
         
         const categorySlug = $('#edit_category_slug').val();
-        const formData = $(this).serialize() + '&action=update_category&original_slug=' + categorySlug;
+        const formData = new FormData(this);
+        formData.append('action', 'update_category');
+        formData.append('original_slug', categorySlug);
         
         $.ajax({
             url: window.location.pathname,
             type: 'POST',
             data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 if (response && response.success) {
                     // Update the table row
@@ -493,6 +551,9 @@ $(document).ready(function() {
     // Clear modal when closed
     $('#editCategoryModal').on('hidden.bs.modal', function() {
         $('#editCategoryForm')[0].reset();
+        $('#current_banner').empty();
+        $('#current_thumbnail_small').empty();
+        $('#current_icon').empty();
     });
 
     // Filter functionality (Client-side for better performance)

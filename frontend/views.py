@@ -1063,10 +1063,12 @@ def create_customer_product(request):
 
 
 
-
-
 def shop(request):
-    return render(request, 'front/shop/shop.html')
+    products = Product.objects.filter(publish_status=1)  # only published
+    return render(request, 'front/shop/shop.html', {
+        'products': products
+    })
+
 
 
 def productDetails(request):

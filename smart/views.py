@@ -1665,6 +1665,10 @@ def category(request):
                     'meta_title': category.meta_title or '',
                     'meta_key': category.meta_key or '',
                     'meta_description': category.meta_description or '',
+                    # Add image URLs
+                    'banner': category.banner.url if category.banner else '',
+                    'thumbnail_small': category.thumbnail_small.url if category.thumbnail_small else '',
+                    'icon': category.icon.url if category.icon else '',
                 }
                 return JsonResponse({'success': True, 'data': data})
             except Exception as e:
@@ -1700,6 +1704,15 @@ def category(request):
                 category.meta_title = meta_title
                 category.meta_key = meta_key
                 category.meta_description = meta_description
+                
+                # Handle image uploads for update
+                if 'banner' in request.FILES:
+                    category.banner = request.FILES['banner']
+                if 'thumbnail_small' in request.FILES:
+                    category.thumbnail_small = request.FILES['thumbnail_small']
+                if 'icon' in request.FILES:
+                    category.icon = request.FILES['icon']
+
                 category.save()
 
                 return JsonResponse({
@@ -1756,6 +1769,16 @@ def category(request):
                     meta_key=meta_key,
                     meta_description=meta_description,
                 )
+                
+                # Handle image uploads
+                if 'banner' in request.FILES:
+                    category.banner = request.FILES['banner']
+                if 'thumbnail_small' in request.FILES:
+                    category.thumbnail_small = request.FILES['thumbnail_small']
+                if 'icon' in request.FILES:
+                    category.icon = request.FILES['icon']
+                
+                category.save()
                 messages.success(request, "Category added successfully!")
                 return redirect('category')
             except Exception as e:
