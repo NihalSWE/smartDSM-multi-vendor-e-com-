@@ -153,46 +153,72 @@
                                 {% for vendor in vendors %}
                                 <tr data-id="{{ vendor.id }}">
                                     <td style="width: 40px;">{{ forloop.counter }}</td>
-                                    <td><a href="{% url 'vendor' vendor.id %}">{{ vendor.contact_info.business_name }}</a></td>
-                                    <td>{{ vendor.contact_info.business_email }}</td>
-                                    <td>{{ vendor.contact_info.contact_person_phone }}</td>
+                                    {% comment %} <td><a href="{% url 'vendor' vendor.id %}">{{ vendor.contact_info.business_name }}</a></td> {% endcomment %}
+                                    <td>
+                                        {% if vendor.contact_info.business_name %}
+                                            <a href="{% url 'vendor' vendor.id %}">
+                                                    {{ vendor.contact_info.business_name }}
+                                            </a>
+                                            {% else %}
+                                                -
+                                        {% endif %}
+                                    </td>
+
+                                    {% comment %} <td>{{ vendor.contact_info.business_email }}</td> {% endcomment %}
+                                    <td>
+                                        {% if vendor.contact_info.business_email %}
+                                            {{ vendor.contact_info.business_email }}
+                                        {% else %}
+                                            {{ vendor.email }}
+                                        {% endif %}
+                                    </td>
+                                    {% comment %} <td>{{ vendor.contact_info.contact_person_phone }}</td> {% endcomment %}
+                                    <td>
+                                        {% if vendor.contact_info.contact_person_phone %}
+                                            {{ vendor.contact_info.contact_person_phone }}
+                                        {% else %}
+                                            {{ vendor.phone_number }}
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if vendor.vendorverification.status == '1' %}
                                             <span class="status-indicator online"></span>
                                         {% elif vendor.vendorverification.status == '2' %}
                                             <span class="status-indicator offline"></span>
-                                        {% else %}
+                                        {% elif vendor.vendorverification.status == '0' %}
                                             <span class="status-indicator pending"></span>
                                         {% endif %}
                                         {{ vendor.vendorverification.get_status_display }}
                                     </td>
                                     <td>
-                                        <ul class="action">
-                                            <li class="edit">
-                                                <a href="{% url 'vendor' vendor.id %}">
-                                                    <span class="edit-icon-span">
-                                                        <i class="fa-regular fa-pen-to-square edit-icon"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#editVendorModal"
+                                        {% if vendor.user_type == 1 or vendor.user_type == 3 and vendor.contact_info %}
+                                            <ul class="action">
+                                                <li class="edit">
+                                                    <a href="{% url 'vendor' vendor.id %}">
+                                                        <span class="edit-icon-span">
+                                                            <i class="fa-regular fa-pen-to-square edit-icon"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#editVendorModal"
+                                                                data-id="{{ vendor.id }}"
+                                                                data-business-name="{{ vendor.contact_info.business_name|default:"-" }}"
+                                                                data-business-email="{% if vendor.contact_info.business_email %}{{ vendor.contact_info.business_email }}{% else %}{{ vendor.email }}{% endif %}"
+                                                                data-contact-phone="{% if vendor.contact_info.contact_person_phone %}{{ vendor.contact_info.contact_person_phone }}{% else %}{{ vendor.phone_number }}{% endif %}"
+                                                                data-verification-status="{{ vendor.vendorverification.status }}"
+                                                            ></i>
+                                                        </span>
+                                                    </a>
+                                                </li>
+                                                <li class="delete" data-id="{{ vendor.id }}">
+                                                    <span class="delete-icon-span">
+                                                        <i class="fa-solid fa-trash-can delete-icon"
                                                             data-id="{{ vendor.id }}"
-                                                            data-business-name="{{ vendor.contact_info.business_name }}"
-                                                            data-business-email="{{ vendor.contact_info.business_email }}"
-                                                            data-contact-phone="{{ vendor.contact_info.contact_person_phone }}"
-                                                            data-verification-status="{{ vendor.vendorverification.status }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteVendorConfirmationModal"
                                                         ></i>
                                                     </span>
-                                                </a>
-                                            </li>
-                                            <li class="delete" data-id="{{ vendor.id }}">
-                                                <span class="delete-icon-span">
-                                                    <i class="fa-solid fa-trash-can delete-icon"
-                                                        data-id="{{ vendor.id }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteVendorConfirmationModal"
-                                                    ></i>
-                                                </span>
-                                            </li>
-                                        </ul>
+                                                </li>
+                                            </ul>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}

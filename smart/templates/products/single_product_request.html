@@ -1,0 +1,1892 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/quill.snow.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/intltelinput.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/tagify.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/dropzone.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/sweetalert2.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}" />
+{% endblock css %} 
+
+{% block custom_css %}
+<style>
+    /* Success Popup Style */
+    .success-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .success-popup.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .success-popup-content {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        transform: translateY(20px);
+        transition: transform 0.3s ease;
+    }
+
+    .success-popup.active .success-popup-content {
+        transform: translateY(0);
+    }
+
+    .checkmark-container {
+    width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+    }
+
+    .animated-checkmark {
+        width: 100%;
+        height: 100%;
+    }
+
+    .checkmark-circle {
+        stroke: #4CAF50;
+        stroke-width: 2;
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-linecap: round;
+        fill: none;
+        animation: draw-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+
+    .checkmark-path {
+        stroke: #4CAF50;
+        stroke-width: 3;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        animation: draw-check 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+    }
+
+    @keyframes draw-circle {
+        0% {
+            stroke-dashoffset: 166;
+        }
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes draw-check {
+        0% {
+            stroke-dashoffset: 48;
+        }
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    .success-popup h3 {
+        color: #4CAF50;
+        margin-bottom: 15px;
+        font-size: 24px;
+    }
+
+    .success-popup p {
+        color: #555;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .close-popup-btn {
+        background-color: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s;
+    }
+
+    .close-popup-btn:hover {
+        background-color: #e0e0e0;
+    }
+    /* Succes Popup */
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+
+    /* drag and drop area */
+    .product-upload {
+        margin-bottom: 30px;
+        background: #f9fbfd;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid #eef2f7;
+    }
+    
+    .product-upload p {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .c-o-light {
+        color: #718096;
+        font-weight: 400;
+        margin-left: 8px;
+        font-size: 15px;
+    }
+    
+    .dropzone {
+        border: 2px dashed #cbd5e0;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        background: white;
+        overflow: hidden;
+    }
+    
+    .dropzone:hover, .dropzone.drag-over {
+        border-color: #4361ee;
+        background: #f0f7ff;
+    }
+    
+    .dropzone i {
+        font-size: 48px;
+        color: #718096;
+        margin-bottom: 15px;
+        display: block;
+        transition: all 0.3s;
+    }
+    
+    .dropzone:hover i {
+        color: #4361ee;
+        transform: translateY(-5px);
+    }
+    
+    .dropzone h6 {
+        font-size: 18px;
+        color: #2d3748;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .dropzone .note {
+        font-size: 14px;
+        color: #718096;
+    }
+    
+    .preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 20px;
+        justify-content: center;
+    }
+    
+    .preview-item {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .preview-item:hover {
+        transform: translateY(-5px);
+    }
+    
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 24px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #e53e3e;
+        font-size: 14px;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .preview-item .remove-btn:hover {
+        background: #e53e3e;
+        color: white;
+        transform: scale(1.1);
+    }
+    
+    .instruction {
+        text-align: center;
+        margin-top: 15px;
+        color: #718096;
+        font-size: 14px;
+        font-style: italic;
+    }
+    /* drag and drop area */
+
+    /* Rejection Modal */
+    :root {
+            --light-primary: #f8f9fa;
+            --light-accent: #f1f3f5;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-light: #e2e8f0;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            --radius: 12px;
+            --transition: all 0.2s ease;
+        }
+
+        #rejectModal .modal-dialog {
+            max-width: 600px;
+        }
+
+        #rejectModal .modal-content {
+            border-radius: var(--radius);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            background-color: white;
+        }
+
+        #rejectModal .modal-header {
+            background-color: var(--light-primary);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.25rem 1.5rem;
+            color: var(--text-dark);
+        }
+
+        #rejectModal .modal-title {
+            font-weight: 600;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #rejectModal .modal-title i {
+            font-size: 1.4rem;
+            color: #a0aec0;
+        }
+
+        #rejectModal .btn-close {
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+
+        #rejectModal .btn-close:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+
+        #rejectModal .modal-body {
+            padding: 1.75rem;
+            background-color: white;
+        }
+
+        #rejectModal .form-label {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            font-size: 1.05rem;
+        }
+
+        .modern-toolbar {
+            background-color: var(--light-accent);
+            border-radius: 8px 8px 0 0;
+            padding: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border: 1px solid var(--border-light);
+            border-bottom: none;
+        }
+
+        .modern-toolbar button {
+            background-color: white;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+        }
+
+        .modern-toolbar button:hover {
+            background-color: #f8fafc;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .modern-editor {
+            min-height: 160px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-light);
+            border-radius: 0 0 8px 8px;
+            resize: vertical;
+            background-color: white;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+
+        .modern-editor:focus {
+            outline: none;
+            border-color: #cbd5e0;
+            box-shadow: 0 0 0 3px rgba(203, 213, 224, 0.15);
+        }
+
+        #rejectModal .modal-footer {
+            border-top: 1px solid var(--border-light);
+            padding: 1.25rem 1.75rem;
+            background-color: var(--light-primary);
+        }
+
+        #rejectModal .modal-footer .btn {
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        #rejectModal .modal-footer .btn-outline-secondary {
+            border: 1px solid var(--border-light);
+            color: var(--text-light);
+            background-color: white;
+        }
+
+        #rejectModal .modal-footer .btn-outline-secondary:hover {
+            background-color: #f7fafc;
+            color: var(--text-dark);
+            border-color: #cbd5e0;
+        }
+
+        #rejectModal .modal-footer .btn-danger {
+            background-color: #e53e3e;
+            border: none;
+            color: white;
+        }
+
+        #rejectModal .modal-footer .btn-danger:hover {
+            background-color: #c53030;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(229, 62, 62, 0.2);
+        }
+
+        @media (max-width: 576px) {
+            #rejectModal .modal-body {
+                padding: 1.25rem;
+            }
+            
+            #rejectModal .modal-footer {
+                padding: 1rem 1.25rem;
+            }
+            
+            .modern-toolbar {
+                gap: 0.4rem;
+            }
+            
+            .modern-toolbar button {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s cubic-bezier(.36,.07,.19,.97), opacity 0.3s;
+            transform: translateY(-30px) scale(.98);
+            opacity: 0;
+        }
+        .modal.fade.show .modal-dialog {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+    /* Rejection Modal */
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+
+    .rejection-error-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .rejection-error-div.show {
+        /* adjust 200px to be comfortably larger than your tallest message */
+        max-height: 200px;
+        opacity: 1;
+    }
+
+
+    /* loading modal*/
+    .loading-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7); /* Transparent black background */
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+</style>
+{% endblock custom_css %}
+
+
+{% block content %}
+
+    <!-- Container-fluid starts -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="">
+                        <div class="card-header col-12">
+                            <h5>Edit Product: {{ product.title }}</h5>
+                        </div>
+                        <form id="approvalForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <div class="card-header col-6 d-flex align-items-center gap-2">
+                                <select id="approval" class="selectpicker" aria-label="Default select example" name="approval">
+                                    <option value="2" {% if product.publish_status == 2 %}selected{% endif %}>Pending</option>
+                                    <option value="3" {% if product.publish_status == 3 %}selected{% endif %}>Reject</option>
+                                    <option value="4" {% if product.publish_status == 4 %}selected{% endif %}>Approve</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="error-success-div p-6"></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-xl-5 g-3">
+                            <div class="col-xxl-3 col-xl-4 box-col-4e sidebar-left-wrapper">
+                                <ul class="sidebar-left-icons nav nav-pills" id="add-product-pills-tab" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="detail-product-tab" data-bs-toggle="pill" href="#detail-product" role="tab" aria-controls="detail-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-detail"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Details</h6>
+                                                <p>Edit product name & details</p>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="gallery-product-tab" data-bs-toggle="pill" href="#gallery-product" role="tab" aria-controls="gallery-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-gallery"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Gallery</h6>
+                                                <p>Edit thumbnail & product gallery</p>
+                                            </div>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="category-product-tab" data-bs-toggle="pill" href="#category-product" role="tab" aria-controls="category-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-category"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Categories</h6>
+                                                <p>Edit product category, status and tags</p>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="pricings-tab" data-bs-toggle="pill" href="#pricings" role="tab" aria-controls="pricings" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#pricing"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Price & Discount</h6>
+                                                <p>Edit product basic price & discount</p>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="advance-product-tab" data-bs-toggle="pill" href="#advance-product" role="tab" aria-controls="advance-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#advance"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Additional Options</h6>
+                                                <p>Edit meta details & inventory details</p>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-xxl-9 col-xl-8 box-col-8 position-relative">
+                                <form id="product-form" method="POST" enctype="multipart/form-data" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="slug" value="{{ product.id }}">
+                                    
+                                    <div class="tab-content custom-input" id="add-product-pills-tabContent">
+                                        <div class="tab-pane fade show active" id="detail-product" role="tabpanel" aria-labelledby="detail-product-tab">
+                                            <div class="sidebar-body">
+                                                <!-- form -->
+                                                <div class="row g-3 common-form">
+                                                    <div class="col-12">
+                                                        <label class="form-label" for="exampleFormControlInput1">Product SKU</label>
+                                                        <input class="form-control" id="exampleFormControlInput1" type="text" 
+                                                               placeholder="Enter a number" name="sku" value="{{ product.sku }}" required />
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" for="validationProductTitle">Product Title</label>
+                                                        <input class="form-control" id="validationProductTitle" type="text" 
+                                                               placeholder="Title" name="title" value="{{ product.title }}" required />
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Product Description</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar2">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor2">{{ product.description|safe }}</div>
+                                                            <textarea name="description" id="product-description" style="display: none">{{ product.description|safe }}</textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 product-buttons">
+                                                        <button id="next-button" class="btn m-0" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
+                                                            Next<svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="gallery-product" role="tabpanel" aria-labelledby="gallery-product-tab">
+                                            <div class="sidebar-body common-form">
+                                                <div class="product-upload">
+                                                    <p>
+                                                        Product Thumbnail Image
+                                                        <span class="c-o-light">(Main Image)</span>
+                                                    </p>
+                                                    <div class="dropzone dropzone-secondary" id="thumbnailDropzone">
+                                                        <div class="dz-message needsclick">
+                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
+                                                            <h6>Drop file here or click to upload</h6>
+                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
+                                                        </div>
+                                                        <div class="preview-container" id="thumbnailPreviewContainer">
+                                                            {% if product.thumbnail_image %}
+                                                            <div class="preview-item">
+                                                                <img src="{{ product.thumbnail_image.url }}" alt="Current thumbnail">
+                                                                <button class="remove-btn">&times;</button>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        <input type="file" name="thumbnail" id="thumbnailFileInput" style="display: none" accept="image/*" />
+                                                    </div>
+                                                    <p class="instruction">Upload one high-quality image as your main product thumbnail</p>
+                                                </div>
+                                                
+                                                <div class="product-upload">
+                                                    <p>Product Gallery</p>
+                                                    <div class="dropzone dropzone-secondary" id="galleryDropzone">
+                                                        <div class="dz-message needsclick">
+                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
+                                                            <h6>Drop files here or click to upload</h6>
+                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
+                                                        </div>
+                                                        <div class="preview-container" id="galleryPreviewContainer">
+                                                            {% for image in product.images.all %}
+                                                            <div class="preview-item">
+                                                                <img src="{{ image.image.url }}" alt="Gallery image">
+                                                                <button class="remove-btn">&times;</button>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        <input type="file" name="gallery[]" id="galleryFileInput" style="display: none" multiple accept="image/*" />
+                                                    </div>
+                                                    <p class="instruction">Upload up to 3 images for your product gallery</p>
+                                                </div>
+                                                
+                                                <div class="product-buttons">
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('detail-product-tab')">
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                        </svg>Previous
+                                                    </button>
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                        Next<svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="category-product" role="tabpanel" aria-labelledby="category-product-tab">
+                                            <div class="sidebar-body common-form">
+                                                <div class="row g-3 common-form">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Category</label>
+                                                        <select id="category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="category">
+                                                            {% for category in categories %}
+                                                                <option value="{{ category.id }}" {% if product.category.id == category.id %}selected{% endif %}>
+                                                                    {{ category.name }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Sub Category</label>
+                                                        <select id="sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_category">
+                                                            {% if product.sub_category %}
+                                                                <option value="{{ product.sub_category.id }}" selected>
+                                                                    {{ product.sub_category.name }}
+                                                                </option>
+                                                            {% endif %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Sub Sub Category</label>
+                                                        <select id="sub-sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_sub_category">
+                                                            {% if product.sub_sub_category %}
+                                                                <option value="{{ product.sub_sub_category.id }}" selected>
+                                                                    {{ product.sub_sub_category.name }}
+                                                                </option>
+                                                            {% endif %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-sm-12 common-tagify">
+                                                        <label class="form-label">Tags</label>
+                                                        <input name="tags" value="{{ product.tags.all|join:', ' }}" />
+                                                    </div>
+
+                                                    <div class="col-12 product-buttons">
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
+                                                            <svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                            </svg>Previous
+                                                        </button>
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('pricings-tab')">
+                                                            Next<svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="pricings" role="tabpanel" aria-labelledby="pricings-tab">
+                                            <div class="price-wrapper common-form row g-3">
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="initialCost">Initial Price</label>
+                                                    <input class="form-control" id="initialCost" type="number" step="0.01" 
+                                                           placeholder="Price" name="initial_price" value="{{ product.initial_price }}" />
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="form-label" for="sellingPrice">Selling Price</label>
+                                                    <input class="form-control" id="sellingPrice" type="number" step="0.01" 
+                                                           placeholder="Price" name="selling_price" value="{{ product.selling_price }}" required />
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Product Discount Options<i class="icon-help-alt ms-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Choose the kind of discount that will be used on that particular item."></i></label>
+                                                    <ul class="nav nav-pills discount-options" id="product-discount-pills-tab" role="tablist">
+                                                        <li class="nav-item">
+                                                            <a class="nav-link active" id="fixed-price-tab" data-bs-toggle="pill" href="#fixed-price" role="tab" aria-controls="fixed-price" aria-selected="false"><span>Fixed Price Discount</span></a>
+                                                        </li>
+                                                        <li class="nav-item">
+                                                            <a class="nav-link" id="bogo-offer-tab" data-bs-toggle="pill" href="#bogo-offer" role="tab" aria-controls="bogo-offer" aria-selected="false"><span>BOGO (Buy One, Get One)</span></a>
+                                                        </li>
+                                                        <li class="nav-item">
+                                                            <a class="nav-link" id="percentage-base-tab" data-bs-toggle="pill" href="#percentage-base" role="tab" aria-controls="percentage-base" aria-selected="false"><span>Percentage Based Discount(%)</span></a>
+                                                        </li>
+                                                        <li class="nav-item">
+                                                            <a class="nav-link" id="bulk-discount-tab" data-bs-toggle="pill" href="#bulk-discount" role="tab" aria-controls="bulk-discount" aria-selected="false"><span>Volume or Bulk Discount</span></a>
+                                                        </li>
+                                                    </ul>
+                                                    <div class="tab-content" id="product-discount-pills-tabContent">
+                                                        <div class="tab-pane fade show active" id="fixed-price" role="tabpanel" aria-labelledby="fixed-price-tab">
+                                                            <div class="meta-body">
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <label class="form-label" for="validationDiscountPrice">Discount Price</label>
+                                                                        <input class="form-control" id="validationDiscountPrice" type="number" 
+                                                                               placeholder="Discount" name="fixed_discount" value="{{ product.fixed_discount }}" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="bogo-offer" role="tabpanel" aria-labelledby="bogo-offer-tab">
+                                                            <div class="meta-body">
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <label class="form-label">Product Name<span class="c-o-light">&nbsp;(Free)</span></label>
+                                                                        <select name="discount_product_name" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true" name="bogo_product">
+                                                                            <option value="1" selected>Women Pink T-shirt</option>
+                                                                            <option value="2">Solid Hooded Sweatshirt</option>
+                                                                            
+                                                                        </select>
+                                                                    </div>
+                                                                <div class="col-sm-6">
+                                                                    <label class="form-label" for="validationMinQuantity">Minimum Quantity</label>
+                                                                    <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" 
+                                                                           placeholder="Quantity" name="bogo_min_qty" value="{{ product.bogo_min_qty }}" />
+                                                                </div>
+                                                                <div class="col-sm-6">
+                                                                    <label class="form-label" for="validationMaxQuantity">Maximum Quantity</label>
+                                                                    <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" 
+                                                                           placeholder="Quantity" name="bogo_max_qty" value="{{ product.bogo_max_qty }}" />
+                                                                </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="percentage-base" role="tabpanel" aria-labelledby="percentage-base-tab">
+                                                            <div class="meta-body">
+                                                                <div class="row g-3">
+                                                                    <div class="col-md-12">
+                                                                        <label class="form-label" for="validationDiscount">Discount Percentage</label>
+                                                                        <input class="form-control" name="discount_percentage" id="validationDiscount" type="number" 
+                                                                               placeholder="Discount" name="percentage_discount" value="{{ product.percentage_discount }}" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="bulk-discount" role="tabpanel" aria-labelledby="bulk-discount-tab">
+                                                            <div class="meta-body">
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <label class="form-label" for="validationQuantity">Quantity</label>
+                                                                        <input class="form-control" name="quantity" id="validationQuantity" type="number" 
+                                                                               placeholder="Quantity" name="bulk_qty" value="{{ product.bulk_qty }}" />
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="row g-3">
+                                                                            <div class="col-sm-6">
+                                                                                <label class="form-label" for="projectType">Discount Type</label>
+                                                                                <select class="form-select" name="discount_Type" id="projectType" name="bulk_discount_type">
+                                                                                <option value="fixed" {% if product.bulk_discount_type == 'fixed' %}selected{% endif %}>Fixed Price</option>
+                                                                                <option value="percentage" {% if product.bulk_discount_type == 'percentage' %}selected{% endif %}>Percentage(%)</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div class="col-sm-6">
+                                                                                <label class="form-label" for="projectType">Value</label>
+                                                                                <input class="form-control" name="discount_value" type="number" 
+                                                                                       placeholder="Discount" name="bulk_discount_value" value="{{ product.bulk_discount_value }}" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 product-buttons">
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                        </svg>Previous
+                                                    </button>
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('advance-product-tab')">
+                                                        Next<svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="advance-product" role="tabpanel" aria-labelledby="advance-product-tab">
+                                            <div class="sidebar-body advance-options">
+                                                <ul class="nav nav-tabs border-tab mb-0" id="advance-option-tab" role="tablist">
+                                                <li class="nav-item">
+                                                    <a class="nav-link active" id="inventory-option-tab" data-bs-toggle="tab" href="#inventory-option" role="tab" aria-controls="inventory-option" aria-selected="true">Inventory</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" id="seo-option-tab" data-bs-toggle="tab" href="#seo-option" role="tab" aria-controls="seo-option" aria-selected="false">SEO Tags</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" id="dropping-option-tab" data-bs-toggle="tab" href="#dropping-option" role="tab" aria-controls="dropping-option" aria-selected="false">Shipping</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
+                                                </li>
+                                                <li class="nav-item">
+                                                    <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
+                                                </li>
+                                                </ul>
+                                                <div class="tab-content" id="advance-option-tabContent">
+                                                    <div class="tab-pane fade show active" id="inventory-option"    role="tabpanel" aria-labelledby="inventory-option-tab">
+                                                        <div class="meta-body">
+                                                            
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="seo-option" role="tabpanel" aria-labelledby="seo-option-tab">
+                                                        <div class="meta-body">
+                                                            <div class="row g-3 common-form">
+                                                                <div class="col-xxl-6">
+                                                                    <label class="form-label" for="validationTitle">Meta Title</label>
+                                                                    <input class="form-control" name="meta_title" id="validationTitle" type="text" 
+                                                                           placeholder="Enter meta title" name="meta_title" value="{{ product.meta_title }}" />
+                                                                </div>
+                                                                <div class="col-xxl-6">
+                                                                    <label class="form-label" for="validationCustom-9">Meta Keywords<span class="c-o-light">&nbsp;(In comma separated)</span></label>
+                                                                    <input class="form-control" id="validationCustom-9" type="text" 
+                                                                           placeholder="Enter meta keywords" name="meta_keywords" value="{{ product.meta_keywords }}" />
+                                                                </div>
+                                                                <div class="col-md-12">
+                                                                    <label class="form-label">Meta Description</label>
+                                                                    <div class="toolbar-box">
+                                                                        <div id="toolbar4">
+                                                                        <button class="ql-bold">Bold</button>
+                                                                        <button class="ql-italic">Italic</button>
+                                                                        <button class="ql-underline">underline</button>
+                                                                        <button class="ql-strike">Strike</button>
+                                                                        <button class="ql-list" value="ordered">List</button>
+                                                                        <button class="ql-list" value="bullet"></button>
+                                                                        <button class="ql-indent" value="-1"></button>
+                                                                        <button class="ql-indent" value="+1"></button>
+                                                                        <button class="ql-link"></button>
+                                                                        </div>
+                                                                        <div id="editor4">{{ product.meta_description|safe }}</div>
+                                                                        <textarea name="meta_description" id="meta-description" style="display: none">{{ product.meta_description|safe }}</textarea>
+                                                                    </div>
+                                                                    <p class="mb-0 mt-1 f-light">Enhance your SEO ranking with an added tag description for the product.</p>
+                                                                </div>
+                                                                <div class="col-md-12 product-buttons">
+                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('inventory-option-tab')">
+                                                                        <svg>
+                                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                                        </svg>Previous
+                                                                    </button>
+                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('dropping-option-tab')">
+                                                                        Next<svg>
+                                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="dropping-option" role="tabpanel" aria-labelledby="dropping-option-tab">
+                                                        <div class="meta-body">
+                                                            <div class="common-form">
+                                                                <div class="row g-3">
+                                                                    <div class="col-12">
+                                                                        <div class="row">
+                                                                        <div class="col-12">
+                                                                            <label class="form-label" for="exampleFormControlInput1">Weight (kg)</label><i class="icon-help-alt ms-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="set proper weight for product items."></i>
+                                                                        </div>
+                                                                        <div class="col-12">
+                                                                            <input class="form-control" type="number" step="0.001" 
+                                                                                   placeholder="Weight (kg)" name="weight" value="{{ product.weight }}" />
+                                                                            <p class="f-light">Decide if the product is a digital or physical item. Shipping may be necessary for real-world items.</p>
+                                                                        </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="row gx-xl-3 gx-md-2 gy-md-0 g-2">
+                                                                        <div class="col-12">
+                                                                            <label class="form-label" for="exampleFormControlInput1">Dimensions</label><i class="icon-help-alt ms-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="set proper length/width and height for product items."></i>
+                                                                        </div>
+                                                                        <div class="col-md-4 col-sm-6">
+                                                                            <input class="form-control" type="number" step="0.001" 
+                                                                                   placeholder="Length[l]" name="length" value="{{ product.length }}" />
+                                                                        </div>
+                                                                        <div class="col-md-4 col-sm-6">
+                                                                            <input class="form-control" type="number" step="0.001" 
+                                                                                   placeholder="Width[w]" name="width" value="{{ product.width }}" />
+                                                                        </div>
+                                                                        <div class="col-md-4">
+                                                                            <input class="form-control" type="number" step="0.001" 
+                                                                                   placeholder="Height[h]" name="height" value="{{ product.height }}" />
+                                                                        </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="row">
+                                                                            <div class="col-12">
+                                                                                <label class="form-label" for="exampleFormControlInput1">Shipping Class</label>
+                                                                            </div>
+                                                                            <div class="col-md-12">
+                                                                                <select class="form-select" name="shipping_class" id="inputState1" name="shipping_class">
+                                                                                <option value="basic" {% if product.shipping_class == 'basic' %}selected{% endif %}>Basic Shipping</option>
+                                                                                <option value="expedited" {% if product.shipping_class == 'expedited' %}selected{% endif %}>Expedited Shipping</option>
+                                                                                <option value="international" {% if product.shipping_class == 'international' %}selected{% endif %}>International Shipping</option>
+                                                                                <option value="free" {% if product.shipping_class == 'free' %}selected{% endif %}>Free Shipping</option>
+                                                                                <option value="same_day" {% if product.shipping_class == 'same_day' %}selected{% endif %}>Same-Day or Next-Day Shipping</option>
+                                                                                <option value="flat_rate" {% if product.shipping_class == 'flat_rate' %}selected{% endif %}>Flat Rate Shipping</option>
+                                                                                <option value="local_pickup" {% if product.shipping_class == 'local_pickup' %}selected{% endif %}>Local Pickup</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12 product-buttons">
+                                                                        <button class="btn" type="button" onclick="handleNextButtonClick('seo-option-tab')">
+                                                                            <svg>
+                                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                                            </svg>Previous
+                                                                        </button>
+                                                                        <button class="btn" type="button" onclick="handleNextButtonClick('variation-option-tab')">
+                                                                            Next<svg>
+                                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="variation-option" role="tabpanel" aria-labelledby="variation-option-tab">
+                                                        <div class="meta-body">
+                                                            <div class="row g-3 common-form">
+                                                                <div class="col-12">
+                                                                    <div class="row g-2 product-tag">
+                                                                        <label class="form-label d-block m-0">Colors</label>
+                                                                        <input name="colors" value="{{ product.colors.all|join:', ' }}" />
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-12">
+                                                                    <label class="form-label">Option Name</label>
+                                                                    <select class="form-select" id="option-variation" onchange="configureDropDownLists(this,document.getElementById('option-value'))" name="variation_name">
+                                                                        <option value="color" {% if product.variation_name == 'color' %}selected{% endif %}>Color</option>
+                                                                        <option value="size" {% if product.variation_name == 'size' %}selected{% endif %}>Size</option>
+                                                                        <option value="material" {% if product.variation_name == 'material' %}selected{% endif %}>Material</option>
+                                                                        <option value="style" {% if product.variation_name == 'style' %}selected{% endif %}>Style</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-12">
+                                                                    <label class="form-label">Options Value</label>
+                                                                    <select class="form-select" id="option-value" name="variation_value">
+                                                                        {% if product.variation_value %}
+                                                                            <option value="{{ product.variation_value }}" selected>{{ product.variation_value }}</option>
+                                                                        {% endif %}
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-12 product-buttons">
+                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('dropping-option-tab')">
+                                                                        <svg>
+                                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                                        </svg>Previous
+                                                                    </button>
+                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('publish-option-tab')">
+                                                                        Next<svg>
+                                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="publish-option" role="tabpanel" aria-labelledby="publish-option-tab">
+                                                        <div class="meta-body">
+                                                            <div class="row g-3 common-form">
+                                                                <div class="col-xxl-6 col-xl-12 col-md-6">
+                                                                    <label class="form-label" for="publishStatus">Publish Status</label>
+                                                                    <select class="form-select" id="publishStatus" required="" name="publish_status">
+                                                                        <option value="published" {% if product.status == 'published' %}selected{% endif %}>Publish</option>
+                                                                        <option value="draft" {% if product.status == 'draft' %}selected{% endif %}>Drafts</option>
+                                                                        <option value="unpublished" {% if product.status == 'unpublished' %}selected{% endif %}>Unpublish</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-xxl-6 col-xl-12 col-md-6">
+                                                                    <label class="form-label" for="datetime-local1">Publish Date & Time</label>
+                                                                    <div class="input-group flatpicker-calender product-date">
+                                                                        <input class="form-control" id="datetime-local1" type="date" 
+                                                                               name="publish_date" value="{{ product.publish_date|date:'Y-m-d' }}" />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                                                                    <div class="error-success-div p-6"></div>
+                                                                </div>
+
+                                                                <div class="col-12 product-buttons">
+                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('variation-option-tab')">
+                                                                        <svg>
+                                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                                        </svg>Previous
+                                                                    </button>
+                                                                    <button class="btn sweet-15" type="submit">
+                                                                        Update Product<svg>
+                                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Container-fluid Ends -->
+
+    <!-- Rejection Modal -->
+    {% comment %} <div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="rejection-modal-content modal-content">
+                <div class="rejection-modal-head modal-header">
+                    <h5 class="modal-title" id="rejectionModalLabel"><i class="bi bi-x-circle"></i> Provide Rejection Feedback</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="rejection-modal-body modal-body">
+                    <p>Please provide detailed feedback explaining why this content was rejected. Your feedback will be sent to the content creator.</p>
+                    
+                    <div class="mb-3">
+                        <label for="rejectionEditor" class="form-label fw-bold">Rejection Reasons:</label>
+                        <div id="rejectionEditor" class="rejection-editor"></div>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="rejectionNotifyCreator">
+                        <label class="form-check-label" for="rejectionNotifyCreator">
+                            Notify content creator via email
+                        </label>
+                    </div>
+                </div>
+                <div class="rejection-modal-footer modal-footer">
+                    <button type="button" class="rejection-cancel-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="rejection-submit-btn">Submit Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div> {% endcomment %}
+    <!-- Modal Structure -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectLabel"><i class="fas fa-edit"></i> Reject Reason</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="modal-body">
+                        <div class="col-md-12">
+                            <label class="form-label">Rejection Reason</label>
+                            <div class="toolbar-box">
+                                <div id="toolbar6" class="modern-toolbar">
+                                    <button class="ql-bold"><i class="fas fa-bold"></i></button>
+                                    <button class="ql-italic"><i class="fas fa-italic"></i></button>
+                                    <button class="ql-underline"><i class="fas fa-underline"></i></button>
+                                    <button class="ql-strike"><i class="fas fa-strikethrough"></i></button>
+                                    <button class="ql-list" value="ordered"><i class="fas fa-list-ol"></i></button>
+                                    <button class="ql-list" value="bullet"><i class="fas fa-list-ul"></i></button>
+                                    <button class="ql-indent" value="-1"><i class="fas fa-outdent"></i></button>
+                                    <button class="ql-indent" value="+1"><i class="fas fa-indent"></i></button>
+                                    <button class="ql-link"><i class="fas fa-link"></i></button>
+                                </div>
+                                <div id="editor6" class="modern-editor" contenteditable="true"></div>
+                                <textarea name="rejectReason" id="rejectReasonn" style="display: none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding-left: 20px; padding-right: 20px; margin-bottom: 10px;">
+                        <div class="rejection-error-div p-6"></div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Submit Reason</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Rejection Modal -->
+    
+
+    <!-- Success Popup -->
+    <div id="success-popup" class="success-popup">
+        <div class="success-popup-content">
+            <div class="checkmark-container">
+                <svg class="animated-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-path" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            <h3>Success!</h3>
+            <p id="success-message"></p>
+            <button class="close-popup-btn">Close</button>
+        </div>
+    </div>
+    <!-- Success Popup -->
+
+    <!-- Loading Modal (hidden by default) -->
+    <div id="loading-modal" class="loading-modal" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Saving product...</p>
+        </div>
+    </div>
+{% endblock %} 
+{% block scriptcontent %}
+    <script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+    <script src="{% static 'assets/js/flat-pickr/custom-flatpickr.js' %}"></script>
+    <script src="{% static 'assets/js/dropzone/dropzone.min.js' %}"></script>
+    <script src="{% static 'assets/js/dropzone/dropzone-script.js' %}"></script>
+    <script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
+    <script src="{% static 'assets/js/select2/tagify.js' %}"></script>
+    <script src="{% static 'assets/js/select2/tagify.polyfills.min.js' %}"></script>
+    <script src="{% static 'assets/js/select2/intltelinput.min.js' %}"></script>
+    <script src="{% static 'assets/js/add-product/select4-custom.js' %}"></script>
+    <script src="{% static 'assets/js/editors/quill.js' %}"></script>
+    <script src="{% static 'assets/js/custom-add-product.js' %}"></script>
+    <script src="{% static 'assets/js/tooltip-init.js' %}"></script>
+    <script src="{% static 'assets/js/modalpage/validation-modal.js' %}"></script>
+    <script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize form elements
+            const productForm = document.getElementById('product-form')
+            const submitBtn = productForm.querySelector('button[type="submit"]')
+            
+            // Initialize editors
+            const descriptionEditor = new Quill('#editor2', {
+                theme: 'snow',
+                modules: { toolbar: '#toolbar2' }
+            })
+            
+            const metaEditor = new Quill('#editor4', {
+                theme: 'snow',
+                modules: { toolbar: '#toolbar4' }
+            })
+
+            const rejectEditor = new Quill('#editor6', {
+                theme: 'snow',
+                modules: { toolbar: '#toolbar6' }
+            })
+
+            let approvalSelect = document.getElementById('approval');
+            let editor = document.getElementById('editor6');
+            let rejectReasonTextarea = document.getElementById('rejectReasonn');
+
+            // Pre-fill rejection reason if status is Rejected (3)
+            if (approvalSelect.value === "3") {
+                editor.innerHTML = `{{ product.rejection_reason|default_if_none:"" | safe }}`;
+                rejectReasonTextarea.value = `{{ product.rejection_reason|default_if_none:"" | safe }}`;
+            }
+
+            // Initialize Tagify
+            new Tagify(document.querySelector('input[name="tags"]'))
+            new Tagify(document.querySelector('input[name="colors"]'))
+            
+            // Handle form submission
+            productForm.addEventListener('submit', async (e) => {
+                e.preventDefault()
+                submitBtn.disabled = true
+                
+                try {
+                    // Sync editor content
+                    const descEditor = document.querySelector('#editor2 .ql-editor')
+                    if (descEditor) {
+                        document.getElementById('product-description').value = descEditor.innerHTML
+                    }
+                
+                    const metaEditor = document.querySelector('#editor4 .ql-editor')
+                    if (metaEditor) {
+                        document.getElementById('meta-description').value = metaEditor.innerHTML
+                    }
+                
+                    // Submit form
+                    const formData = new FormData(productForm)
+                    const response = await fetch(productForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: formData
+                    })
+                
+                    const result = await response.json()
+                
+                    if (result.success) {
+                        showSuccessPopup(result.message || "Product updated successfully!")
+                        showMessage("success", result.message || "Product updated successfully!")
+                    } else {
+                        let message = result.message || "Something went wrong."
+                        if (result.errors) {
+                            // Format validation errors if present
+                            message = Object.entries(result.errors)
+                                .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+                                .join('<br>')
+                        }
+                        showMessage("error", message)
+                    }
+                } catch (error) {
+                    console.error('Submission error:', error)
+                    showMessage("error", "An unexpected error occurred. Please try again.")
+                } finally {
+                    submitBtn.disabled = false
+                }
+            })
+            
+            // Tab navigation
+            window.handleNextButtonClick = function (tabId) {
+                const tab = document.getElementById(tabId)
+                if (tab) {
+                    new bootstrap.Tab(tab).show()
+                }
+            }
+
+            // Category dropdown handling
+            const subCategorySelect = $('#sub-category');
+            const subSubCategorySelect = $('#sub-sub-category');
+
+            // Reset and disable a select
+            function resetSelect(select, placeholder = 'Select an option') {
+                select.empty().append(`<option value="">${placeholder}</option>`).prop('disabled', true).selectpicker('refresh');
+            }
+
+            // Populate select with options
+            function populateSelect(select, data) {
+                resetSelect(select);
+                if (data.length > 0) {
+                    data.forEach(item => {
+                        select.append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    select.prop('disabled', false);
+                }
+                select.selectpicker('refresh');
+            }
+
+            // When a category is selected, fetch its subcategories
+            $('#category').on('change', function () {
+                const categoryId = $(this).val();
+
+                resetSelect(subCategorySelect);
+                resetSelect(subSubCategorySelect);  // Reset sub-sub category as well
+
+                if (categoryId) {
+                    fetch(`/admin-dashboard/get-subcategories/${categoryId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            populateSelect(subCategorySelect, data);
+                        })
+                        .catch(err => console.error('Error loading subcategories:', err));
+                }
+            });
+
+            // When a sub-category is selected, fetch its sub-sub-categories
+            subCategorySelect.on('change', function () {
+                const subCategoryId = $(this).val();
+
+                resetSelect(subSubCategorySelect);
+
+                if (subCategoryId) {
+                    fetch(`/admin-dashboard/get-subcategories/${subCategoryId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            populateSelect(subSubCategorySelect, data);
+                        })
+                        .catch(err => console.error('Error loading sub-sub-categories:', err));
+                }
+            });
+
+            // Initially disable sub and sub-sub selects if no category is selected
+            if (!$('#category').val()) {
+                resetSelect(subCategorySelect);
+                resetSelect(subSubCategorySelect);
+            }
+
+            function showMessage(type, message) {
+                const div = $(".error-success-div");
+
+                // routine to set text + color and then expand
+                function expand() {
+                    div
+                    .removeClass("error-message success-message")
+                    .addClass(type + "-message")
+                    .text(message);
+
+                    // small delay so the browser "sees" the reset
+                    requestAnimationFrame(() => {
+                    div.addClass("show");
+                    });
+
+                    if (type === "success") {
+                    setTimeout(() => location.reload(), 1000);
+                    }
+                }
+
+                if (div.hasClass("show")) {
+                    // 1. If already shown, collapse first
+                    div.removeClass("show");
+
+                    // 2. Wait for collapse transition to finish, then expand
+                    div.one("transitionend", expand);
+                } else {
+                    // first time: just expand
+                    expand();
+                }
+            }
+
+            function showSuccessPopup(message) {
+                const popup = document.getElementById('success-popup');
+                const messageElement = document.getElementById('success-message');
+                
+                // Reset animations
+                const checkmarkCircle = document.querySelector('.checkmark-circle');
+                const checkmarkPath = document.querySelector('.checkmark-path');
+                checkmarkCircle.style.animation = 'none';
+                checkmarkPath.style.animation = 'none';
+                void checkmarkCircle.offsetWidth; // Trigger reflow
+                void checkmarkPath.offsetWidth; // Trigger reflow
+                checkmarkCircle.style.animation = 'draw-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards';
+                checkmarkPath.style.animation = 'draw-check 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards';
+                
+                messageElement.textContent = message;
+                popup.classList.add('active');
+                
+                // Close popup when close button is clicked
+                document.querySelector('.close-popup-btn').addEventListener('click', function() {
+                    popup.classList.remove('active');
+                });
+                
+                // Close popup when clicking outside the content
+                popup.addEventListener('click', function(e) {
+                    if (e.target === popup) {
+                        popup.classList.remove('active');
+                    }
+                });
+            }
+
+            // Image upload handling
+            // Thumbnail elements
+            const thumbnailDropzone = document.getElementById('thumbnailDropzone');
+            const thumbnailInput = document.getElementById('thumbnailFileInput');
+            const thumbnailPreview = document.getElementById('thumbnailPreviewContainer');
+            
+            // Gallery elements
+            const galleryDropzone = document.getElementById('galleryDropzone');
+            const galleryInput = document.getElementById('galleryFileInput');
+            const galleryPreview = document.getElementById('galleryPreviewContainer');
+            
+            // Setup for thumbnail dropzone (single file)
+            setupDropzone(thumbnailDropzone, thumbnailInput, thumbnailPreview, 1);
+            
+            // Setup for gallery dropzone (multiple files)
+            setupDropzone(galleryDropzone, galleryInput, galleryPreview, 3);
+            
+            function setupDropzone(dropzone, input, previewContainer, maxFiles) {
+                // Click event to trigger file input
+                dropzone.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-btn')) return;
+                    input.value = ''; // Clear previous selection
+                    input.click();
+                });
+                
+                // Drag over event
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('drag-over');
+                });
+                
+                // Drag leave event
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('drag-over');
+                });
+                
+                // Drop event
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('drag-over');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length) {
+                        processFiles(files, input, previewContainer, maxFiles);
+                    }
+                });
+                
+                // File input change event
+                input.addEventListener('change', () => {
+                    if (input.files.length) {
+                        processFiles(input.files, input, previewContainer, maxFiles);
+                    }
+                });
+            }
+            
+            function processFiles(files, input, previewContainer, maxFiles) {
+                // Clear previous files and previews
+                const dataTransfer = new DataTransfer();
+                previewContainer.innerHTML = '';
+                
+                // Handle single file upload (thumbnail)
+                if (maxFiles === 1) {
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.type.match('image.*')) {
+                            dataTransfer.items.add(file);
+                            createPreview(file, previewContainer, input, maxFiles);
+                        }
+                    }
+                } 
+                // Handle multiple files (gallery)
+                else {
+                    const validFiles = Array.from(files).filter(file => file.type.match('image.*'));
+                    const filesToAdd = validFiles.slice(0, maxFiles);
+                    
+                    filesToAdd.forEach(file => {
+                        dataTransfer.items.add(file);
+                        createPreview(file, previewContainer, input, maxFiles);
+                    });
+                    
+                    if (validFiles.length > maxFiles) {
+                        alert(`Maximum ${maxFiles} files allowed. Only the first ${maxFiles} were added.`);
+                    }
+                }
+                
+                // Update input files
+                input.files = dataTransfer.files;
+            }
+            
+            function createPreview(file, previewContainer, input, maxFiles) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Preview';
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeFile(file, input, previewContainer, maxFiles);
+                    };
+                    
+                    previewItem.appendChild(img);
+                    previewItem.appendChild(removeBtn);
+                    previewContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            function removeFile(fileToRemove, input, previewContainer, maxFiles) {
+                const files = Array.from(input.files);
+                const updatedFiles = files.filter(file => file !== fileToRemove);
+                
+                // Update the input files
+                const dataTransfer = new DataTransfer();
+                updatedFiles.forEach(file => dataTransfer.items.add(file));
+                input.files = dataTransfer.files;
+                
+                // Re-render previews
+                previewContainer.innerHTML = '';
+                updatedFiles.forEach(file => {
+                    createPreview(file, previewContainer, input, maxFiles);
+                });
+            }
+
+            // Variation options configuration
+            function configureDropDownLists(ddl1, ddl2) {
+                const colorOptions = ['Red', 'Green', 'Blue', 'Yellow', 'Black', 'White'];
+                const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+                const materialOptions = ['Cotton', 'Polyester', 'Silk', 'Wool', 'Leather'];
+                const styleOptions = ['Casual', 'Formal', 'Sport', 'Vintage', 'Modern'];
+                
+                ddl2.innerHTML = "";
+                
+                let options = [];
+                switch (ddl1.value) {
+                    case 'color':
+                        options = colorOptions;
+                        break;
+                    case 'size':
+                        options = sizeOptions;
+                        break;
+                    case 'material':
+                        options = materialOptions;
+                        break;
+                    case 'style':
+                        options = styleOptions;
+                        break;
+                }
+                
+                for (let i = 0; i < options.length; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = options[i];
+                    opt.text = options[i];
+                    ddl2.appendChild(opt);
+                }
+            }
+
+            // Initialize variation options based on current selection
+            const variationSelect = document.getElementById('option-variation');
+            if (variationSelect) {
+                configureDropDownLists(variationSelect, document.getElementById('option-value'));
+            }
+        });
+    </script>
+
+    <script>
+        // Initialize CKEditor
+        let rejectionEditor;
+        
+        ClassicEditor
+            .create(document.querySelector('#rejectionEditor'), {
+                toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo']
+            })
+            .then(editor => {
+                rejectionEditor = editor;
+            })
+            .catch(error => {
+                console.error('Error initializing CKEditor:', error);
+            });
+        
+        // Get elements
+        const approvalSelect = document.getElementById('approval');
+        const rejectionModal = new bootstrap.Modal(document.getElementById('rejectionModal'));
+        const statusBadge = document.querySelector('.rejection-status-badge');
+        const currentStatus = document.getElementById('currentStatus');
+        
+        // Add event listener to the select element
+        approvalSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const selectedText = this.options[this.selectedIndex].text;
+            
+            // Update status badge and text
+            statusBadge.textContent = selectedText;
+            currentStatus.textContent = selectedText;
+            statusBadge.classList.remove('rejection-badge-pending', 'rejection-badge-rejected', 'rejection-badge-approved');
+            
+            if (selectedValue === '2') {
+                statusBadge.classList.add('rejection-badge-pending');
+            } else if (selectedValue === '3') {
+                statusBadge.classList.add('rejection-badge-rejected');
+                // Show modal when Rejected is selected
+                rejectionModal.show();
+            } else if (selectedValue === '4') {
+                statusBadge.classList.add('rejection-badge-approved');
+            }
+        });
+        
+        // Handle form submission
+        document.querySelector('.rejection-submit-btn').addEventListener('click', function() {
+            const editorData = rejectionEditor.getData();
+            
+            if (editorData.trim() === '') {
+                alert('Please provide rejection feedback before submitting.');
+                return;
+            }
+            
+            // In a real application, you would send this data to the server
+            console.log('Rejection feedback:', editorData);
+            
+            // Show success message
+            alert('Rejection feedback submitted successfully!');
+            
+            // Close the modal
+            rejectionModal.hide();
+            
+            // Reset the editor for next time
+            rejectionEditor.setData('');
+        });
+        
+        // Reset editor when modal is closed without submitting
+        document.getElementById('rejectionModal').addEventListener('hidden.bs.modal', function () {
+            rejectionEditor.setData('');
+        });
+    </script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.CKEDITOR) {
+        CKEDITOR.replace('rejectReason');
+    } else {
+        console.error('CKEditor failed to load.');
+    }
+});
+</script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+
+            // Modal trigger logic
+            var approvalSelect = document.getElementById('approval');
+            var rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            approvalSelect.addEventListener('change', function () {
+                if (approvalSelect.value === "3") {
+                    // Show the modal with a transition
+                    rejectModal.show();
+                }
+            });
+
+            // Optional: When modal closes, reset select to pending and clear CKEditor if needed
+            document.getElementById('rejectModal').addEventListener('hidden.bs.modal', function () {
+                if (approvalSelect.value === "3") {
+                    approvalSelect.value = "3";
+                }
+                CKEDITOR.instances.rejectReason.setData('');
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById("rejectForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            // move editor6 content into hidden textarea
+            document.getElementById("rejectReasonn").value = document.getElementById("editor6").innerHTML.trim();
+
+            // Show loading modal
+            const loadingModal = document.getElementById('loading-modal');
+            loadingModal.style.display = 'flex';
+
+            let form = e.target;
+            let formData = new FormData(form);
+
+            let response = await fetch("{% url 'reject_product' %}", {
+                method: "POST",
+                body: formData,
+            });
+
+            let result = await response.json();
+            let messageDiv = document.querySelector(".error-success-div");
+            let rejectionMessageDiv = document.querySelector(".rejection-error-div");
+
+            if (result.success) {
+                loadingModal.style.display = 'none';
+                messageDiv.classList.remove("error-message");
+                messageDiv.classList.add("success-message", "show");
+                messageDiv.innerText = result.message;
+
+                // hide modal immediately
+                let modalEl = document.getElementById("rejectModal");
+                let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            } else {
+                loadingModal.style.display = 'none';
+                messageDiv.classList.remove("success-message");
+                rejectionMessageDiv.classList.add("error-message", "show");
+                rejectionMessageDiv.innerText = result.message;
+            }
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                messageDiv.classList.remove("show");
+            }, 3000);
+        });
+
+        document.getElementById("approvalForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            let approvalSelect = document.getElementById("approval");
+            let status = approvalSelect.value;
+
+            console.log("Approval status:", status);
+
+            if (status === '3') {
+                // Show reject modal
+                console.log("Showing reject modal");
+                var rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                rejectModal.show();
+                return;
+            }
+
+            let form = e.target;
+            let formData = new FormData(form);
+
+            // Get product ID from hidden input
+            let productId = form.querySelector('input[name="product_id"]').value;
+            formData.append("product_id", productId);
+
+            // Show loading modal like rejectForm
+            const loadingModal = document.getElementById('loading-modal');
+            loadingModal.style.display = 'flex';
+
+            console.log('loading modal is being loaded')
+
+            let response = await fetch("{% url 'update_approval_status' %}", {
+                method: "POST",
+                body: formData,
+            });
+
+            let result = await response.json();
+            const messageDiv = document.querySelector(".error-success-div");
+
+            loadingModal.style.display = 'none';
+
+            if (result.success) {
+                messageDiv.classList.remove("error-message");
+                messageDiv.classList.add("success-message", "show");
+                messageDiv.innerText = result.message;
+            }
+
+            setTimeout(() => {
+                messageDiv.classList.remove("show");
+            }, 3000);
+        });
+    </script>
+
+    
+{% endblock %}

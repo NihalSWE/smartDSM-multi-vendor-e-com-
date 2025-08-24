@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-d@ub!sxl+p3xehse+7ge)(+_e0)nmrgig9h7!p5b7_o)rt8^@v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'smart.User'
 
@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'frontend.context_processors.cart_context',
+                'smart.context_processors.global_context',
             ],
         },
     },
@@ -123,7 +124,7 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Dhaka'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 

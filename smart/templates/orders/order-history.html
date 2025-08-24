@@ -254,18 +254,7 @@
           }
       }
       
-      function fetchOrderCount() {
-          $.ajax({
-              url: '{% url "get_order_count" %}',
-              type: 'GET',
-              success: function(data) {
-                  if (data.count !== currentCount) {
-                      currentCount = data.count;
-                      updateCountDisplay(currentCount);
-                  }
-              }
-          });
-      }
+
       
       $('.order-view-btn').click(function(e) {
           e.preventDefault();
@@ -285,11 +274,15 @@
           window.location.href = $(this).attr('href');
       });
       
-      setInterval(fetchOrderCount, 5000);
+
       updateCountDisplay(currentCount);
   });
   </script>
   <!-- END OF SCRIPT ADDITION -->
+
+
+
+
 
 
 

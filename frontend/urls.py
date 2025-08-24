@@ -49,14 +49,6 @@ urlpatterns = [
     path("add/", views.add_to_cart, name="add_to_cart"),
     path('cart/', views.cart, name='cart_user'),
     path('checkout',views.order_checkout,name='order_checkout'),
-    
-    
-    # path('check-phone/', views.check_phone_number, name='check_phone_number'),
-    # path('save-address/', views.save_address, name='save_address'),
-    # path('select-address/', views.select_address, name='select_address'),
-    # path('delete-address/', views.delete_address, name='delete_address'),
-    
-    
     path('orderComplete',views.orderComplete,name='orderComplete'),
     path('place_order',views.place_order,name='place_order'),
     path('order_success',views.order_success,name='order_success'),

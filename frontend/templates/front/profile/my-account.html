@@ -153,7 +153,11 @@
                 
                 {% if can_upload %}
                     <li class="nav-item">
-                    <a href="{% url 'create_customer_product' %}" class="nav-product">Add Products</a>
+                        {% if request.user.user_type == 1 %}
+                            <a href="{% url 'add_products' %}" class="nav-product">Add Products</a>
+                        {% elif request.user.user_type == 3 %}
+                            <a href="{% url 'create_customer_product' %}" class="nav-product">Add Products</a>
+                        {% endif %}
                     </li>
                     {% else %}
                     <li class="nav-item">
@@ -168,12 +172,12 @@
                     <a href="#account-products" class="nav-link">Products</a>
                 </li>
                 
-                <li class="nav-item">
+                {% comment %} <li class="nav-item">
                     <a href="wishlist.html">Wishlist</a>
                 </li>
                 <li class="nav-item">
                     <a href="wishlist.html">My Products</a>
-                </li>
+                </li> {% endcomment %}
 
                 <li class="nav-item">
                     <a href="{% url 'logout_user' %}">Logout</a>
@@ -576,6 +580,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
     $(document).ready(function() {
+        
         
 
         // Products Table

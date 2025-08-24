@@ -23,7 +23,7 @@ import json
 import os
 import re
 from .models import *
-from django.utils import timezone
+
 
 
 
@@ -34,6 +34,7 @@ def is_valid_email(email):
 
 @login_required(login_url="/admin-dashboard/login_home")
 def dashboard(request):
+    print('my user---------------------------------: ', request.user)
     context = {
         "breadcrumb":{
             "title":"E-Commerce",
@@ -89,7 +90,7 @@ def login_home(request):
                 if 'next' in request.GET:
                     nextPage = request.GET['next']
                     return HttpResponseRedirect(nextPage)
-                return redirect("index")
+                return redirect("dashboard")
             else:
                 messages.error(request,"Wrong credentials")
                 return redirect("login_home")
@@ -552,7 +553,7 @@ from .models import Product, Category
 
 @login_required(login_url="/admin-dashboard/login_home")
 def list_products(request):
-    products = Product.objects.all()
+    products = Product.objects.filter(seller=request.user)
     categories = Category.objects.all()
     
     context = {
@@ -565,97 +566,134 @@ def list_products(request):
         }
     }
     return render(request, 'products/product_list.html', context)
+    
+    
+@login_required(login_url="/admin-dashboard/login_home")
+def pending_products(request):
+    products = Product.objects.pending()
+    categories = Category.objects.all()
+    
+    product_request = True
+    
+    context = {
+        "products": products,
+        "categories": categories,
+        'product_request': product_request,
+        "breadcrumb": {
+            "title": "Product List",
+            "parent": "Ecommerce", 
+            "child": "Product List"
+        }
+    }
+    return render(request, 'products/product_list.html', context)
+
+
+
+def update_product_from_request(product, request):
+    """Helper function to update a product instance from request data."""
+    # Update basic fields
+    product.sku = request.POST.get('sku')
+    product.title = request.POST.get('title')
+    product.description = request.POST.get('description')
+
+    # Categories
+    category_id = request.POST.get('category')
+    if category_id:
+        product.category = Category.objects.get(id=category_id)
+
+    sub_category_id = request.POST.get('sub_category')
+    if sub_category_id:
+        product.sub_category = Category.objects.get(id=sub_category_id)
+
+    sub_sub_category_id = request.POST.get('sub_sub_category')
+    if sub_sub_category_id:
+        product.sub_sub_category = Category.objects.get(id=sub_sub_category_id)
+
+    # Pricing
+    product.initial_price = request.POST.get('initial_price', 0) or 0
+    product.selling_price = request.POST.get('selling_price', 0) or 0
+
+    # Shipping
+    product.weight = request.POST.get('weight', 0) or 0
+    product.length = request.POST.get('length', 0) or 0
+    product.width = request.POST.get('width', 0) or 0
+    product.height = request.POST.get('height', 0) or 0
+
+    # SEO
+    product.meta_title = request.POST.get('meta_title')
+    product.meta_keywords = request.POST.get('meta_keywords')
+    product.meta_description = request.POST.get('meta_description')
+
+    # Status (⚠️ You probably want publish_status, not status)
+    product.publish_status = request.POST.get('publish_status', Product.DRAFT)
+
+    # Thumbnail
+    if 'thumbnail' in request.FILES:
+        product.thumbnail_image = request.FILES['thumbnail']
+
+    # Gallery
+    if 'gallery[]' in request.FILES:
+        product.images.all().delete()
+        for image in request.FILES.getlist('gallery[]'):
+            ProductImage.objects.create(product=product, image=image)
+
+    # Save product
+    product.save()
+
+    # Tags
+    tag_list = json.loads(request.POST.get('tags', '[]'))
+    for tag_obj in tag_list:
+        tag_name = tag_obj.get('value')
+        if tag_name:
+            tag, _ = Tag.objects.get_or_create(name=tag_name)
+            product.tags.add(tag)
+
+    return product
 
 
 
 @login_required(login_url="/admin-dashboard/login_home")
-def edit_product(request, id):  # Changed from slug to id
-    product = get_object_or_404(Product, id=id)  # Changed to lookup by id
+def edit_product(request, id):
+    product = get_object_or_404(Product, id=id)
     categories = Category.objects.all()
 
     if request.method == 'POST':
         try:
-            # Update basic fields
-            product.sku = request.POST.get('sku')
-            product.title = request.POST.get('title')
-            product.description = request.POST.get('description')
-            
-            # Update category fields
-            category_id = request.POST.get('category')
-            if category_id:
-                product.category = Category.objects.get(id=category_id)
-            
-            sub_category_id = request.POST.get('sub_category')
-            if sub_category_id:
-                product.sub_category = Category.objects.get(id=sub_category_id)
-            
-            sub_sub_category_id = request.POST.get('sub_sub_category')
-            if sub_sub_category_id:
-                product.sub_sub_category = Category.objects.get(id=sub_sub_category_id)
-            
-            # Update pricing
-            product.initial_price = request.POST.get('initial_price', 0) or 0
-            product.selling_price = request.POST.get('selling_price', 0) or 0
-            
-            # Update shipping
-            product.weight = request.POST.get('weight', 0) or 0
-            product.length = request.POST.get('length', 0) or 0
-            product.width = request.POST.get('width', 0) or 0
-            product.height = request.POST.get('height', 0) or 0
-            
-            # Update SEO
-            product.meta_title = request.POST.get('meta_title')
-            product.meta_keywords = request.POST.get('meta_keywords')
-            product.meta_description = request.POST.get('meta_description')
-            
-            # Update status
-            product.status = request.POST.get('publish_status', 'draft')
-            
-            # Handle thumbnail image
-            if 'thumbnail' in request.FILES:
-                product.thumbnail_image = request.FILES['thumbnail']
-            
-            # Handle gallery images
-            if 'gallery[]' in request.FILES:
-                # First delete existing images if needed
-                product.images.all().delete()
-                for image in request.FILES.getlist('gallery[]'):
-                    ProductImage.objects.create(product=product, image=image)
-            
-            # Save the product
-            product.save()
-            
-            # Handle tags
-            tag_list = json.loads(request.POST.get('tags', '[]'))
-            for tag_obj in tag_list:
-                tag_name = tag_obj.get('value')
-                if tag_name:
-                    tag, _ = Tag.objects.get_or_create(name=tag_name)
-                    product.tags.add(tag)
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Product updated successfully!'
-            })
-            
+            update_product_from_request(product, request)
+            return JsonResponse({'success': True, 'message': 'Product updated successfully!'})
         except Exception as e:
             print(traceback.format_exc())
-            return JsonResponse({
-                'success': False,
-                'message': str(e),
-                'errors': {'server_error': [str(e)]}
-            })
-
+            return JsonResponse({'success': False, 'message': str(e), 'errors': {'server_error': [str(e)]}})
+        
     context = {
         "product": product,
         "categories": categories,
-        "breadcrumb": {
-            "title": "Edit Product",
-            "parent": "Ecommerce", 
-            "child": "Edit Product"
-        }
+        "breadcrumb": {"title": "Edit Product", "parent": "Ecommerce", "child": "Edit Product"}
     }
+
     return render(request, 'products/edit_products.html', context)
+
+
+@login_required(login_url="/admin-dashboard/login_home")
+def single_product_request(request, id):
+    product = get_object_or_404(Product, id=id)
+    categories = Category.objects.all()
+
+    if request.method == 'POST':
+        try:
+            update_product_from_request(product, request)
+            return JsonResponse({'success': True, 'message': 'Product updated successfully!'})
+        except Exception as e:
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': str(e), 'errors': {'server_error': [str(e)]}})
+        
+    context = {
+        "product": product,
+        "categories": categories,
+        "breadcrumb": {"title": "Edit Product", "parent": "Ecommerce", "child": "Edit Product"}
+    }
+
+    return render(request, 'products/single_product_request.html', context)
 
 
 def delete_product(request):
@@ -712,6 +750,12 @@ def create_product(request):
             return JsonResponse({'success': False, 'errors': errors})
 
         description = data.get('description', '')
+        model = data.get('model', '')
+        short_description = data.get('short_description', '')
+        
+        print('********model about to be save*********: ', model)
+        print('********short_description about to be save*********: ', short_description)
+        
         thumbnail = files.get('thumbnail') if 'thumbnail' in files else None
         gallery_files = files.getlist('gallery[]')
 
@@ -725,7 +769,7 @@ def create_product(request):
         shipping_class_name = data.get('shipping_class')
         shipping_class = ShippingClass.objects.filter(name=shipping_class_name).first() if shipping_class_name else None
 
-        publish_status = data.get('publish_status') or 0
+        publish_status = data.get('publish_status') or 1
         publish_date = parse_datetime(data.get('publish_date')) if data.get('publish_date') else None
         
         if 'thumbnail' in files:
@@ -751,6 +795,8 @@ def create_product(request):
         product = Product.objects.create(
             sku=sku,
             title=title,
+            model=model,
+            short_description=short_description,
             description=description,
             thumbnail_image=thumbnail,
             selling_price=selling_price,
@@ -1087,7 +1133,10 @@ def add_products(request):
                         'success': False,
                         'error': f"Missing required field: {field}"
                     }, status=400)
-
+                    
+            
+            print('*******************************short description: ', request.POST.get('short_description', ''))
+            print('*******************************product model: ', request.POST.get('short_description', ''))
             # Handle main product data
             product = Product(
                 seller=request.user,
@@ -1206,66 +1255,6 @@ def product_review(request):
     }
     return render (request,'products/product_review.html',context) 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
 #---------------Ecommerce-------------------#
 
@@ -1295,22 +1284,6 @@ def get_user_data(request, user_id):
         })
     except User.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
-    
-    
-
-def vendors(request):
-    # Fetch all users who are vendors
-    vendors = User.objects.filter(user_type=1).select_related(
-        'contact_info', 'vendorverification'
-    )
-
-    return render(request, 'vendors/vendors.html', {
-        'vendors': vendors
-    })
-    
-
-def vendor(request, id):
-    return render(request, 'vendors/vendor.html')
 
 
 
@@ -1328,6 +1301,22 @@ def vendor_list(request):
         },
     }
     return render(request, "vendors/vendor_list.html", context)
+
+
+def vendors(request):
+    # Fetch all users who are vendors
+    user_type_list = [1, 3]
+    # vendors = User.objects.filter(user_type=1).select_related(
+    #     'contact_info', 'vendorverification'
+    # )
+    
+    vendors = User.objects.filter(user_type__in=user_type_list).select_related(
+        'contact_info', 'vendorverification'
+    )
+
+    return render(request, 'vendors/vendors.html', {
+        'vendors': vendors
+    })
 
 
 
@@ -1435,7 +1424,7 @@ def vendor(request, id):
             'company_overview',
             'financial_info',
             'vendorverification',
-        ), id=id, user_type=1
+        ), id=id
     )
     
     print('vendor: ', vendor)
@@ -1485,9 +1474,22 @@ def update_vendor(request, id):
     financial_info.save()
 
     # === VERIFICATION ===
-    verification.status = request.POST.get("verification_status")
+    verification.status = int(request.POST.get("verification_status"))
     verification.rejection_reason = request.POST.get("rejection_reason")
     verification.save()
+    
+    print('verification.status: ', verification.status)
+    
+    # === UPDATE USER TYPE BASED ON VERIFICATION ===
+    if verification.status == 1:  # Approved
+        user.user_type = 1  # Vendor
+    else:
+        print('else part printed')
+        user.user_type = 3  # Client
+        
+    user.save(update_fields=["user_type"])
+    
+    print('user_type: ', user.user_type)
 
     return JsonResponse({
         "success": True,
@@ -1771,6 +1773,7 @@ def category(request):
 
 
 
+
 @login_required(login_url="/admin-dashboard/login_home")
 def order_history(request):
     orders = Order.objects.all().order_by('-created_at')
@@ -1809,7 +1812,7 @@ def order_details(request, order_id):
     for vendor_order in order.vendor_orders.all():
         for item in vendor_order.items.all():
             item.total_price = item.final_price * item.quantity
-            item.vendor = vendor_order.vendor  # 🔥 attach vendor here
+            item.vendor = vendor_order.vendor
             order_items.append(item)
 
     context = {
@@ -1837,191 +1840,194 @@ def mark_order_viewed(request):
         OrderNotification.objects.filter(order_id=order_id, is_viewed=False).update(is_viewed=True)
     return JsonResponse({"status": "ok"})
 
-@login_required(login_url="/admin-dashboard/login_home")
-def edit_order(request, order_id):
-    """Display order edit form"""
-    order = get_object_or_404(Order, id=order_id)
-    
-    # Get all order items through vendor_orders (your actual structure)
-    order_items = []
-    for vendor_order in order.vendor_orders.all():
-        for item in vendor_order.items.all():
-            item.total_price = item.final_price * item.quantity
-            item.vendor = vendor_order.vendor
-            item.vendor_order_id = vendor_order.id
-            order_items.append(item)
-    
-    # Get all products for adding new items (using publish_status instead of is_active)
-    available_products = Product.objects.filter(publish_status=1).select_related('seller')  # 4 = Approved
-    
-    context = {
-        "breadcrumb": {"title": "Edit Order", "parent": "Ecommerce", "child": "Edit Order"},
-        "order": order,
-        "order_items": order_items,
-        "available_products": available_products,
-    }
-    return render(request, "orders/edit-order.html", context)
 
-@login_required(login_url="/admin-dashboard/login_home")
 @require_POST
-def update_order(request, order_id):
-    """Update existing order with modified items"""
-    order = get_object_or_404(Order, id=order_id)
+@login_required
+def reject_product(request):
+    product_id = request.POST.get("product_id")
+    reason = request.POST.get("rejectReason")
+    plain_reason = strip_tags(reason).strip()
     
-    try:
-        with transaction.atomic():
-            # Get the updated items data from form
-            items_data = json.loads(request.POST.get('items_data', '[]'))
-            
-            print(f"Received items_data: {items_data}")  # Debug line
-            
-            if not items_data:
-                messages.error(request, 'No items data received. Please try again.')
-                return redirect('edit_order', order_id=order.id)
-            
-            # Store original total for comparison
-            original_total = order.grand_total
-            
-            # CLEAR existing items but keep the SAME order
-            # Delete all existing vendor orders and their items
-            for vendor_order in order.vendor_orders.all():
-                vendor_order.items.all().delete()
-            order.vendor_orders.all().delete()
-            
-            # Group items by vendor to recreate vendor orders
-            vendor_items = {}
-            
-            for item_data in items_data:
-                product_id = item_data['product_id']
-                quantity = int(item_data['quantity'])
-                
-                if quantity <= 0:
-                    continue  # Skip items with 0 or negative quantity
-                
-                try:
-                    product = Product.objects.get(id=product_id)
-                except Product.DoesNotExist:
-                    continue  # Skip if product doesn't exist
-                
-                vendor = product.seller
-                
-                if vendor.id not in vendor_items:
-                    vendor_items[vendor.id] = {
-                        'vendor': vendor,
-                        'items': []
-                    }
-                
-                # Use selling_price based on your template
-                price = product.selling_price
-                
-                vendor_items[vendor.id]['items'].append({
-                    'product': product,
-                    'quantity': quantity,
-                    'price': price
-                })
-            
-            # Recreate vendor orders and items for the SAME main order
-            total_subtotal = 0
-            
-            for vendor_id, vendor_data in vendor_items.items():
-                # Calculate vendor totals
-                vendor_subtotal = 0
-                
-                # Create OrderVendor (not Order) linked to the SAME main order
-                vendor_order = OrderVendor.objects.create(
-                    order=order,  # Link to the SAME existing order
-                    vendor=vendor_data['vendor'],
-                    vendor_status=order.status
-                )
-                
-                # Create order items for this vendor order
-                for item_info in vendor_data['items']:
-                    order_item = OrderItem.objects.create(
-                        vendor_order=vendor_order,  # Link to vendor order
-                        product=item_info['product'],
-                        quantity=item_info['quantity'],
-                        base_price=item_info['price'],
-                        final_price=item_info['price']
-                    )
-                    
-                    # Calculate subtotals
-                    item_total = item_info['price'] * item_info['quantity']
-                    vendor_subtotal += item_total
-                    total_subtotal += item_total
-                
-                # Update vendor order totals
-                vendor_order.vendor_subtotal = vendor_subtotal
-                vendor_order.vendor_total = vendor_subtotal  # Assuming no vendor-specific discounts
-                vendor_order.save()
-            
-            # UPDATE the SAME order record - don't create new one
-            order.subtotal = total_subtotal
-            order.grand_total = total_subtotal - (order.discount_total or 0) + (order.shipping_total or 0)
-            order.updated_at = timezone.now()  # Update timestamp
-            
-            # Add admin note about the edit
-            admin_note = f"Order edited by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
-            if hasattr(order, 'admin_notes'):
-                if order.admin_notes:
-                    order.admin_notes = f"{order.admin_notes}\n{admin_note}"
-                else:
-                    order.admin_notes = admin_note
-            
-            # SAVE the updated order (same record, just modified)
-            order.save()
-            
-            print(f"Order updated successfully. New total: {order.grand_total}")  # Debug line
-            
-            messages.success(request, f'Order #{order.order_number} has been updated successfully! New total: ${order.grand_total:.2f}')
-            return redirect('order_details', order_id=order.id)
-            
-    except Exception as e:
-        print(f"Error updating order: {str(e)}")  # Debug line
-        messages.error(request, f'Error updating order: {str(e)}')
-        return redirect('edit_order', order_id=order.id)
+    print('rejection reason: ', plain_reason)
 
-@login_required(login_url="/admin-dashboard/login_home")
-@require_POST
-def remove_order_item(request, order_id, item_id):
-    """AJAX endpoint to remove a specific order item"""
+    if not product_id or not plain_reason:
+        return JsonResponse({"success": False, "message": "Product ID and rejection reason are required."})
+
     try:
-        order = get_object_or_404(Order, id=order_id)
-        
-        # Find and remove the item from vendor orders
-        item_removed = False
-        for vendor_order in order.vendor_orders.all():
-            if vendor_order.items.filter(id=item_id).exists():
-                vendor_order.items.get(id=item_id).delete()
-                item_removed = True
-                
-                # If vendor order has no more items, remove it
-                if not vendor_order.items.exists():
-                    vendor_order.delete()
-                else:
-                    # Recalculate vendor order totals
-                    vendor_subtotal = sum(
-                        item.final_price * item.quantity 
-                        for item in vendor_order.items.all()
-                    )
-                    vendor_order.vendor_subtotal = vendor_subtotal
-                    vendor_order.vendor_total = vendor_subtotal
-                    vendor_order.save()
-                break
-        
-        if not item_removed:
-            return JsonResponse({'success': False, 'error': 'Item not found'})
-        
-        # Recalculate main order totals
-        order.recalculate_totals()
-        
+        product = Product.objects.get(pk=product_id)
+        product.publish_status = 3  # Rejected
+        product.rejection_reason = reason
+        product.save(update_fields=["publish_status", "rejection_reason"])
+        return JsonResponse({"success": True, "message": "Product has been rejected successfully."})
+    except Product.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Product not found."})
+    
+
+@require_POST
+def change_publish_status(request):
+    product_id = request.POST.get("product_id")
+    status = request.POST.get("status")
+
+    try:
+        product = Product.objects.get(id=product_id)
+        product.status = status
+        product.save()
+        return JsonResponse({"success": True})
+    except Product.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Product not found"})
+    
+    
+def update_approval_status(request):
+    if request.method == "POST":
+        product_id = request.POST.get("product_id")
+        product = get_object_or_404(Product, pk=product_id)
+        status = int(request.POST.get("approval"))
+
+        if status == 3:
+            # Reject selected → frontend handles modal
+            return JsonResponse({"show_modal": True})
+
+        # Pending or Approve → update directly
+        product.publish_status = status
+        product.rejection_reason = ""  # clear previous rejection reason
+        product.save()
+
         return JsonResponse({
-            'success': True,
-            'new_total': float(order.grand_total),
-            'new_subtotal': float(order.subtotal)
+            "success": True,
+            "message": f"Product status updated to {product.get_publish_status_display()}"
         })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+
+
+
+
+
+
+def vendorOrder(request):
+    return render (request,'vendor_Order/orderList.html')
+
+
+from django.http import JsonResponse, HttpResponseBadRequest
+def notify_vendor_item(request):
+    """Admin click → notify vendor about a single item."""
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+
+    data = json.loads(request.body.decode("utf-8"))
+    item_id = data.get("item_id")
+    order_id = data.get("order_id")
+
+    item = get_object_or_404(OrderItem, id=item_id, vendor_order__order_id=order_id)
+    vendor_order = item.vendor_order
+    order = vendor_order.order
+    vendor = vendor_order.vendor
+
+    notice, created = VendorOrderNotice.objects.get_or_create(
+        order=order,
+        vendor_order=vendor_order,
+        item=item,
+        vendor=vendor,
+        defaults={"notified_by": request.user}
+    )
+    return JsonResponse({"ok": True, "created": created})
+
+
+@login_required
+def vendor_orders_api(request):
+    """Vendors fetch their notified items only."""
+    qs = VendorOrderNotice.objects.filter(vendor=request.user).select_related(
+        "order", "item__product"
+    ).order_by("-created_at")
+
+    data = []
+    for n in qs:
+        data.append({
+            "order_number": n.order.order_number,
+            "order_date": n.order.created_at.strftime("%d %b %Y %I:%M %p"),
+            "product_title": n.item.product.title,
+            "image": n.item.product.thumbnail_image.url if n.item.product.thumbnail_image else "",
+            "quantity": n.item.quantity,
+            "price": str(n.item.final_price),
+            "subtotal": str(n.item.get_total_price()),
+            "detail_url": f"/orders/{n.order.id}/"
+        })
+    return JsonResponse({"data": data})
+
+
+
+
+@receiver(post_save, sender=OrderVendor)
+def create_vendor_order_notification(sender, instance, created, **kwargs):
+    if created:
+        VendorOrderNotification.objects.create(vendor_order=instance)
+@login_required(login_url="/admin-dashboard/login_home")
+def get_vendor_order_count(request):
+    unviewed_count = VendorOrderNotification.objects.filter(
+        vendor_order__vendor=request.user,
+        is_viewed=False
+    ).count()
+    return JsonResponse({'count': unviewed_count})
+
+
+@require_POST
+@login_required(login_url="/admin-dashboard/login_home")
+def mark_vendor_order_viewed(request):
+    vendor_order_id = request.POST.get("vendor_order_id")
+    if vendor_order_id:
+        VendorOrderNotification.objects.filter(
+            vendor_order_id=vendor_order_id,
+            is_viewed=False
+        ).update(
+            is_viewed=True,
+            viewed_by=request.user,
+            viewed_at=timezone.now()
+        )
+    return JsonResponse({"status": "ok"})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3524,3 +3530,229 @@ def delete_offer_banner(request, banner_id):
         return JsonResponse({'success': True})
 
     return JsonResponse({'success': False, 'error': 'Only POST allowed.'})
+    
+    
+    
+    
+    
+    
+    
+    
+    
+@login_required(login_url="/admin-dashboard/login_home")
+def edit_order(request, order_id):
+    """Display order edit form"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Get all order items through vendor_orders (your actual structure)
+    order_items = []
+    for vendor_order in order.vendor_orders.all():
+        for item in vendor_order.items.all():
+            item.total_price = item.final_price * item.quantity
+            item.vendor = vendor_order.vendor
+            item.vendor_order_id = vendor_order.id
+            order_items.append(item)
+    
+    # Get all products for adding new items (using publish_status instead of is_active)
+    available_products = Product.objects.filter(publish_status=1).select_related('seller')  # 4 = Approved
+    
+    context = {
+        "breadcrumb": {"title": "Edit Order", "parent": "Ecommerce", "child": "Edit Order"},
+        "order": order,
+        "order_items": order_items,
+        "available_products": available_products,
+    }
+    return render(request, "orders/edit-order.html", context)
+
+@login_required(login_url="/admin-dashboard/login_home")
+@require_POST
+def update_order(request, order_id):
+    """Update existing order with modified items"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    try:
+        with transaction.atomic():
+            # Get the updated items data from form
+            items_data = json.loads(request.POST.get('items_data', '[]'))
+            
+            print(f"Received items_data: {items_data}")  # Debug line
+            
+            if not items_data:
+                messages.error(request, 'No items data received. Please try again.')
+                return redirect('edit_order', order_id=order.id)
+            
+            # Store original total for comparison
+            original_total = order.grand_total
+            
+            # CLEAR existing items but keep the SAME order
+            # Delete all existing vendor orders and their items
+            for vendor_order in order.vendor_orders.all():
+                vendor_order.items.all().delete()
+            order.vendor_orders.all().delete()
+            
+            # Group items by vendor to recreate vendor orders
+            vendor_items = {}
+            
+            for item_data in items_data:
+                product_id = item_data['product_id']
+                quantity = int(item_data['quantity'])
+                
+                if quantity <= 0:
+                    continue  # Skip items with 0 or negative quantity
+                
+                try:
+                    product = Product.objects.get(id=product_id)
+                except Product.DoesNotExist:
+                    continue  # Skip if product doesn't exist
+                
+                vendor = product.seller
+                
+                if vendor.id not in vendor_items:
+                    vendor_items[vendor.id] = {
+                        'vendor': vendor,
+                        'items': []
+                    }
+                
+                # Use selling_price based on your template
+                price = product.selling_price
+                
+                vendor_items[vendor.id]['items'].append({
+                    'product': product,
+                    'quantity': quantity,
+                    'price': price
+                })
+            
+            # Recreate vendor orders and items for the SAME main order
+            total_subtotal = 0
+            
+            for vendor_id, vendor_data in vendor_items.items():
+                # Calculate vendor totals
+                vendor_subtotal = 0
+                
+                # Create OrderVendor (not Order) linked to the SAME main order
+                vendor_order = OrderVendor.objects.create(
+                    order=order,  # Link to the SAME existing order
+                    vendor=vendor_data['vendor'],
+                    vendor_status=order.status
+                )
+                
+                # Create order items for this vendor order
+                for item_info in vendor_data['items']:
+                    order_item = OrderItem.objects.create(
+                        vendor_order=vendor_order,  # Link to vendor order
+                        product=item_info['product'],
+                        quantity=item_info['quantity'],
+                        base_price=item_info['price'],
+                        final_price=item_info['price']
+                    )
+                    
+                    # Calculate subtotals
+                    item_total = item_info['price'] * item_info['quantity']
+                    vendor_subtotal += item_total
+                    total_subtotal += item_total
+                
+                # Update vendor order totals
+                vendor_order.vendor_subtotal = vendor_subtotal
+                vendor_order.vendor_total = vendor_subtotal  # Assuming no vendor-specific discounts
+                vendor_order.save()
+            
+            # UPDATE the SAME order record - don't create new one
+            order.subtotal = total_subtotal
+            order.grand_total = total_subtotal - (order.discount_total or 0) + (order.shipping_total or 0)
+            order.updated_at = timezone.now()  # Update timestamp
+            
+            # Add admin note about the edit
+            admin_note = f"Order edited by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+            if hasattr(order, 'admin_notes'):
+                if order.admin_notes:
+                    order.admin_notes = f"{order.admin_notes}\n{admin_note}"
+                else:
+                    order.admin_notes = admin_note
+            
+            # SAVE the updated order (same record, just modified)
+            order.save()
+            
+            print(f"Order updated successfully. New total: {order.grand_total}")  # Debug line
+            
+            messages.success(request, f'Order #{order.order_number} has been updated successfully! New total: ${order.grand_total:.2f}')
+            return redirect('order_details', order_id=order.id)
+            
+    except Exception as e:
+        print(f"Error updating order: {str(e)}")  # Debug line
+        messages.error(request, f'Error updating order: {str(e)}')
+        return redirect('edit_order', order_id=order.id)
+
+@login_required(login_url="/admin-dashboard/login_home")
+@require_POST
+def remove_order_item(request, order_id, item_id):
+    """AJAX endpoint to remove a specific order item"""
+    try:
+        order = get_object_or_404(Order, id=order_id)
+        
+        # Find and remove the item from vendor orders
+        item_removed = False
+        for vendor_order in order.vendor_orders.all():
+            if vendor_order.items.filter(id=item_id).exists():
+                vendor_order.items.get(id=item_id).delete()
+                item_removed = True
+                
+                # If vendor order has no more items, remove it
+                if not vendor_order.items.exists():
+                    vendor_order.delete()
+                else:
+                    # Recalculate vendor order totals
+                    vendor_subtotal = sum(
+                        item.final_price * item.quantity 
+                        for item in vendor_order.items.all()
+                    )
+                    vendor_order.vendor_subtotal = vendor_subtotal
+                    vendor_order.vendor_total = vendor_subtotal
+                    vendor_order.save()
+                break
+        
+        if not item_removed:
+            return JsonResponse({'success': False, 'error': 'Item not found'})
+        
+        # Recalculate main order totals
+        order.recalculate_totals()
+        
+        return JsonResponse({
+            'success': True,
+            'new_total': float(order.grand_total),
+            'new_subtotal': float(order.subtotal)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

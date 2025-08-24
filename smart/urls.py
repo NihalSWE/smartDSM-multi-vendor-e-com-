@@ -50,6 +50,12 @@ urlpatterns = [
     path('edit-product/<int:id>/', views.edit_product, name='edit_product'),
     path('product-review',views.product_review,name='product_review'),
     
+    path('pending-products',views.pending_products,name='pending_products'),
+    path('single-product-request/<int:id>/', views.single_product_request, name='single_product_request'),
+    path('reject-product/', views.reject_product, name='reject_product'),
+    path('update-approval-status/', views.update_approval_status, name='update_approval_status'),
+    # products
+    
     #About Us
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
     #About Us
@@ -123,13 +129,38 @@ urlpatterns = [
     path('delete-offer-banner/<int:banner_id>/', views.delete_offer_banner, name='delete_offer_banner'),
     #ofer banner
     
+    #vendors order
+    path('vendorOrder',views.vendorOrder,name='vendorOrder'),
+    path("orders/notify-item/", views.notify_vendor_item, name="notify_vendor_item"),
+    path("api/vendor/orders/", views.vendor_orders_api, name="vendor_orders_api"),
     
+    
+    
+     # 🔔 Order notifications (admin side)
+    path("orders/get-order-count/", views.get_order_count, name="get_order_count"),
+    path("orders/mark-viewed/", views.mark_order_viewed, name="mark_order_viewed"),
+
+    # 🔔 Vendor order notifications
+    path("vendor-orders/get-order-count/", views.get_vendor_order_count, name="get_vendor_order_count"),
+    path("vendor-orders/mark-viewed/", views.mark_vendor_order_viewed, name="mark_vendor_order_viewed"),
+    
+    
+    #vendors order
     
     
     
     path('products/create/', views.create_product, name='create_product'),
     
+    path('order_history', views.order_history, name="order_history"),
+    path('orders/<int:order_id>/details/', views.order_details, name='order_details'),
+    # path('api/order-count/', views.get_order_count, name='get_order_count'),
+    path("orders/mark-viewed/", views.mark_order_viewed, name="mark_order_viewed"),
     
+    
+    # ðŸ”¥ NEW URLs for order editing
+    path('orders/<int:order_id>/edit/', views.edit_order, name='edit_order'),
+    path('orders/<int:order_id>/update/', views.update_order, name='update_order'),
+    path('orders/<int:order_id>/remove-item/<int:item_id>/', views.remove_order_item, name='remove_order_item'),
     
     
     # built-in views
@@ -180,18 +211,6 @@ urlpatterns = [
     path('seller_list', views.seller_list, name="seller_list"),
     path('seller_details', views.seller_details, name="seller_details"),
     
-    path('order_history', views.order_history, name="order_history"),
-    path('orders/<int:order_id>/details/', views.order_details, name='order_details'),
-    
-    # 🔥 NEW URLs for order editing
-    path('orders/<int:order_id>/edit/', views.edit_order, name='edit_order'),
-    path('orders/<int:order_id>/update/', views.update_order, name='update_order'),
-    path('orders/<int:order_id>/remove-item/<int:item_id>/', views.remove_order_item, name='remove_order_item'),
-
-    
-    
-    path('api/order-count/', views.get_order_count, name='get_order_count'),
-    path("orders/mark-viewed/", views.mark_order_viewed, name="mark_order_viewed"),
 
 
     

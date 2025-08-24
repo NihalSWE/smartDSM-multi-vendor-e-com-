@@ -132,14 +132,14 @@ class User(AbstractBaseUser, PermissionsMixin):
             # You can customize the prefix and length as needed
             self.user_id = 'USR-' + str(uuid.uuid4())[:8].upper() # Example: USR-ABCDEF12
 
-        if not self.is_superuser:
-            if self.package:
-                if self.package.package_type == 0:
-                    self.user_type = 3  # Client
-                else:
-                    self.user_type = 1  # Vendor
-            else:
-                self.user_type = 2 # Default to Staff if no package is assigned
+        # if not self.is_superuser:
+        #     if self.package:
+        #         if self.package.package_type == 0:
+        #             self.user_type = 3  # Client
+        #         else:
+        #             self.user_type = 1  # Vendor
+        #     else:
+        #         self.user_type = 2 # Default to Staff if no package is assigned
                 
         super().save(*args, **kwargs)
 
@@ -217,18 +217,20 @@ class VendorFinancialInfo(models.Model):
 
 class VendorVerification(models.Model):
     STATUS_CHOICES = [
-        ('0', 'Pending'),
-        ('1', 'Approved'),
-        ('2', 'Rejected'),
+        (0, 'Pending'),
+        (1, 'Approved'),
+        (2, 'Rejected'),
     ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(blank=True, null=True)
     rejection_reason = models.TextField(blank=True, null=True)
-    status = models.CharField(
-        max_length=1, # Max length of the choice key (e.g., '0', '1', '2')
+
+    # Change to IntegerField ✅
+    status = models.IntegerField(
         choices=STATUS_CHOICES,
-        default='0', # Set a default status, e.g., 'Pending'
+        default=0,  # Default to Pending
         help_text="Current verification status of the vendor."
     )
 
@@ -241,22 +243,20 @@ class VendorVerification(models.Model):
         is_verified and verified_at based on the status field.
         """
         # Get the original object from the database if it's an existing instance
-        # This is important to check if the status has actually changed
         original_obj = None
         if obj.pk:
             original_obj = VendorVerification.objects.get(pk=obj.pk)
 
-        # Check if the status field has changed to 'Approved'
-        if obj.status == '1': # '1' is the database value for 'Approved'
+        # ✅ Now obj.status is an integer, compare with int
+        if obj.status == 1:  # Approved
             obj.is_verified = True
-            
-            if original_obj is None or original_obj.status != '1':
+            if original_obj is None or original_obj.status != 1:
                 obj.verified_at = timezone.now()
         else:
             obj.is_verified = False
             obj.verified_at = None
 
-        super().save_model(request, obj, form, change) # Call the parent save_model to save the object
+        super().save_model(request, obj, form, change)  # Save the object
 
 
 
@@ -375,13 +375,16 @@ class ShippingClass(models.Model):
 
 class ProductQuerySet(models.QuerySet):
     def approved(self):
-        return self.filter(status="approved")
+        return self.filter(publish_status=4)  # Approved
 
     def pending(self):
-        return self.filter(status="pending")
+        return self.filter(publish_status=2)  # Pending
 
     def rejected(self):
-        return self.filter(status="rejected")
+        return self.filter(publish_status=3)  # Rejected
+
+    def published(self):
+        return self.filter(publish_status=1)  # Published
     
     
     
@@ -514,6 +517,7 @@ class ProductImage(models.Model):
         on_delete=models.CASCADE
     )
     image = models.ImageField(upload_to='products/images/')
+    image_small = models.ImageField(upload_to='products/images/small/', blank=True, null=True)
     position = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -528,24 +532,30 @@ class ProductImage(models.Model):
         img_path = self.image.path
         img = Image.open(img_path)
 
-        # Always crop to square (center crop)
-        min_side = min(img.width, img.height)
-        left = (img.width - min_side) / 2
-        top = (img.height - min_side) / 2
-        right = (img.width + min_side) / 2
-        bottom = (img.height + min_side) / 2
-        img = img.crop((left, top, right, bottom))
+        max_size = (800, 800)
 
-        # Only shrink if larger than 800
-        if img.width > 800:
-            img = img.resize((800, 800), Image.LANCZOS)
+        # If bigger than 800x800 → crop & resize
+        if img.width > 800 or img.height > 800:
+            # First, crop to square (center crop)
+            min_side = min(img.width, img.height)
+            left = (img.width - min_side) / 2
+            top = (img.height - min_side) / 2
+            right = (img.width + min_side) / 2
+            bottom = (img.height + min_side) / 2
+            img = img.crop((left, top, right, bottom))
 
-        # Convert to RGB if needed
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-
-        # Save optimized (smaller file size)
-        img.save(img_path, format="JPEG", optimize=True, quality=70)
+            # Then resize to 800x800
+            img = img.resize(max_size, Image.LANCZOS)
+            img.save(img_path)
+            
+            # === Create small version (250x250) ===
+            small_img = img.copy()
+            small_img = small_img.resize((250, 250), Image.LANCZOS)
+            buffer = BytesIO()
+            small_img.save(buffer, format='JPEG', quality=70)
+            self.image_small.save(f"{self.pk}_small.jpg", ContentFile(buffer.getvalue()), save=False)
+            
+            super().save(update_fields=['image_small'])
     
     
 # example best seller, new arrival
@@ -786,7 +796,7 @@ class ProductReview(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.name} - {self.product.title} ({self.rating})"
+        return f"{self.name} - {self.product.name} ({self.rating})"
             
             
 
@@ -1012,8 +1022,6 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.street_address}, {self.thana}, {self.district}"
-    
-    
 
 # ----------------------------------
 # Order Models
@@ -1079,7 +1087,9 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.order_number} by {self.customer.email}"
-    
+        
+        
+        
     def recalculate_totals(self):
         """Recalculate order totals based on current items through vendor_orders"""
         subtotal = 0
@@ -1130,7 +1140,6 @@ class Order(models.Model):
                 total=models.Sum('quantity')
             )['total'] or 0
         return total
-
 
 
 class OrderVendor(models.Model):
@@ -1196,9 +1205,6 @@ class OrderPayment(models.Model):
 
 
 
-
-
-
 #order notification
 class OrderNotification(models.Model):
     order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='notification')
@@ -1223,3 +1229,126 @@ from django.dispatch import receiver
 def create_order_notification(sender, instance, created, **kwargs):
     if created:
         OrderNotification.objects.create(order=instance)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+#order notification
+class OrderNotification(models.Model):
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='notification')
+    is_viewed = models.BooleanField(default=False)
+    viewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for Order #{self.order.order_number}"
+
+
+# STEP 2: Add this signal at the bottom of your models.py or create signals.py
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Order)
+def create_order_notification(sender, instance, created, **kwargs):
+    if created:
+        OrderNotification.objects.create(order=instance)
+        
+        
+        
+        
+#vendor order list 
+from django.conf import settings
+class VendorOrderNotice(models.Model):
+    """
+    Tracks which OrderItem has been explicitly notified to its vendor.
+    Vendors only see items from this table.
+    """
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="notices")
+    vendor_order = models.ForeignKey(OrderVendor, on_delete=models.CASCADE, related_name="notices")
+    item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="notices")
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="vendor_notices"
+    )
+
+    notified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="sent_vendor_notices"
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ("item", "vendor")  # avoid duplicate notifications
+
+    def __str__(self):
+        return f"Notice: {self.item} → {self.vendor}"
+    
+    
+    
+class VendorOrderNotification(models.Model):
+    vendor_order = models.OneToOneField(
+        'OrderVendor',
+        on_delete=models.CASCADE,
+        related_name='notification'
+    )
+    is_viewed = models.BooleanField(default=False)
+    viewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for VendorOrder #{self.vendor_order.id} ({self.vendor_order.vendor.username})"
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

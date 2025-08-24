@@ -91,26 +91,35 @@
                 <table class="table">
                   <thead>
                     <tr>
-                      <th scope="col">Image</th>
-                      <th scope="col">Product</th>
-                      <th scope="col">Vendor</th>
-                      <th scope="col">Price</th>
-                      <th scope="col">Qty</th>
-                      <th scope="col">Subtotal</th>
+                      <th>Image</th>
+                      <th>Product</th>
+                      <th>Seller</th>
+                      <th>Unit Price</th>
+                      <th>Qty</th>
+                      <th>Total</th>
+                      <th>Notify</th>   {# 👈 new column header #}
                     </tr>
                   </thead>
                   <tbody>
                     {% for item in order_items %}
-                    <tr>
+                    <tr data-item-id="{{ item.id }}">
                       <td><img class="img-fluid" src="{{ item.product.thumbnail_image.url }}" alt="{{ item.product.name }}"></td>
                       <td>{{ item.product.title }}</td>
                       <td>{{ item.product.seller }}</td>
                       <td>${{ item.base_price|floatformat:2 }}</td>
                       <td>{{ item.quantity }}</td>
                       <td>${{ item.total_price|floatformat:2 }}</td>
+                      <td>
+                        <button 
+                          class="btn btn-outline-info btn-sm notify-btn"
+                          data-item-id="{{ item.id }}">
+                          Notify
+                        </button>
+                      </td>
                     </tr>
                     {% endfor %}
                   </tbody>
+                  
                 </table>
               </div>
             </div>
@@ -257,5 +266,37 @@ document.querySelectorAll('a[href*="edit_order"]').forEach(link => {
     });
 });
 </script>
+<script>
 
+    document.addEventListener('DOMContentLoaded', function () {
+      const orderId = {{ order.id }};  // already available in template
+    
+      document.querySelectorAll('.notify-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          fetch("{% url 'notify_vendor_item' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ order_id: orderId, item_id: btn.dataset.itemId })
+          })
+          .then(r => r.json())
+          .then(res => {
+            if (res.ok) {
+              btn.textContent = "Notified";
+              btn.disabled = true;
+              btn.classList.remove("btn-outline-info");
+              btn.classList.add("btn-success");
+            } else {
+              alert(res.error || "Failed to notify vendor.");
+            }
+          });
+        });
+      });
+    });
+
+    
+  </script>
+  
 {% endblock %}

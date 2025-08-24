@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select.bootstrap5.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}">
+
+<style>
+  .notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  .sidebar-list {
+    position: relative;
+  }
+  
+  .notification-badge.hide {
+    display: none;
+  }
+</style>
+
+{% endblock css %}
+
+{% block content %}
+
+<!-- Container-fluid starts-->
+<div class="container-fluid common-order-history">
+    <div class="row">
+
+      <div class="col-sm-12">
+        <div class="card heading-space">
+          <div class="card-header card-no-border">
+            <div class="header-top">
+              <!-- ONLY UPDATE THIS H5 TAG: -->
+              <h5>New Orders 
+                {% if unviewed_count > 0 %}
+                  <span class="badge bg-danger ms-2" id="order-count-badge">{{ unviewed_count }}</span>
+                {% endif %}
+              </h5>
+              <!-- END OF H5 UPDATE -->
+            </div>
+          </div>
+          <div class="card-body pt-0 px-0">
+            <div class="row"> 
+              <div class="col-12">
+                <div class="order-history-wrapper">
+                  <div class="recent-table table-responsive custom-scrollbar">
+                    <table class="table" id="order-history-table">
+                      <thead> 
+                        <tr> 
+                          <th></th>
+                          <th> <span class="f-light f-w-600">Order Number</span></th>
+                          <th> <span class="f-light f-w-600">Order Date</span></th>
+                          <th> <span class="f-light f-w-600">Product Name</span></th>
+                          <th> <span class="f-light f-w-600">Quantity</span></th>
+                          <th> <span class="f-light f-w-600">Price</span></th>
+                          
+                          <th> <span class="f-light f-w-600">Action</span></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                    </tbody>
+                    
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+{% block scriptcontent %} 
+
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.select.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/select.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+<script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/flat-pickr/custom-flatpickr.js' %}"></script>
+<script src="{% static 'assets/js/trash.js' %}"></script>
+<script src="{% static 'assets/js/tooltip-init.js' %}"></script>
+    
+
+
+
+
+
+<!-- ADD ONLY THIS SCRIPT BLOCK (don't change existing scripts) -->
+<script>
+  $(document).ready(function() {
+      let currentCount = {{ unviewed_count|default:0 }};
+      
+      function updateCountDisplay(count) {
+          const badge = $('#order-count-badge');
+          const sidebarBadge = $('.notification-badge');
+          
+          if (count > 0) {
+              if (badge.length === 0) {
+                  $('h5').append(`<span class="badge bg-danger ms-2" id="order-count-badge">${count}</span>`);
+              } else {
+                  badge.text(count).show();
+              }
+              
+              if (sidebarBadge.length === 0) {
+                  $('.sidebar-list:has(a[href*="order"])').append(`<span class="notification-badge">${count}</span>`);
+              } else {
+                  sidebarBadge.text(count).removeClass('hide');
+              }
+          } else {
+              badge.hide();
+              sidebarBadge.addClass('hide');
+          }
+      }
+      
+      function fetchOrderCount() {
+          $.ajax({
+              url: '{% url "get_order_count" %}',
+              type: 'GET',
+              success: function(data) {
+                  if (data.count !== currentCount) {
+                      currentCount = data.count;
+                      updateCountDisplay(currentCount);
+                  }
+              }
+          });
+      }
+      
+      $('.order-view-btn').click(function(e) {
+          e.preventDefault();
+          if (currentCount > 0) {
+              currentCount--;
+              updateCountDisplay(currentCount);
+          }
+          // ADD ONLY THIS AJAX CALL:
+          $.ajax({
+            url: '{% url "mark_order_viewed" %}',  
+            type: 'POST',
+            data: {
+                'order_id': $(this).attr('href').split('/').pop(),
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            }
+        });
+          window.location.href = $(this).attr('href');
+      });
+      
+      setInterval(fetchOrderCount, 5000);
+      updateCountDisplay(currentCount);
+  });
+  </script>
+  <!-- END OF SCRIPT ADDITION -->
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const tbody = document.querySelector('#order-history-table tbody');
+      fetch("{% url 'vendor_orders_api' %}")
+        .then(r => r.json())
+        .then(payload => {
+          tbody.innerHTML = "";
+          payload.data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td></td>
+              <td>#${row.order_number}</td>
+              <td>${row.order_date}</td>
+              <td>
+                ${row.image ? `<img src="${row.image}" style="width:40px;height:40px;">` : ""}
+                ${row.product_title}
+              </td>
+              <td>${row.quantity}</td>
+              <td>$${row.price}</td>
+              <td><a href="${row.detail_url}" class="btn btn-sm btn-primary">View</a></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
+    });
+
+
+    function fetchVendorOrderCount() {
+        fetch("{% url 'get_vendor_order_count' %}")
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById("vendor-order-badge");
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove("hide");
+                } else {
+                    badge.classList.add("hide");
+                }
+            })
+            .catch(error => console.error("Error fetching vendor order count:", error));
+    }
+    
+    // Poll every 30 seconds (adjust as needed)
+    setInterval(fetchVendorOrderCount, 30000);
+    
+    // Fetch immediately when page loads
+    fetchVendorOrderCount();
+    
+    </script>
+    
+
+{% endblock %}

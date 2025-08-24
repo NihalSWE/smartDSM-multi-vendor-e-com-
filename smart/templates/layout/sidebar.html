@@ -110,7 +110,7 @@
                         </svg><span class="">Users</span></a>
                     <ul class="sidebar-submenu">
                         <li><a class="" href="{% url 'user_list' %}">User List</a></li>
-                        <li><a class="" href="{% url 'add_user' %}">Add Users</a></li>
+                        <!--<li><a class="" href="{% url 'add_user' %}">Add Users</a></li>-->
                     </ul>
                 </li>
                 <!--Users-->
@@ -144,31 +144,32 @@
                     <ul class="sidebar-submenu">
                         <li><a href="{% url 'add_products' %}">Add Product</a></li>
                         <li><a href="{% url 'list_products' %}">Products List</a></li>
+                        <li><a href="{% url 'pending_products' %}">Product Requests</a></li>
                         <li><a href="{% url 'product_details' %}">Product Details</a></li>
                         <li><a href="{% url 'product_review' %}">Product Reviews</a></li>
                     </ul>
                 </li>
                 <!--products-->
-
-                 <!--Orders-->
-<li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
-    <a class="sidebar-link sidebar-title" href="#">
-        <svg class="stroke-icon">
-            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
-        </svg>
-        <svg class="fill-icon">
-            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
-        </svg><span class="">Orders</span></a>
-    <ul class="sidebar-submenu">
-        <li><a href="{% url 'order_history' %}">Order History</a></li> 
-    </ul>
-    <!-- ADD ONLY THIS LINE TO YOUR EXISTING SIDEBAR: -->
-    {% if unviewed_count > 0 %}
-        <span class="notification-badge">{{ unviewed_count }}</span>
-    {% endif %}
-    <!-- END OF ADDITION -->
-</li>
-<!--Orders-->
+                
+                                 <!--Orders-->
+                        <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                            <a class="sidebar-link sidebar-title" href="#">
+                                <svg class="stroke-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                                </svg>
+                                <svg class="fill-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                                </svg><span class="">Orders</span></a>
+                            <ul class="sidebar-submenu">
+                                <li><a href="{% url 'order_history' %}">Order History</a></li> 
+                            </ul>
+                            <!-- ADD ONLY THIS LINE TO YOUR EXISTING SIDEBAR: -->
+                            {% if unviewed_count > 0 %}
+                                <span class="notification-badge">{{ unviewed_count }}</span>
+                            {% endif %}
+                            <!-- END OF ADDITION -->
+                        </li>
+                        <!--Orders-->
 <!-- ADD THIS CSS TO YOUR BASE TEMPLATE OR MAIN CSS FILE: -->
 <style>
     .notification-badge {
@@ -203,7 +204,24 @@
         display: none !important;
     }
     </style>
-
+                    <!--VendorOrders-->
+                        {% if request.user.user_type == 1 %} 
+                            <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                                <a class="sidebar-link sidebar-title" href="#">
+                                    <svg class="stroke-icon">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                                    </svg>
+                                    <svg class="fill-icon">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                                    </svg><span class="">Vendor Orders</span>
+                                </a>
+                                <ul class="sidebar-submenu">
+                                    <li><a href="{% url 'vendorOrder' %}">Order List</a></li> 
+                                </ul>
+                                <span id="vendor-order-badge" class="notification-badge hide">0</span>
+                            </li>
+                        {% endif %}
+                    <!--VendorOrders-->
 
                 <!--Home Content-->
                 <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
@@ -223,6 +241,8 @@
                     </ul>
                 </li>
                 <!--Home Content-->
+                
+               
 
                 <!--About Us-->
                 <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title" href="#">
@@ -294,6 +314,8 @@
 
 
 
+
+
                 
 
 
@@ -314,7 +336,7 @@
 
 
 
-                    <!--built-in sider bar options in the template-->
+                {% comment %} <!--built-in sider bar options in the template-->
                 <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i><a class="sidebar-link sidebar-title" href="#">
                     <svg class="stroke-icon">
                         <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-widget"></use>
@@ -531,6 +553,8 @@
                         <li><a href="/admin-dashboard/megaoptions">Mega Options</a></li>
                         </ul>
                     </li>
+
+
                     <li><a class="submenu-title" href="#">Form Widgets<span class="sub-arrow"><i class="fa-solid fa-angle-right"></i></span></a>
                         <ul class="sidebar-submenu">
                         <li><a href="/admin-dashboard/datepicker">Datepicker</a></li>
@@ -915,8 +939,47 @@
                     </svg>
                     <svg class="fill-icon">
                         <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-support-tickets"></use>
-                    </svg><span>Support Ticket</span></a></li>
+                    </svg><span>Support Ticket</span></a></li> {% endcomment %}
+
+
+            {% elif request.user.user_type == 1 %}
+                <!--products-->
+                <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                    <a class="sidebar-link sidebar-title" href="#">
+                        <svg class="stroke-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                        </svg>
+                        <svg class="fill-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                        </svg><span class="">Products</span></a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{% url 'add_products' %}">Add Product</a></li>
+                        <li><a href="{% url 'list_products' %}">Products List</a></li>
+                        <li><a href="{% url 'product_details' %}">Product Details</a></li>
+                        <li><a href="{% url 'product_review' %}">Product Reviews</a></li>
+                    </ul>
+                </li>
+                <!--products-->
+                
+                <!--Vendor Order-->
+                    <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                        <a class="sidebar-link sidebar-title" href="#">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                            </svg><span class="">Vendor Orders</span>
+                        </a>
+                        <ul class="sidebar-submenu">
+                            <li><a href="{% url 'vendorOrder' %}">Order List</a></li> 
+                        </ul>
+                        <span id="vendor-order-badge" class="notification-badge hide">0</span>
+                    </li>
+                <!--Vendor Order-->
             {% endif %}
+            
+            <div>{{ request.user.user_type }}</div>
 
         </ul>
       </div>

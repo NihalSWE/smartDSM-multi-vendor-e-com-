@@ -11,7 +11,12 @@
         <div class="col-12 p-0">    
           <div class="login-card login-dark">
             <div>
-              <div><a class="logo" href="/index"><img class="img-fluid for-light" src="{% static 'assets/images/logo/logo.png'  %}" alt="looginpage"><img class="img-fluid for-dark" src="{% static 'assets/images/logo/logo_dark.png'  %}" alt="looginpage"></a></div>
+              <div>
+                    <a class="logo" href="/index">
+                        <img class="img-fluid for-light" src="{% static 'assets/images/logo/logo.png'  %}" alt="looginpage" style="width: 150px;">
+                        <img class="img-fluid for-dark" src="{% static 'assets/images/logo/logo_dark.png'  %}" alt="looginpage" style="width: 150px;">
+                    </a>
+                </div>
               {% include "includes/alert.html" %}
               <div class="login-main"> 
                 <form class="theme-form" method="post">

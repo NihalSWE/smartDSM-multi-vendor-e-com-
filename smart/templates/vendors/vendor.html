@@ -301,9 +301,9 @@
                                 <div class="mb-3">
                                     <label class="form-label">Verification Status</label>
                                     <select class="form-control btn-pill" name="verification_status">
-                                        <option value="0" {% if vendor.vendorverification.status == '0' %}selected{% endif %}>Pending</option>
-                                        <option value="1" {% if vendor.vendorverification.status == '1' %}selected{% endif %}>Approved</option>
-                                        <option value="2" {% if vendor.vendorverification.status == '2' %}selected{% endif %}>Rejected</option>
+                                        <option value="0" {% if vendor.vendorverification.status == 0 %}selected{% endif %}>Pending</option>
+                                        <option value="1" {% if vendor.vendorverification.status == 1 %}selected{% endif %}>Approved</option>
+                                        <option value="2" {% if vendor.vendorverification.status == 2 %}selected{% endif %}>Rejected</option>
                                     </select>
                                 </div>
                             </div>
