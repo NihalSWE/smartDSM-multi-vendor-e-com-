@@ -1063,10 +1063,66 @@ def create_customer_product(request):
 
 
 
+from django.db.models import Min, Max
+
+from django.core.paginator import Paginator
+
 def shop(request):
-    products = Product.objects.filter(publish_status=1)  # only published
+    products = Product.objects.filter(publish_status=1)
+
+    # --- price filter + sorting logic (from before) ---
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
+    if min_price and max_price:
+        products = products.filter(selling_price__gte=min_price, selling_price__lte=max_price)
+    elif min_price:
+        products = products.filter(selling_price__gte=min_price)
+    elif max_price:
+        products = products.filter(selling_price__lte=max_price)
+
+    orderby = request.GET.get("orderby", "default")
+    if orderby == "price-low":
+        products = products.order_by("selling_price")
+    elif orderby == "price-high":
+        products = products.order_by("-selling_price")
+    elif orderby == "date":
+        products = products.order_by("-created_at")
+    else:
+        products = products.order_by("-created_at")
+
+    count = int(request.GET.get("count", 12))
+    paginator = Paginator(products, count)
+    page_number = request.GET.get("page")
+    products_page = paginator.get_page(page_number)
+
+    categories = Category.objects.filter(status=1, parent_category__isnull=True)
+
+    # Default banner
+    banner_url = '/static/front/assets/images/shop/banner1.jpg'
+
+    return render(request, "front/shop/shop.html", {
+        "products": products_page,
+        "categories": categories,
+        "orderby": orderby,
+        "count": count,
+        "banner_url": banner_url
+    })
+
+
+
+def shop_by_category(request, slug):
+    category = get_object_or_404(Category, slug=slug, status=1)
+    products = Product.objects.filter(publish_status=1, category=category)
+    categories = Category.objects.filter(status=1).exclude(parent_category=None)
+
+    # Check if category has a banner
+    banner_url = category.banner.url if category.banner else None
+
     return render(request, 'front/shop/shop.html', {
-        'products': products
+        'products': products,
+        'categories': categories,
+        'selected_category': category,
+        'banner_url': banner_url
     })
 
 

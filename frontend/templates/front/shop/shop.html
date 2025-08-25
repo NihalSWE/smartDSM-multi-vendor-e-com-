@@ -25,8 +25,8 @@
                 <div class="container">
                     <!-- Start of Shop Banner -->
                     <div class="shop-default-banner banner d-flex align-items-center mb-5 br-xs"
-                        style="background-image: url({% static 'front/assets/images/shop/banner1.jpg'%}); background-color: #FFC74E;  width: 1244px;height: 257px;">
-                    </div>
+                    style="background-image: url({{ banner_url }}); background-color: #FFC74E; width: 1244px; height: 257px;">
+               </div>
                     <!-- End of Shop Banner -->
 
                     <!-- Start of Shop Category -->
@@ -198,45 +198,59 @@
                                         <a href="#" class="btn btn-dark btn-link filter-clean">Clean All</a>
                                     </div>
                                     <!-- Start of Collapsible widget -->
-                                    <div class="widget widget-collapsible">
-                                        <h3 class="widget-title"><span>All Categories</span></h3>
-                                        <ul class="widget-body filter-items search-ul">
-                                            <li><a href="#">Accessories</a></li>
-                                            <li><a href="#">Babies</a></li>
-                                            <li><a href="#">Beauty</a></li>
-                                            <li><a href="#">Decoration</a></li>
-                                            <li><a href="#">Electronics</a></li>
-                                            <li><a href="#">Fashion</a></li>
-                                            <li><a href="#">Food</a></li>
-                                            <li><a href="#">Furniture</a></li>
-                                            <li><a href="#">Kitchen</a></li>
-                                            <li><a href="#">Medical</a></li>
-                                            <li><a href="#">Sports</a></li>
-                                            <li><a href="#">Watches</a></li>
-                                        </ul>
-                                    </div>
+                                    <ul class="widget-body filter-items search-ul">
+                                        {% for category in categories %}
+                                            {% if category.has_children %}
+                                                {# Show subcategories instead of parent #}
+                                                {% for child in category.subcategories.all %}
+                                                    <li>
+                                                        <a href="{% url 'shop_by_category' child.slug %}">
+                                                            {{ child.name }}
+                                                        </a>
+                                                    </li>
+                                                {% endfor %}
+                                            {% else %}
+                                                {# Show parent itself if no children #}
+                                                <li>
+                                                    <a href="{% url 'shop_by_category' category.slug %}">
+                                                        {{ category.name }}
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% empty %}
+                                            <li>No categories available</li>
+                                        {% endfor %}
+                                    </ul>
+                                    
+                                    
+                                    
                                     <!-- End of Collapsible Widget -->
 
                                     <!-- Start of Collapsible Widget -->
                                     <div class="widget widget-collapsible">
-                                        <h3 class="widget-title"><span>Price</span></h3>
+                                        <h3 class="widget-title"><span>Price(৳)</span></h3>
                                         <div class="widget-body">
                                             <ul class="filter-items search-ul">
-                                                <li><a href="#">$0.00 - $100.00</a></li>
-                                                <li><a href="#">$100.00 - $200.00</a></li>
-                                                <li><a href="#">$200.00 - $300.00</a></li>
-                                                <li><a href="#">$300.00 - $500.00</a></li>
-                                                <li><a href="#">$500.00+</a></li>
+                                                <li><a href="?min_price=0&max_price=100">0.00 - 100.00</a></li>
+                                                <li><a href="?min_price=100&max_price=200">100.00 - 200.00</a></li>
+                                                <li><a href="?min_price=200&max_price=300">200.00 - 300.00</a></li>
+                                                <li><a href="?min_price=300&max_price=500">300.00 - 500.00</a></li>
+                                                <li><a href="?min_price=500">500.00+</a></li>
                                             </ul>
-                                            <form class="price-range">
+                                    
+                                            <form method="get" class="price-range">
                                                 <input type="number" name="min_price" class="min_price text-center"
-                                                    placeholder="$min"><span class="delimiter">-</span><input
-                                                    type="number" name="max_price" class="max_price text-center"
-                                                    placeholder="$max"><a href="#"
-                                                    class="btn btn-primary btn-rounded">Go</a>
+                                                    placeholder="${{ price_range.min_price|default:0 }}"
+                                                    value="{{ request.GET.min_price }}">
+                                                <span class="delimiter">-</span>
+                                                <input type="number" name="max_price" class="max_price text-center"
+                                                    placeholder="${{ price_range.max_price|default:0 }}"
+                                                    value="{{ request.GET.max_price }}">
+                                                <button type="submit" class="btn btn-primary btn-rounded">Go</button>
                                             </form>
                                         </div>
                                     </div>
+                                    
                                     <!-- End of Collapsible Widget -->
 
                                     <!-- Start of Collapsible Widget -->
@@ -292,39 +306,54 @@
                             <nav class="toolbox sticky-toolbox sticky-content fix-top">
                                 <div class="toolbox-left">
                                     <a href="#" class="btn btn-primary btn-outline btn-rounded left-sidebar-toggle 
-                                        btn-icon-left d-block d-lg-none"><i
-                                            class="w-icon-category"></i><span>Filters</span></a>
+                                        btn-icon-left d-block d-lg-none">
+                                        <i class="w-icon-category"></i><span>Filters</span>
+                                    </a>
+                            
+                                    <!-- Sort Dropdown -->
                                     <div class="toolbox-item toolbox-sort select-box text-dark">
-                                        <label>Sort By :</label>
-                                        <select name="orderby" class="form-control">
-                                            <option value="default" selected="selected">Default sorting</option>
-                                            <option value="popularity">Sort by popularity</option>
-                                            <option value="rating">Sort by average rating</option>
-                                            <option value="date">Sort by latest</option>
-                                            <option value="price-low">Sort by pric: low to high</option>
-                                            <option value="price-high">Sort by price: high to low</option>
-                                        </select>
+                                        <form method="get" id="sortForm">
+                                            <!-- Keep other query params (price filters, count, etc.) -->
+                                            {% for key, value in request.GET.items %}
+                                                {% if key != "orderby" %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                            
+                                            <label>Sort By :</label>
+                                            <select name="orderby" class="form-control" onchange="this.form.submit()">
+                                                <option value="default" {% if orderby == "default" %}selected{% endif %}>Default sorting</option>
+                                                <option value="popularity" {% if orderby == "popularity" %}selected{% endif %}>Sort by popularity</option>
+                                                <option value="rating" {% if orderby == "rating" %}selected{% endif %}>Sort by average rating</option>
+                                                <option value="date" {% if orderby == "date" %}selected{% endif %}>Sort by latest</option>
+                                                <option value="price-low" {% if orderby == "price-low" %}selected{% endif %}>Sort by price: low to high</option>
+                                                <option value="price-high" {% if orderby == "price-high" %}selected{% endif %}>Sort by price: high to low</option>
+                                            </select>
+                                        </form>
                                     </div>
                                 </div>
+                            
                                 <div class="toolbox-right">
+                                    <!-- Show Count Dropdown -->
                                     <div class="toolbox-item toolbox-show select-box">
-                                        <select name="count" class="form-control">
-                                            <option value="9">Show 9</option>
-                                            <option value="12" selected="selected">Show 12</option>
-                                            <option value="24">Show 24</option>
-                                            <option value="36">Show 36</option>
-                                        </select>
-                                    </div>
-                                    <div class="toolbox-item toolbox-layout">
-                                        <a href="shop-banner-sidebar.html" class="icon-mode-grid btn-layout active">
-                                            <i class="w-icon-grid"></i>
-                                        </a>
-                                        <a href="shop-list.html" class="icon-mode-list btn-layout">
-                                            <i class="w-icon-list"></i>
-                                        </a>
+                                        <form method="get" id="countForm">
+                                            {% for key, value in request.GET.items %}
+                                                {% if key != "count" %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                            
+                                            <select name="count" class="form-control" onchange="this.form.submit()">
+                                                <option value="9" {% if count == 9 %}selected{% endif %}>Show 9</option>
+                                                <option value="12" {% if count == 12 %}selected{% endif %}>Show 12</option>
+                                                <option value="24" {% if count == 24 %}selected{% endif %}>Show 24</option>
+                                                <option value="36" {% if count == 36 %}selected{% endif %}>Show 36</option>
+                                            </select>
+                                        </form>
                                     </div>
                                 </div>
                             </nav>
+                            
                             <div class="product-wrapper row cols-lg-4 cols-md-3 cols-sm-2 cols-2">
                                 {% for product in products %}
                                 <div class="product-wrap">
@@ -382,27 +411,59 @@
 
                             <div class="toolbox toolbox-pagination justify-content-between">
                                 <p class="showing-info mb-2 mb-sm-0">
-                                    Showing<span>1-12 of 60</span>Products
+                                    Showing 
+                                    <span>
+                                        {{ products.start_index }}-{{ products.end_index }} of {{ products.paginator.count }}
+                                    </span> 
+                                    Products
                                 </p>
+                            
                                 <ul class="pagination">
-                                    <li class="prev disabled">
-                                        <a href="#" aria-label="Previous" tabindex="-1" aria-disabled="true">
-                                            <i class="w-icon-long-arrow-left"></i>Prev
-                                        </a>
-                                    </li>
-                                    <li class="page-item active">
-                                        <a class="page-link" href="#">1</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">2</a>
-                                    </li>
-                                    <li class="next">
-                                        <a href="#" aria-label="Next">
-                                            Next<i class="w-icon-long-arrow-right"></i>
-                                        </a>
-                                    </li>
+                                    {# Previous button #}
+                                    {% if products.has_previous %}
+                                        <li class="prev">
+                                            <a href="?page={{ products.previous_page_number }}&{{ request.GET.urlencode }}" aria-label="Previous">
+                                                <i class="w-icon-long-arrow-left"></i>Prev
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="prev disabled">
+                                            <a href="#" aria-label="Previous" tabindex="-1" aria-disabled="true">
+                                                <i class="w-icon-long-arrow-left"></i>Prev
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                            
+                                    {# Page numbers #}
+                                    {% for page_num in products.paginator.page_range %}
+                                        {% if products.number == page_num %}
+                                            <li class="page-item active">
+                                                <a class="page-link" href="#">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page_num }}&{{ request.GET.urlencode }}">{{ page_num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                            
+                                    {# Next button #}
+                                    {% if products.has_next %}
+                                        <li class="next">
+                                            <a href="?page={{ products.next_page_number }}&{{ request.GET.urlencode }}" aria-label="Next">
+                                                Next<i class="w-icon-long-arrow-right"></i>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="next disabled">
+                                            <a href="#" aria-label="Next" tabindex="-1" aria-disabled="true">
+                                                Next<i class="w-icon-long-arrow-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
                                 </ul>
                             </div>
+                            
                         </div>
                         <!-- End of Shop Main Content -->
                     </div>

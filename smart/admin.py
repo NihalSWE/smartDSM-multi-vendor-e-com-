@@ -150,14 +150,14 @@ class VendorReviewAdmin(admin.ModelAdmin):
 # Register the Category model (from previous)
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'parent_category', 'status', 'position', 'created_at')
+    list_display = ('name', 'code', 'parent_category', 'banner','status', 'position', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name', 'slug', 'description')
     list_filter = ('status', 'parent_category')
     readonly_fields = ('code', 'created_at', 'updated_at')
     fieldsets = (
         (None, {'fields': ('name', 'slug', 'description', 'parent_category')}),
-        ('Status & Display', {'fields': ('status', 'image', 'icon', 'position')}),
+        ('Status & Display', {'fields': ('status', 'banner', 'icon', 'position')}),
         ('SEO Information', {'fields': ('meta_key', 'meta_title', 'meta_description')}),
         ('System Info', {'fields': ('code', 'created_at', 'updated_at')}),
     )

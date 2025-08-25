@@ -296,7 +296,7 @@ class Category(models.Model):
     )
 
     name = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
     category_type = models.ForeignKey(CategoryType, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     
@@ -305,7 +305,8 @@ class Category(models.Model):
         on_delete=models.SET_NULL,
         related_name='subcategories',
         blank=True,
-        null=True
+        null=True,
+        
     )
     
     status = models.IntegerField(choices=STATUS_CHOICES, default=1)
@@ -329,22 +330,23 @@ class Category(models.Model):
         ordering = ['position', 'name']
 
     def save(self, *args, **kwargs):
-        if self.pk:
+        if not self.slug:  # 🔹 always ensure slug exists
+            self.slug = generate_unique_slug(self, Category, 'slug')
+        elif self.pk:
             old_instance = Category.objects.get(pk=self.pk)
             if old_instance.name != self.name:
                 self.slug = generate_unique_slug(self, Category, 'slug')
-        else:
-            self.slug = generate_unique_slug(self, Category, 'slug')
-    
+
         if not self.code:
             last = Category.objects.order_by('-code').first()
             self.code = (last.code + 1) if last else 10
-    
+
         super().save(*args, **kwargs)
 
         # 🔹 Resize images after saving
         self.resize_image(self.banner, (1244, 257))
         self.resize_image(self.thumbnail_small, (400, 400))
+
 
     def resize_image(self, image_field, size):
         """Resize uploaded image to exact size (if provided)."""
@@ -355,6 +357,11 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def has_children(self):
+        return self.subcategories.filter(status=1).exists()
+
         
 
 

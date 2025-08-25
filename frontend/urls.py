@@ -23,6 +23,7 @@ urlpatterns = [
     
     #shop
     path('shop',views.shop,name='shop'),
+    path('shop/category/<slug:slug>/', views.shop_by_category, name='shop_by_category'),
     path('product-details/<slug:slug>/', views.product_details, name='product_details'),
     path('wishlist',views.wishlist,name="wishlist"),
     path('compare',views.compare,name="compare"),
