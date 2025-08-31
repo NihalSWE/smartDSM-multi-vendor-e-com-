@@ -60,6 +60,14 @@ urlpatterns = [
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
     #About Us
     
+    
+    #delivery charge
+    path('deliveryCharge',views.deliveryCharge,name='deliveryCharge'),
+    path('get_delivery_types',views.get_delivery_types,name='get_delivery_types'),
+    path('deliverytype',views.deliverytype,name='deliverytype'),
+    #delivery charge
+    
+    
     #Faqs
     path('faqs_header/', views.faqs_header, name='faqs_header'),
     #Faqs

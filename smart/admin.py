@@ -150,14 +150,14 @@ class VendorReviewAdmin(admin.ModelAdmin):
 # Register the Category model (from previous)
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'code', 'parent_category', 'banner','status', 'position', 'created_at')
+    list_display = ('name', 'code', 'parent_category', 'status', 'position', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
     search_fields = ('name', 'slug', 'description')
     list_filter = ('status', 'parent_category')
     readonly_fields = ('code', 'created_at', 'updated_at')
     fieldsets = (
         (None, {'fields': ('name', 'slug', 'description', 'parent_category')}),
-        ('Status & Display', {'fields': ('status', 'banner', 'icon', 'position')}),
+        ('Status & Display', {'fields': ('status', 'image', 'icon', 'position')}),
         ('SEO Information', {'fields': ('meta_key', 'meta_title', 'meta_description')}),
         ('System Info', {'fields': ('code', 'created_at', 'updated_at')}),
     )
@@ -466,3 +466,80 @@ class OrderPaymentAdmin(admin.ModelAdmin):
     list_display = ('order', 'transaction_id', 'amount', 'payment_method', 'is_successful', 'paid_at')
     list_filter = ('payment_method', 'is_successful', 'paid_at')
     search_fields = ('order__order_number', 'transaction_id')
+    
+
+
+# -------- Shared util mixins --------
+class VendorOwnedAdminMixin:
+    # Helpful default filters/search for vendor-owned models
+    list_filter = ('status',)
+    autocomplete_fields = ('vendor',)  # requires UserAdmin with search_fields
+    # Ensure vendor is visible in list_display on derived admins
+
+# -------- Inlines --------
+class DeliveryChargeInline(admin.TabularInline):
+    model = DeliveryCharge
+    extra = 0
+    min_num = 0
+    max_num = 1  # unique_together(delivery_type, vendor) implies at most one per type/vendor
+    fields = ('amount', 'status', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+    can_delete = True
+    show_change_link = True
+
+    def get_queryset(self, request):
+        # Order newest first for clarity
+        qs = super().get_queryset(request)
+        return qs.order_by('-created_at')
+
+# -------- ModelAdmins --------
+@admin.register(DeliveryType)
+class DeliveryTypeAdmin(VendorOwnedAdminMixin, admin.ModelAdmin):
+    list_display = ('name', 'slug', 'vendor', 'status', 'created_at', 'updated_at')
+    search_fields = ('name', 'slug', 'vendor__email', 'vendor__username', 'vendor__user_id')
+    ordering = ('-created_at',)
+    prepopulated_fields = {'slug': ('name',)}  # safe; model save also enforces vendor-unique slug
+    inlines = [DeliveryChargeInline]
+    list_select_related = ('vendor',)
+
+    # Optional: scope queryset if a staff user should only see own vendor data.
+    # Uncomment and adapt to permission model.
+    # def get_queryset(self, request):
+    #     qs = super().get_queryset(request).select_related('vendor')
+    #     if request.user.is_superuser:
+    #         return qs
+    #     # Example: if staff are vendors and should see only their records
+    #     return qs.filter(vendor=request.user)
+
+    # Ensure vendor is set automatically to the logged-in vendor when creating via admin (non-superusers)
+    def save_model(self, request, obj, form, change):
+        if not change and not request.user.is_superuser and not obj.vendor_id:
+            obj.vendor = request.user
+        super().save_model(request, obj, form, change)
+
+@admin.register(DeliveryCharge)
+class DeliveryChargeAdmin(VendorOwnedAdminMixin, admin.ModelAdmin):
+    list_display = ('delivery_type', 'vendor', 'amount', 'status', 'created_at', 'updated_at')
+    search_fields = (
+        'delivery_type__name',
+        'vendor__email',
+        'vendor__username',
+        'vendor__user_id',
+    )
+    ordering = ('-created_at',)
+    list_select_related = ('delivery_type', 'vendor')
+    autocomplete_fields = ('vendor', 'delivery_type')  # delivery_type can be large; use autocomplete
+    readonly_fields = ('created_at', 'updated_at')
+
+    # Optionally scope queryset as above
+    # def get_queryset(self, request):
+    #     qs = super().get_queryset(request).select_related('delivery_type', 'vendor')
+    #     if request.user.is_superuser:
+    #         return qs
+    #     return qs.filter(vendor=request.user)
+
+    def save_model(self, request, obj, form, change):
+        # Auto-assign vendor for non-superusers to enforce ownership consistency
+        if not request.user.is_superuser:
+            obj.vendor = request.user
+        super().save_model(request, obj, form, change)

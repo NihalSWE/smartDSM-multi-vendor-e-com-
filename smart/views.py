@@ -5,6 +5,7 @@ from django.core.validators import validate_email
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
+from django.utils.html import strip_tags
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
@@ -2019,6 +2020,161 @@ def mark_vendor_order_viewed(request):
 
 
 
+
+@login_required
+def deliverytype(request):
+    user = request.user  # Logged-in user
+    
+    # Only root/admin can manage delivery types
+    if user.user_type != 0:
+        return JsonResponse({'status': 'error', 'message': 'You do not have permission to manage delivery types.'})
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+
+            if action == 'add':
+                name = data.get('name', '').strip()
+                if not name:
+                    return JsonResponse({'status': 'error', 'message': 'Name is required'})
+
+                # Check if delivery type already exists
+                if DeliveryType.objects.filter(name__iexact=name, vendor=user).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Delivery type already exists'})
+
+                delivery_type = DeliveryType.objects.create(
+                    name=name,
+                    vendor=user
+                )
+                return JsonResponse({'status': 'success', 'message': 'Delivery type added successfully'})
+
+            elif action == 'edit':
+                type_id = data.get('id')
+                name = data.get('name', '').strip()
+
+                if not name:
+                    return JsonResponse({'status': 'error', 'message': 'Name is required'})
+
+                delivery_type = get_object_or_404(DeliveryType, id=type_id, vendor=user)
+
+                if DeliveryType.objects.filter(name__iexact=name, vendor=user).exclude(id=type_id).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Delivery type already exists'})
+
+                delivery_type.name = name
+                delivery_type.slug = slugify(name)
+                delivery_type.save()
+                
+                return JsonResponse({'status': 'success', 'message': 'Delivery type updated successfully'})
+
+            elif action == 'delete':
+                type_id = data.get('id')
+                delivery_type = get_object_or_404(DeliveryType, id=type_id, vendor=user)
+
+                if DeliveryCharge.objects.filter(delivery_type=delivery_type).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Cannot delete. Delivery charges exist for this type.'})
+
+                delivery_type.delete()
+                return JsonResponse({'status': 'success', 'message': 'Delivery type deleted successfully'})
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+
+    # GET request: show all delivery types
+    delivery_types = DeliveryType.objects.filter(vendor=user).order_by('-created_at')
+    return render(request, 'Delivery/deliverytype.html', {'delivery_types': delivery_types})
+
+
+@login_required
+def get_delivery_types(request):
+    types = DeliveryType.objects.values("id", "name")  # only return the fields you need
+    return JsonResponse({"types": list(types)})
+
+
+
+@login_required
+def deliveryCharge(request):
+    vendor = request.user  # The logged-in user is the vendor
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'add':
+                delivery_type_id = data.get('delivery_type')
+                amount = data.get('amount', '').strip()
+                
+                if not delivery_type_id or not amount:
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+                
+                try:
+                    amount = float(amount)
+                    if amount < 0:
+                        return JsonResponse({'status': 'error', 'message': 'Amount must be positive'})
+                except ValueError:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid amount format'})
+                
+                delivery_type = get_object_or_404(DeliveryType, id=delivery_type_id)
+                
+                # Check if charge already exists for this delivery type
+                if DeliveryCharge.objects.filter(delivery_type=delivery_type, vendor=vendor).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Charge already exists for this delivery type'})
+                
+                DeliveryCharge.objects.create(
+                    delivery_type=delivery_type,
+                    amount=amount,
+                    vendor=vendor
+                )
+                return JsonResponse({'status': 'success', 'message': 'Delivery charge added successfully'})
+            
+            elif action == 'edit':
+                charge_id = data.get('id')
+                delivery_type_id = data.get('delivery_type')
+                amount = data.get('amount', '').strip()
+                
+                if not delivery_type_id or not amount:
+                    return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+                
+                try:
+                    amount = float(amount)
+                    if amount < 0:
+                        return JsonResponse({'status': 'error', 'message': 'Amount must be positive'})
+                except ValueError:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid amount format'})
+                
+                delivery_charge = get_object_or_404(DeliveryCharge, id=charge_id, vendor=vendor)
+                delivery_type = get_object_or_404(DeliveryType, id=delivery_type_id, vendor=vendor)
+                
+                # Check if another charge exists for this delivery type (excluding current)
+                if DeliveryCharge.objects.filter(delivery_type=delivery_type, vendor=vendor).exclude(id=charge_id).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Charge already exists for this delivery type'})
+                
+                delivery_charge.delivery_type = delivery_type
+                delivery_charge.amount = amount
+                delivery_charge.save()
+                
+                return JsonResponse({'status': 'success', 'message': 'Delivery charge updated successfully'})
+            
+            elif action == 'delete':
+                charge_id = data.get('id')
+                delivery_charge = get_object_or_404(DeliveryCharge, id=charge_id, vendor=vendor)
+                delivery_charge.delete()
+                return JsonResponse({'status': 'success', 'message': 'Delivery charge deleted successfully'})
+            
+        except Exception as e:
+            print(f"Error in deliveryCharge POST: {e}")
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    # GET request
+    delivery_charges = DeliveryCharge.objects.filter(vendor=vendor).select_related('delivery_type').order_by('-created_at')
+    delivery_types = DeliveryType.objects.filter(status=True)
+    
+    context = {
+        'delivery_charges': delivery_charges,
+        'delivery_types': delivery_types
+    }
+    return render(request, 'Delivery/delivery.html', context)
 
 
 

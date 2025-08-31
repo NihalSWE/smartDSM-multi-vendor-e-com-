@@ -1,82 +1,7 @@
 from decimal import Decimal
 from django.db.models import Q
 from django.utils import timezone
-from smart.models import Product, ProductDiscount
-
-
-
-
-# def cart_context(request):
-#     cart = request.session.get("cart", {})
-#     cart_items = []
-#     total_price = Decimal("0.00")  # total payable amount after discounts
-#     total_quantity = 0
-
-#     now = timezone.now()
-
-#     for product_id, item in cart.items():
-#         try:
-#             product = Product.objects.get(pk=product_id)
-#         except Product.DoesNotExist:
-#             continue
-
-#         price = product.selling_price  # original selling price (Decimal)
-#         quantity = item["quantity"]
-#         total_quantity += quantity
-
-#         discounts = product.discounts.filter(active=True).filter(
-#             (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
-#             (Q(end_date__gte=now) | Q(end_date__isnull=True))
-#         )
-
-#         if discounts.exists():
-#             discount = discounts.first()
-
-#             if discount.discount_type == ProductDiscount.FIXED and discount.discount_price is not None:
-#                 discount_amount = discount.discount_price  # amount to subtract from price
-
-#             elif discount.discount_type == ProductDiscount.PERCENT and discount.percentage is not None:
-#                 discount_amount = price * (discount.percentage / Decimal("100"))
-
-#             elif discount.discount_type == ProductDiscount.BULK:
-#                 if discount.bulk_quantity and quantity >= discount.bulk_quantity:
-#                     if discount.bulk_discount_type == ProductDiscount.FIXED and discount.bulk_discount_value:
-#                         discount_amount = discount.bulk_discount_value
-#                     elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
-#                         discount_amount = price * (discount.bulk_discount_value / Decimal("100"))
-#                     else:
-#                         discount_amount = Decimal("0.00")
-#                 else:
-#                     discount_amount = Decimal("0.00")
-
-#             else:
-#                 discount_amount = Decimal("0.00")
-#         else:
-#             discount_amount = Decimal("0.00")
-
-#         discounted_price = price - discount_amount
-#         if discounted_price < 0:
-#             discounted_price = Decimal("0.00")
-
-#         subtotal = discounted_price * quantity  # total payable amount for this product line
-#         total_price += subtotal
-
-#         cart_items.append({
-#             "id": product.id,
-#             "slug": product.slug,
-#             "name": product.title,
-#             "image": product.thumbnail_image.url if product.thumbnail_image else "",
-#             "price": price,
-#             "discounted_price": discounted_price,
-#             "quantity": quantity,
-#             "subtotal": subtotal,  # total payable amount per product line
-#         })
-
-#     return {
-#         "cart_items": cart_items,
-#         "cart_count": total_quantity,
-#         "cart_total": total_price.quantize(Decimal("0.01")),
-#     }
+from smart.models import *
 
 
 def cart_context(request):
@@ -170,3 +95,83 @@ def cart_context(request):
         "grand_total": grand_total.quantize(Decimal("0.01")),
         "has_own_products": has_own_products,
     }
+    
+    
+    
+def categories_context(request):
+    """
+    Context processor to provide hierarchical categories for navigation menu
+    """
+    try:
+        main_categories = Category.objects.filter(
+            status=1,
+            parent_category__isnull=True
+        ).prefetch_related(
+            'subcategories__subcategories'
+        ).order_by('position', 'name')
+
+        default_icons = {
+            'fashion': 'w-icon-tshirt2',
+            'clothing': 'w-icon-tshirt2',
+            'home': 'w-icon-home',
+            'garden': 'w-icon-home',
+            'electronics': 'w-icon-electronics',
+            'furniture': 'w-icon-furniture',
+            'beauty': 'w-icon-heartbeat',
+            'health': 'w-icon-heartbeat',
+            'gift': 'w-icon-gift',
+            'toys': 'w-icon-gamepad',
+            'games': 'w-icon-gamepad',
+            'cooking': 'w-icon-ice-cream',
+            'kitchen': 'w-icon-ice-cream',
+            'phone': 'w-icon-ios',
+            'mobile': 'w-icon-ios',
+            'camera': 'w-icon-camera',
+            'photo': 'w-icon-camera',
+            'accessories': 'w-icon-ruby',
+            'jewelry': 'w-icon-ruby',
+        }
+
+        def get_icon(category):
+            if category.icon:
+                return {'type': 'image', 'url': category.icon.url}
+            for keyword, icon_class in default_icons.items():
+                if keyword in category.name.lower():
+                    return {'type': 'class', 'class': icon_class}
+            return {'type': 'class', 'class': 'w-icon-category'}
+
+        structured = []
+
+        for category in main_categories:
+            subcats = category.subcategories.filter(status=1).order_by('position', 'name')
+            category_data = {
+                'id': category.id,
+                'name': category.name,
+                'slug': category.slug,
+                'icon': get_icon(category),
+                'banner': category.banner.url if category.banner else None,
+                'subcategories': []
+            }
+
+            for subcat in subcats:
+                children = subcat.subcategories.filter(status=1).order_by('position', 'name')
+                category_data['subcategories'].append({
+                    'id': subcat.id,
+                    'name': subcat.name,
+                    'slug': subcat.slug,
+                    'children': [
+                        {
+                            'id': child.id,
+                            'name': child.name,
+                            'slug': child.slug
+                        } for child in children
+                    ]
+                })
+
+            structured.append(category_data)
+
+        return {'navigation_categories': structured}
+
+    except Exception as e:
+        print("Error in categories_context:", e)
+        return {'navigation_categories': []}

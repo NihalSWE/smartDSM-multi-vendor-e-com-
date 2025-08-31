@@ -115,6 +115,7 @@
                           <th> <span class="f-light f-w-600">Order Number</span></th>
                           <th> <span class="f-light f-w-600">Order Date</span></th>
                           <th> <span class="f-light f-w-600">Customer Name</span></th>
+                          <th> <span class="f-light f-w-600">Customer Number</span></th>
                           <th> <span class="f-light f-w-600">Total Amount</span></th>
                           <th> <span class="f-light f-w-600">Status</span></th>
                           <th> <span class="f-light f-w-600">Payment Status</span></th>
@@ -127,7 +128,7 @@
                         <tr class="inbox-data {% if order.id in unviewed_ids %}table-warning new-order{% endif %}">
 
                           <td></td>
-                          <td> <a href="#">#{{ order.order_number }}</a></td>
+                          <td> <a href="{% url 'order_details' order.id %}">{{ order.order_number }}</a></td>
                           <td> 
                             <p class="c-o-light">{{ order.created_at|date:"d M Y h:i A" }}</p>
                           </td>
@@ -140,6 +141,12 @@
                               {% endif %}
                             </p>
                           </td>
+                          <td>
+                            <a href="tel:{{ order.customer.phone_number }}">
+                              {{ order.customer.phone_number }}
+                            </a>
+                          </td>
+                          
                           <td> 
                             <p class="c-o-light">${{ order.grand_total }}</p>
                           </td>

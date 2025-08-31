@@ -57,6 +57,8 @@ urlpatterns = [
     path('remove-item/', views.remove_item, name='remove_item'),
     path('clear-cart/', views.clear_cart, name='clear_cart'),
     
+    path('get-shipping-cost/', views.get_shipping_cost, name='get_shipping_cost'),
+    
 
     #cart
     

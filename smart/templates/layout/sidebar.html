@@ -150,7 +150,21 @@
                     </ul>
                 </li>
                 <!--products-->
-                
+                <!--Delivery charge-->
+                <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                    <a class="sidebar-link sidebar-title" href="#">
+                        <svg class="stroke-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                        </svg>
+                        <svg class="fill-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                        </svg><span class="">Delivery Charge</span></a>
+                    <ul class="sidebar-submenu">
+                        <li><a class="" href="{% url 'deliveryCharge' %}">Set Charge</a></li>
+                        <li><a class="" href="{% url 'deliverytype' %}">Type</a></li>
+                    </ul>
+                </li>
+                <!--Delivery charge-->
                                  <!--Orders-->
                         <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
                             <a class="sidebar-link sidebar-title" href="#">
@@ -977,6 +991,21 @@
                         <span id="vendor-order-badge" class="notification-badge hide">0</span>
                     </li>
                 <!--Vendor Order-->
+                <!--Delivery charge-->
+                <li class="sidebar-list"><i class="fa-solid fa-thumbtack"></i>
+                    <a class="sidebar-link sidebar-title" href="#">
+                        <svg class="stroke-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                        </svg>
+                        <svg class="fill-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
+                        </svg><span class="">Delivery Charge</span></a>
+                    <ul class="sidebar-submenu">
+                        <li><a class="" href="{% url 'deliveryCharge' %}">Set Charge</a></li>
+                        {% comment %} <li><a class="" href="{% url 'deliverytype' %}">Type</a></li> {% endcomment %}
+                    </ul>
+                </li>
+                <!--Delivery charge-->
             {% endif %}
             
             <div>{{ request.user.user_type }}</div>

@@ -15,6 +15,7 @@ from django.contrib.auth import authenticate, login,logout
 from django.db import transaction
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from .context_processors import cart_context
 from itertools import chain
 import datetime
 import random
@@ -676,7 +677,10 @@ def create_order(user, cart_items, subtotal, discount_total, shipping_total, gra
     
 def order_checkout(request):
     cart_data = cart_context(request)
-    shipping_cost = Decimal("100.00")  # fixed shipping cost, or calculate dynamically
+    shipping_cost = Decimal("0.00")  # fixed shipping cost, or calculate dynamically
+
+
+    print('cart data: ', cart_data)
 
     context = {
         "cart_items": cart_data["cart_items"],
@@ -689,6 +693,52 @@ def order_checkout(request):
     return render(request, 'front/order/checkout.html', context)
 
 
+def get_shipping_cost(request):
+    cart_data = cart_context(request)
+    district = request.GET.get("district")
+    print("district:", district)
+
+    shipping_cost = Decimal("0.00")
+
+    # Step 1: Collect seller IDs from products in cart
+    product_ids = [item["id"] for item in cart_data["cart_items"]]
+    products = Product.objects.filter(id__in=product_ids).select_related("seller")
+
+    unique_sellers = set()
+    for product in products:
+        if product.seller:
+            unique_sellers.add(product.seller)
+
+    # Step 2: For each seller, add shipping cost based on district
+    for seller in unique_sellers:
+        if district == "Dhaka":
+            charge = DeliveryCharge.objects.filter(
+                vendor=seller,
+                delivery_type__slug="inside-dhaka",
+                status=True
+            ).first()
+        else:
+            charge = DeliveryCharge.objects.filter(
+                vendor=seller,
+                delivery_type__slug="outside-dhaka",
+                status=True
+            ).first()
+
+        if charge:
+            shipping_cost += charge.amount
+
+    context = {
+        "cart_items": cart_data["cart_items"],
+        "total_price_without_discount": cart_data["subtotal"],
+        "cart_discount_total": cart_data["discount_total"],
+        "shipping_cost": shipping_cost,
+        "cart_total": (cart_data["grand_total"] + shipping_cost).quantize(Decimal("0.01")),
+    }
+
+    return JsonResponse(context)
+
+
+@require_POST
 @require_POST
 def place_order(request):
     try:
@@ -719,8 +769,8 @@ def place_order(request):
             full_street_address += ", " + street_address_2
 
         # For now, skipping district and thana - set None
-        district = None
-        thana = None
+        district = request.POST.get('district', '').strip()
+        thana = request.POST.get('thana', '').strip()
 
         print('saving adresss*****************************************')
         # Create Address
@@ -742,7 +792,34 @@ def place_order(request):
 
         subtotal = Decimal('0.00')
         discount_total = Decimal('0.00')
-        shipping_total = Decimal("100.00")  # Hardcoded shipping cost
+        shipping_total = Decimal("0.00")  # Hardcoded shipping cost
+        
+        # get total shipping cost
+        product_ids = [product_id for product_id, item in cart.items()]
+        products = Product.objects.filter(id__in=product_ids).select_related("seller")
+        
+        unique_sellers = set()
+        for product in products:
+            if product.seller:
+                unique_sellers.add(product.seller)
+
+        # Step 2: For each seller, add shipping cost based on district
+        for seller in unique_sellers:
+            if district == "Dhaka":
+                charge = DeliveryCharge.objects.filter(
+                    vendor=seller,
+                    delivery_type__slug="inside-dhaka",
+                    status=True
+                ).first()
+            else:
+                charge = DeliveryCharge.objects.filter(
+                    vendor=seller,
+                    delivery_type__slug="outside-dhaka",
+                    status=True
+                ).first()
+
+            if charge:
+                shipping_total += charge.amount
 
         # Create the Order
         order = Order.objects.create(
@@ -831,9 +908,11 @@ def place_order(request):
         error_message = f"An error occurred: {str(e)}\n\n{traceback.format_exc()}"
         print(error_message)
         return render(request, 'front/order/checkout.html', {'error': error_message})
+
+
+
     
-    
-from .context_processors import cart_context
+
 
 def order_success(request):
     if request.user.is_authenticated:
@@ -853,8 +932,8 @@ def order_success(request):
         'cart_items': cart_data['cart_items'],
         'total_price_without_discount': cart_data['subtotal'],
         'cart_discount_total': cart_data['discount_total'],
-        'shipping_cost': shipping_cost,     
-        'grand_total': cart_data['grand_total'] + shipping_cost, 
+        'shipping_cost': order.shipping_total,
+        'grand_total': cart_data['grand_total'] + order.shipping_total,
     }
 
     # Render the page
@@ -866,7 +945,6 @@ def order_success(request):
         del request.session['clear_cart_after_success']
 
     return response
-
 
     
 
@@ -1063,12 +1141,32 @@ def create_customer_product(request):
 
 
 
+
+
+
+
+
 from django.db.models import Min, Max
 
 from django.core.paginator import Paginator
 
 def shop(request):
     products = Product.objects.filter(publish_status=1)
+
+    # --- category filter (added) ---
+    category_slug = request.GET.get("category")
+    if category_slug:
+        try:
+            category = Category.objects.get(slug=category_slug, status=1)
+            # include self + children + grandchildren (3-level deep)
+            categories = Category.objects.filter(
+                Q(id=category.id) |
+                Q(parent_category=category) |
+                Q(parent_category__parent_category=category)
+            )
+            products = products.filter(category__in=categories)
+        except Category.DoesNotExist:
+            pass
 
     # --- price filter + sorting logic (from before) ---
     min_price = request.GET.get("min_price")
@@ -1098,7 +1196,7 @@ def shop(request):
     categories = Category.objects.filter(status=1, parent_category__isnull=True)
 
     # Default banner
-    banner_url = '/static/front/assets/images/shop/banner1.jpg'
+    banner_url = category.banner.url if category.banner else None
 
     return render(request, "front/shop/shop.html", {
         "products": products_page,
@@ -1110,21 +1208,48 @@ def shop(request):
 
 
 
+
 def shop_by_category(request, slug):
     category = get_object_or_404(Category, slug=slug, status=1)
     products = Product.objects.filter(publish_status=1, category=category)
     categories = Category.objects.filter(status=1).exclude(parent_category=None)
+    
+    # --- price filter + sorting logic (from before) ---
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
+    if min_price and max_price:
+        products = products.filter(selling_price__gte=min_price, selling_price__lte=max_price)
+    elif min_price:
+        products = products.filter(selling_price__gte=min_price)
+    elif max_price:
+        products = products.filter(selling_price__lte=max_price)
+        
+    orderby = request.GET.get("orderby", "default")
+    if orderby == "price-low":
+        products = products.order_by("selling_price")
+    elif orderby == "price-high":
+        products = products.order_by("-selling_price")
+    elif orderby == "date":
+        products = products.order_by("-created_at")
+    else:
+        products = products.order_by("-created_at")
+        
+    count = int(request.GET.get("count", 12))
+    paginator = Paginator(products, count)
+    page_number = request.GET.get("page")
+    products_page = paginator.get_page(page_number)
 
     # Check if category has a banner
     banner_url = category.banner.url if category.banner else None
 
     return render(request, 'front/shop/shop.html', {
-        'products': products,
+        'products': products_page,
         'categories': categories,
         'selected_category': category,
+        "orderby": orderby,
+        "count": count,
         'banner_url': banner_url
     })
-
 
 
 def productDetails(request):

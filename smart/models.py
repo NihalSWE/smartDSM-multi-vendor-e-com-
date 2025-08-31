@@ -12,6 +12,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from decimal import Decimal
 from PIL import Image
+import os
 import uuid
 
 
@@ -288,7 +289,8 @@ class CategoryType(models.Model):
             
         super().save(*args, **kwargs)
 
-import os
+
+
 class Category(models.Model):
     STATUS_CHOICES = (
         (0, 'Inactive'),
@@ -305,8 +307,7 @@ class Category(models.Model):
         on_delete=models.SET_NULL,
         related_name='subcategories',
         blank=True,
-        null=True,
-        
+        null=True
     )
     
     status = models.IntegerField(choices=STATUS_CHOICES, default=1)
@@ -357,11 +358,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-    
     @property
     def has_children(self):
         return self.subcategories.filter(status=1).exists()
-
         
 
 
@@ -1033,8 +1032,8 @@ class Address(models.Model):
         blank=True,
     )
     title = models.CharField(max_length=50, default="Home")  # "Home", "Office", etc.
-    district = models.ForeignKey(District, on_delete=models.SET_NULL, blank=True, null=True)
-    thana = models.ForeignKey(Thana, on_delete=models.SET_NULL, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
+    thana = models.CharField(max_length=100, blank=True, null=True)
     street_address = models.TextField()
     postal_code = models.CharField(max_length=10, blank=True, null=True)
     phone_number = models.CharField(max_length=20)
@@ -1243,13 +1242,6 @@ class OrderNotification(models.Model):
 
 # STEP 2: Add this signal at the bottom of your models.py or create signals.py
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Order)
-def create_order_notification(sender, instance, created, **kwargs):
-    if created:
-        OrderNotification.objects.create(order=instance)
         
         
         
@@ -1272,17 +1264,6 @@ class OrderNotification(models.Model):
 
     def __str__(self):
         return f"Notification for Order #{self.order.order_number}"
-
-
-# STEP 2: Add this signal at the bottom of your models.py or create signals.py
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Order)
-def create_order_notification(sender, instance, created, **kwargs):
-    if created:
-        OrderNotification.objects.create(order=instance)
         
         
         
@@ -1337,14 +1318,63 @@ class VendorOrderNotification(models.Model):
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
+#delivery charge
+class DeliveryType(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, blank=True)
+    description = models.TextField(blank=True, null=True)
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delivery_types')
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            
+            # Make slug unique for this vendor
+            while DeliveryType.objects.filter(
+                slug=slug, 
+                vendor=self.vendor
+            ).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} - {self.vendor.username}"
+
+    class Meta:
+        unique_together = ('name', 'vendor')
+        ordering = ['-created_at']
+
+
+class DeliveryCharge(models.Model):
+    delivery_type = models.ForeignKey(
+        DeliveryType, 
+        on_delete=models.CASCADE,
+        related_name='charges'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    vendor = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='delivery_charges'
+    )
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.delivery_type.name} - ৳{self.amount}"
+
+    class Meta:
+        unique_together = ('delivery_type', 'vendor')
+        ordering = ['-created_at']
         
         
         

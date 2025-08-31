@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from .models import UserProfile, Package
+from .models import *
 
 
 
@@ -31,3 +31,9 @@ def assign_default_package(sender, instance, created, **kwargs):
             instance.save()
         except Package.DoesNotExist:
             pass
+        
+    
+@receiver(post_save, sender=Order)
+def create_order_notification(sender, instance, created, **kwargs):
+    if created:
+        OrderNotification.objects.create(order=instance)
