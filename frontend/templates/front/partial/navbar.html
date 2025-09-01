@@ -193,7 +193,7 @@
                                         <a href="{% url 'home' %}">Home</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'shop' %}">Shop</a>
+                                        {% comment %} <a href="{% url 'shop' %}">Shop</a> {% endcomment %}
 
                                         {% comment %} <!-- Start of Megamenu -->
                                         <ul class="megamenu">
@@ -259,29 +259,25 @@
                                         <!-- End of Megamenu --> {% endcomment %}
                                     </li>
                                     <li>
-                                        <a href="vendor-dokan-store.html">Vendor</a>
+                                        <a href="#">Vendor</a>
                                         <ul>
-                                            <li>
+                                            {% comment %} <li>
                                                 <a href="{% url 'vendor_list' %}">Store Listing</a>
                                                 
                                             </li>
                                             <li>
                                                 <a href="{% url 'single_vendor' %}">Vendor Store</a>
                                                 
-                                            </li>
+                                            </li> {% endcomment %}
                                             <li><a href="{% url 'become_a_vendor' %}">Become A Vendor</a></li>
                                         </ul>
                                     </li>
-                                    <li>
+                                    {% comment %} <li>
                                         <a href="{% url 'blog_list' %}">Blog</a>
-                                    </li>
-                                    <li>
+                                    </li> {% endcomment %}
+                                    {% comment %} <li>
                                         <a href="about-us.html">Pages</a>
                                         <ul>
-
-                                            <li><a href="{% url 'aboutUs' %}">About Us</a></li>
-                                            
-                                            <li><a href="{% url 'contactUs' %}">Contact Us</a></li>
                                             <li><a href="{% url 'faq' %}">FAQs</a></li>
                                             <li><a href="{% url 'error404' %}">Error 404</a></li>
                                            
@@ -291,8 +287,9 @@
                                             <li><a href="{% url 'myAccount' %}">My Account</a></li>
                                             <li><a href="{% url 'compare' %}">Compare</a></li>
                                         </ul>
-                                    </li>
-                                   
+                                    </li> {% endcomment %}
+                                    <li><a href="{% url 'aboutUs' %}">About Us</a></li>
+                                    <li><a href="{% url 'contactUs' %}">Contact Us</a></li>
                                 </ul>
                             </nav>
                         </div>

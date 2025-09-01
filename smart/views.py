@@ -1075,7 +1075,39 @@ def aboutUs_header(request):
         header.save()
         return redirect('aboutUs_header')
 
-    return render(request, 'applications/aboutus/aboutus-header.html', {'header': header})
+    return render(request, 'aboutus/aboutus-header.html', {'header': header})
+
+def aboutus_content(request):
+    if request.method == "POST":
+        content_id = request.POST.get("id")
+        if content_id:  # Edit
+            content = get_object_or_404(AboutPageContent, pk=content_id)
+        else:  # Add new
+            content = AboutPageContent()
+
+        content.title = request.POST.get("title")
+        content.description = request.POST.get("description")
+        content.button_text = request.POST.get("button_text")
+        content.button_url = request.POST.get("button_url")
+
+        if request.FILES.get("image"):
+            content.image = request.FILES["image"]
+            # Resize image to 610x450
+            img = Image.open(content.image)
+            img = img.resize((610, 450), Image.LANCZOS)
+            img.save(content.image.path)
+
+        content.save()
+        return redirect("aboutus_content")
+
+    contents = AboutPageContent.objects.all()
+    return render(request, "aboutus/aboutus-content.html", {"contents": contents})
+
+
+def delete_about_page_content(request, pk):
+    content = get_object_or_404(AboutPageContent, pk=pk)
+    content.delete()
+    return redirect("aboutus_content")
 
 
 #-----------faq header
@@ -2082,7 +2114,7 @@ def deliverytype(request):
 
     # GET request: show all delivery types
     delivery_types = DeliveryType.objects.filter(vendor=user).order_by('-created_at')
-    return render(request, 'Delivery/deliverytype.html', {'delivery_types': delivery_types})
+    return render(request, 'delivery/delivery_type.html', {'delivery_types': delivery_types})
 
 
 @login_required
@@ -2174,7 +2206,7 @@ def deliveryCharge(request):
         'delivery_charges': delivery_charges,
         'delivery_types': delivery_types
     }
-    return render(request, 'Delivery/delivery.html', context)
+    return render(request, 'delivery/delivery.html', context)
 
 
 

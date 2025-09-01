@@ -42,6 +42,10 @@ def home(request):
     new_arrivals  = get_new_arrivals(limit=10)
     # Attach slides to ad banners
     attach_products_to_ad_banners(ad_banners)
+    
+    # get 6 categories dynamically
+    top_categories = get_six_categories()
+
 
     return render(request, 'front/index.html', {
         'sliders': sliders,
@@ -51,7 +55,34 @@ def home(request):
         'offer_banners': offer_banners,
         'product': product_list,
         'new_arrivals': new_arrivals,
+        'top_categories': top_categories,
     })
+    
+    
+def get_six_categories():
+    categories = []
+
+    # Step 1: Parent categories
+    parents = list(Category.objects.filter(status=1, parent_category__isnull=True))
+    random.shuffle(parents)
+    categories.extend(parents[:6])
+
+    # Step 2: Subcategories if less than 6
+    if len(categories) < 6:
+        subs = list(Category.objects.filter(status=1, parent_category__isnull=False)
+                                   .exclude(id__in=[c.id for c in categories]))
+        random.shuffle(subs)
+        categories.extend(subs[: 6 - len(categories)])
+
+    # Step 3: Sub-subcategories if still less than 6
+    if len(categories) < 6:
+        subsubs = list(Category.objects.filter(status=1, parent_category__isnull=False)
+                                       .exclude(id__in=[c.id for c in categories]))
+        random.shuffle(subsubs)
+        categories.extend(subsubs[: 6 - len(categories)])
+
+    # Final: return only 6
+    return categories[:6]
     
     
     
@@ -80,9 +111,11 @@ def attach_products_to_ad_banners(ad_banners):
 
 
 def aboutUs(request):
-    header=AboutusPageHeader.objects.filter(is_active=True).first()
+    header=AboutusPageHeader.objects.filter(is_active=True).last()
+    content = AboutPageContent.objects.last()
     context={
-        'header':header
+        'header':header,
+        "content": content
     }
     return render(request, 'front/pages/about-us.html',context)
 
@@ -414,6 +447,10 @@ def product_details(request, slug):
         category=product.category  # Same category as current product
     ).exclude(id=product.id).order_by('?')[:6]  # Random 6 products from same category
     
+    vendor_products = Product.objects.filter(
+        seller=product.seller  # Same seller as current product
+    ).exclude(id=product.id).order_by('?')[:3]
+    
     # Split into chunks of 3 for swiper slides
     related_chunks = [list(related_products)[i:i+3] for i in range(0, len(related_products), 3)]
     
@@ -459,6 +496,8 @@ def product_details(request, slug):
         'discount': discount,
         'final_price': final_price,
         'related_products': related_chunks,
+        'related_products_of_same_category': related_products,
+        'vendor_products': vendor_products,
         'reviews': reviews,
         'avg_rating': round(avg_rating, 1),
         'total_reviews': total_reviews,
@@ -738,7 +777,6 @@ def get_shipping_cost(request):
     return JsonResponse(context)
 
 
-@require_POST
 @require_POST
 def place_order(request):
     try:
@@ -1105,6 +1143,162 @@ def create_customer_product(request):
     }
     return render(request, 'front/products/create_customer_product.html', context)
 
+from django.views.decorators.http import require_http_methods
+import json
+@require_http_methods(["POST"])
+def check_phone_number(request):
+    """AJAX endpoint to check if phone number exists and return user data"""
+    try:
+        data = json.loads(request.body)
+        phone_number = data.get('phone_number', '').strip()
+        
+        if not phone_number:
+            return JsonResponse({'exists': False})
+        
+        address = Address.objects.filter(phone_number=phone_number).first()
+        
+        if address:
+            response_data = {
+                'exists': True,
+                'data': {
+                    'email': address.user.email if address.user else '',
+                    'firstname': address.user.first_name if address.user else '',
+                    'lastname': address.user.last_name if address.user else '',
+                    # 'district': address.district or '',  # COMMENTED OUT
+                    # 'thana': address.thana or '',        # COMMENTED OUT
+                    'street_address_1': address.street_address.split('\n')[0] if address.street_address else '',
+                    'street_address_2': address.street_address.split('\n')[1] if '\n' in address.street_address else '',
+                    'city': address.title,
+                    'zip': address.postal_code or '',
+                }
+            }
+            return JsonResponse(response_data)
+        
+        return JsonResponse({'exists': False})
+        
+    except Exception as e:
+        return JsonResponse({'exists': False, 'error': str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def save_address(request):
+    """AJAX endpoint to save a new address"""
+    try:
+        data = json.loads(request.body)
+        
+        # UPDATED REQUIRED FIELDS WITHOUT DISTRICT AND THANA
+        required_fields = ['phone_number', 'firstname', 'lastname', 'street_address_1', 'city']
+        for field in required_fields:
+            if not data.get(field, '').strip():
+                return JsonResponse({'success': False, 'error': f'{field} is required'})
+        
+        street_address = data['street_address_1'].strip()
+        if data.get('street_address_2', '').strip():
+            street_address += '\n' + data['street_address_2'].strip()
+        
+        address = Address.objects.create(
+            user=request.user,
+            title=data['city'].strip(),
+            # district=data['district'].strip(),  # COMMENTED OUT - Now storing as string
+            # thana=data['thana'].strip(),        # COMMENTED OUT - Now storing as string
+            street_address=street_address,
+            postal_code=data.get('zip', '').strip(),
+            phone_number=data['phone_number'].strip(),
+            is_default=False
+        )
+        
+        # UPDATE USER INFO ONLY IF IT'S DIFFERENT AND WON'T CAUSE CONFLICTS
+        user_updated = False
+        try:
+            if data.get('email') and data.get('email').strip() != request.user.email:
+                # Check if email already exists for another user
+                from django.contrib.auth.models import User
+                if not User.objects.filter(email=data.get('email').strip()).exclude(id=request.user.id).exists():
+                    request.user.email = data['email'].strip()
+                    user_updated = True
+            
+            if data.get('firstname') and data.get('firstname').strip() != request.user.first_name:
+                request.user.first_name = data['firstname'].strip()
+                user_updated = True
+                
+            if data.get('lastname') and data.get('lastname').strip() != request.user.last_name:
+                request.user.last_name = data['lastname'].strip()
+                user_updated = True
+            
+            if user_updated:
+                request.user.save()
+        except Exception as user_update_error:
+            # If user update fails, still return success for address creation
+            print(f"User update failed: {user_update_error}")
+            pass
+        
+        return JsonResponse({
+            'success': True,
+            'address': {
+                'id': address.id,
+                'title': address.title,
+                'full_address': str(address),
+                'phone_number': address.phone_number,
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def select_address(request):
+    """AJAX endpoint to get selected address details"""
+    try:
+        data = json.loads(request.body)
+        address_id = data.get('address_id')
+        
+        if not address_id:
+            return JsonResponse({'success': False, 'error': 'Address ID required'})
+        
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        
+        response_data = {
+            'success': True,
+            'data': {
+                'phone_number': address.phone_number,
+                'email': address.user.email if address.user else '',
+                'firstname': address.user.first_name if address.user else '',
+                'lastname': address.user.last_name if address.user else '',
+                # 'district': address.district or '',  # COMMENTED OUT
+                # 'thana': address.thana or '',        # COMMENTED OUT
+                'street_address_1': address.street_address.split('\n')[0] if address.street_address else '',
+                'street_address_2': address.street_address.split('\n')[1] if '\n' in address.street_address else '',
+                'city': address.title,
+                'zip': address.postal_code or '',
+            }
+        }
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# ADD NEW DELETE ADDRESS VIEW
+@login_required
+@require_http_methods(["POST"])
+def delete_address(request):
+    """AJAX endpoint to delete an address"""
+    try:
+        data = json.loads(request.body)
+        address_id = data.get('address_id')
+        
+        if not address_id:
+            return JsonResponse({'success': False, 'error': 'Address ID required'})
+        
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        address.delete()
+        
+        return JsonResponse({'success': True, 'message': 'Address deleted successfully'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 
@@ -1205,7 +1399,6 @@ def shop(request):
         "count": count,
         "banner_url": banner_url
     })
-
 
 
 

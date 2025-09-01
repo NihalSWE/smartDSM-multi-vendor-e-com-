@@ -921,7 +921,18 @@ class AboutusPageHeader(models.Model):
 
     def __str__(self):
         return f"{self.page_slug} - {self.title}"
-    
+ 
+ 
+ 
+class AboutPageContent(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    image = models.ImageField(upload_to="about/")
+    button_text = models.CharField(max_length=100, blank=True, null=True)
+    button_url = models.CharField(max_length=25,blank=True, null=True)
+
+    def __str__(self):
+        return self.title       
     
 #--AboutUs page header
 
@@ -1106,7 +1117,7 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Order {self.order_number} by {self.customer.email}"
+        return f"Order {self.order_number}"
         
         
         

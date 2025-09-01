@@ -128,7 +128,7 @@
                         <tr class="inbox-data {% if order.id in unviewed_ids %}table-warning new-order{% endif %}">
 
                           <td></td>
-                          <td> <a href="{% url 'order_details' order.id %}">{{ order.order_number }}</a></td>
+                          <td> <a href="#">#{{ order.order_number }}</a></td>
                           <td> 
                             <p class="c-o-light">{{ order.created_at|date:"d M Y h:i A" }}</p>
                           </td>
@@ -231,7 +231,18 @@
     
 
 
-
+<script>
+  $(function () {
+    $('#ordersTable').DataTable({
+      // keep the order from the server/DOM
+      order: [],           // <- IMPORTANT
+      aaSorting: [],       // legacy alias to be extra safe
+      columnDefs: [
+        { targets: [0, 9], orderable: false, searchable: false } // checkbox/blank + actions
+      ]
+    });
+  });
+</script>
 
 
 <!-- ADD ONLY THIS SCRIPT BLOCK (don't change existing scripts) -->

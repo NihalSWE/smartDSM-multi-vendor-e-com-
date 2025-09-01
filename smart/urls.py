@@ -58,6 +58,8 @@ urlpatterns = [
     
     #About Us
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
+    path('aboutus_content',views.aboutus_content,name='aboutus_content'),
+    path('delete/<int:pk>/', views.delete_about_page_content, name='delete_about_page_content'),
     #About Us
     
     

@@ -59,6 +59,11 @@ urlpatterns = [
     
     path('get-shipping-cost/', views.get_shipping_cost, name='get_shipping_cost'),
     
+    path('check-phone/', views.check_phone_number, name='check_phone_number'),
+    path('save-address/', views.save_address, name='save_address'),
+    path('select-address/', views.select_address, name='select_address'),
+    path('delete-address/', views.delete_address, name='delete_address'),
+    
 
     #cart
     
