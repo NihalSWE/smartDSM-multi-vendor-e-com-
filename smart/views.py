@@ -2210,12 +2210,20 @@ def deliveryCharge(request):
 
 
 
+@login_required(login_url="/admin-dashboard/login_home")
+def invoice(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
 
+    # Fetch related order items (through vendor_orders → items)
+    order_items = []
+    for vendor_order in order.vendor_orders.prefetch_related("items__product"):
+        order_items.extend(vendor_order.items.all())
 
-
-
-
-
+    context = {
+        "order": order,
+        "order_items": order_items,
+    }
+    return render(request, "invoice/invoice-4.html", context)
 
 
 

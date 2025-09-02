@@ -138,9 +138,10 @@
               <div class="header-top summary-header">
                 <h5>Summary</h5>
                 <div class="card-header-right-icon">
-                  <a class="btn btn-primary" href="/invoice/{{ order.id }}/" target="_blank">
+                  <a class="btn btn-primary" href="{% url 'invoice' order.id %}" target="_blank">
                     <i class="fa-regular fa-file-lines pe-2 f-14"></i>Invoice
                   </a>
+                  
                 </div>
               </div>
             </div>

@@ -62,6 +62,10 @@ urlpatterns = [
     path('delete/<int:pk>/', views.delete_about_page_content, name='delete_about_page_content'),
     #About Us
     
+    #invoice
+    path('invoice/<int:order_id>/', views.invoice, name='invoice'),
+
+    #invoice
     
     #delivery charge
     path('deliveryCharge',views.deliveryCharge,name='deliveryCharge'),
