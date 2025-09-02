@@ -809,7 +809,6 @@ def create_product(request):
             meta_keywords=meta_keywords,
             meta_description=meta_description,
             shipping_class=shipping_class,
-            publish_status=publish_status,
             publish_date=publish_date,
             seller=request.user  # replace or mock this as needed
         )

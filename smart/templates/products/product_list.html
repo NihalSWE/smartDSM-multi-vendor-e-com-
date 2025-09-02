@@ -32,95 +32,110 @@
 {% block content %}
 <!-- Container-fluid starts-->
 <div class="container-fluid list-product-view product-wrapper">
-  <div class="row"> 
+<div class="row"> 
     <div class="col-sm-12">
-      <div class="card">
+    <div class="card">
         <div class="card-header card-no-border text-end">
-          <div class="card-header-right-icon">
+        <div class="card-header-right-icon">
             <a class="btn btn-primary f-w-500" href="{% url 'add_products' %}">
-              <i class="fa fa-plus pe-2"></i>Add Products
+            <i class="fa fa-plus pe-2"></i>Add Products
             </a>
-          </div>
+        </div>
         </div>
         <div class="card-body px-0 pt-0">
-          <div class="list-product">
+        <div class="list-product">
             <div class="recent-table table-responsive custom-scrollbar product-list-table">
-              <table class="table" id="product-list-view">
-                <thead> 
-                  <tr> 
-                    <th>ID</th>
-                    <th>Product Name</th>
-                    <th>SKU</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Qty</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="product-table-body">
-                  {% for product in products %}
-                  <tr class="product-removes">
-                    <td>{{ product.id }}</td>
-                    <td> 
-                      <div class="product-names">
-                        <div class="light-product-box">
-                          {% if product.thumbnail_image %}
-                            <img class="img-fluid" src="{{ product.thumbnail_image.url }}" alt="{{ product.title }}">
-                          {% else %}
-                            <img class="img-fluid" src="{% static 'assets/images/dashboard-8/product-categories/laptop.png' %}" alt="No image">
-                          {% endif %}
-                        </div>
-                        <p>{{ product.title }}</p>
-                      </div>
-                    </td>
-                    <td> 
-                      <p class="c-o-light">{{ product.sku }}</p>
-                    </td>
-                    <td> 
-                      <p class="c-o-light">{{ product.category.name }}</p>
-                    </td>
-                    <td> 
-                      <p class="c-o-light">${{ product.selling_price }}</p>
-                    </td>
-                    <td> 
-                      <p class="c-o-light">{{ product.stock_quantity }}</p>
-                    </td>
-                    <td>
-                      {% if product.stock_availability %}
-                        <span class="badge badge-light-primary">In Stock</span>
-                      {% else %}
-                        <span class="badge badge-light-secondary">Sold Out</span>
-                      {% endif %}
-                    </td>
-                    <td> 
-                      <div class="product-action">
-                        <a class="square-white" href="{% url 'edit_product' product.id %}">
-                          <svg>    
-                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#edit-content"></use>
-                          </svg>
-                        </a>
-                        <a class="square-white trash-3" href="#" onclick="confirmDelete({{ product.id }})"> 
-                          <svg>
-                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#trash1"></use>
-                          </svg>
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                  {% empty %}
-                  <tr>
-                    <td colspan="8" class="text-center">No products found</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+                <table class="table" id="product-list-view">
+                    <thead> 
+                        <tr>
+                            <th>S/L</th>
+                            <th>ID</th>
+                            <th>Product Name</th>
+                            <th>SKU</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body">
+                        {% for product in products %}
+                            <tr class="product-removes">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ product.id }}</td>
+                                <td> 
+                                    <div class="product-names">
+                                        <div class="light-product-box">
+                                        {% if product.thumbnail_image %}
+                                            <img class="img-fluid" src="{{ product.thumbnail_image.url }}" alt="{{ product.title }}">
+                                        {% else %}
+                                            <img class="img-fluid" src="{% static 'assets/images/dashboard-8/product-categories/laptop.png' %}" alt="No image">
+                                        {% endif %}
+                                        </div>
+                                        <p>{{ product.title }}</p>
+                                    </div>
+                                </td>
+                                <td> 
+                                    <p class="c-o-light">{{ product.sku }}</p>
+                                </td>
+                                <td> 
+                                    <p class="c-o-light">{{ product.category.name }}</p>
+                                </td>
+                                <td> 
+                                    <p class="c-o-light">${{ product.selling_price }}</p>
+                                </td>
+                                <td> 
+                                    <p class="c-o-light">{{ product.stock_quantity }}</p>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if product.publish_status == 2 %}badge-light-warning{% endif %}
+                                        {% if product.publish_status == 3 %}badge-light-danger{% endif %}
+                                        {% if product.publish_status == 4 %}badge-light-success{% endif %}
+                                        {% if product.publish_status == 0 %}badge-light-secondary{% endif %}
+                                        {% if product.publish_status == 1 %}badge-light-primary{% endif %}
+                                    ">
+                                        {{ product.get_publish_status_display }}
+                                    </span>
+                                </td>
+                                <td> 
+                                    <div class="product-action">
+                                        {% if product_request %}
+                                            <a class="square-white" href="{% url 'single_product_request' product.id %}">
+                                                <svg>    
+                                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#edit-content"></use>
+                                                </svg>
+                                            </a>
+                                        {% else %}
+                                            <a class="square-white" href="{% url 'edit_product' product.id %}">
+                                                <svg>    
+                                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#edit-content"></use>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+
+                                        <a class="square-white trash-3" href="#" onclick="confirmDelete({{ product.id }})"> 
+                                            <svg>
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#trash1"></use>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No products found</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-          </div>
         </div>
-      </div>
+        </div>
     </div>
-  </div>
+    </div>
+</div>
 </div>
 <!-- Container-fluid Ends-->
 {% endblock %}
@@ -134,52 +149,52 @@
 <script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
 
 <script>
-$(document).ready(function() {
-    // Initialize DataTable with retrieve option
-    $('#product-list-view').DataTable({
-        responsive: true,
-        columnDefs: [
-            { targets: 0, visible: false }, // Hide ID column
-            { targets: [1, 2, 3, 4, 5, 6, 7], orderable: true }
-        ],
-        order: [[0, 'desc']],
-        retrieve: true, // Prevents reinitialization error
-        destroy: true   // Allows table to be reinitialized
+    $(document).ready(function() {
+        // Initialize DataTable with retrieve option
+        $('#product-list-view').DataTable({
+            responsive: true,
+            columnDefs: [
+                { targets: 0, visible: false }, // Hide ID column
+                { targets: [1, 2, 3, 4, 5, 6, 7], orderable: true }
+            ],
+            order: [[0, 'desc']],
+            retrieve: true, // Prevents reinitialization error
+            destroy: true   // Allows table to be reinitialized
+        });
     });
-});
 
-function confirmDelete(productId) {
-    swal({
-        title: "Are you sure?",
-        text: "Once deleted, you will not be able to recover this product!",
-        icon: "warning",
-        buttons: true,
-        dangerMode: true,
-    })
-    .then((willDelete) => {
-        if (willDelete) {
-            // Send AJAX request to delete the product
-            $.ajax({
-                url: `/products/delete/${productId}/`,
-                method: 'POST',
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    if(response.success) {
-                        swal("Success!", response.message, "success").then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        swal("Error!", response.message, "error");
+    function confirmDelete(productId) {
+        swal({
+            title: "Are you sure?",
+            text: "Once deleted, you will not be able to recover this product!",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willDelete) => {
+            if (willDelete) {
+                // Send AJAX request to delete the product
+                $.ajax({
+                    url: `/products/delete/${productId}/`,
+                    method: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if(response.success) {
+                            swal("Success!", response.message, "success").then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            swal("Error!", response.message, "error");
+                        }
+                    },
+                    error: function() {
+                        swal("Error!", "Something went wrong.", "error");
                     }
-                },
-                error: function() {
-                    swal("Error!", "Something went wrong.", "error");
-                }
-            });
-        }
-    });
-}
-</script>
+                });
+            }
+        });
+    }
+    </script>
 {% endblock %}

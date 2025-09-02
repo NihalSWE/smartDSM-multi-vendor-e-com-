@@ -1345,7 +1345,8 @@ from django.db.models import Min, Max
 from django.core.paginator import Paginator
 
 def shop(request):
-    products = Product.objects.filter(publish_status=1)
+    publish_statuses = [1, 4]
+    products = Product.objects.filter(publish_status__in=publish_statuses)
 
     # --- category filter (added) ---
     category_slug = request.GET.get("category")
