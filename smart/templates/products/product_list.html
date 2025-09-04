@@ -53,7 +53,8 @@
                             <th>Product Name</th>
                             <th>SKU</th>
                             <th>Category</th>
-                            <th>Price</th>
+                            <th>Buy Price</th>
+                            <th>Sell Price</th>
                             <th>Qty</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -83,7 +84,10 @@
                                     <p class="c-o-light">{{ product.category.name }}</p>
                                 </td>
                                 <td> 
-                                    <p class="c-o-light">${{ product.selling_price }}</p>
+                                    <p class="c-o-light">৳{{ product.buy_price }}</p>
+                                </td>
+                                <td> 
+                                    <p class="c-o-light">৳{{ product.selling_price }}</p>
                                 </td>
                                 <td> 
                                     <p class="c-o-light">{{ product.stock_quantity }}</p>

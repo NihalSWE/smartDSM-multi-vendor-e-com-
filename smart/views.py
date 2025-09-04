@@ -24,7 +24,9 @@ import json
 import os
 import re
 from .models import *
-
+from django.db.models import Count
+from django.utils import timezone
+from datetime import timedelta
 
 
 
@@ -33,18 +35,207 @@ def is_valid_email(email):
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
 
+from django.utils import timezone
+from datetime import timedelta
+from django.db import models
+from django.db.models import Sum
+
+
 @login_required(login_url="/admin-dashboard/login_home")
 def dashboard(request):
-    print('my user---------------------------------: ', request.user)
-    context = {
-        "breadcrumb":{
-            "title":"E-Commerce",
-            "parent":"Dashboard",
-            "child":"E-Commerce"
-        },
-    }
+    today = timezone.now().date()
+    last_week = today - timedelta(days=7)
+
+    # --- Existing Orders Logic ---
+    total_orders = Order.objects.count()
+    recent_orders = Order.objects.filter(created_at__date__gte=last_week).count()
+    prev_week_orders = Order.objects.filter(
+        created_at__date__gte=last_week - timedelta(days=7),
+        created_at__date__lt=last_week
+    ).count()
+    if prev_week_orders > 0:
+        growth_percent = round(((recent_orders - prev_week_orders) / prev_week_orders) * 100, 2)
+    else:
+        growth_percent = 100 if recent_orders > 0 else 0
+
+    # --- NEW: Customers Logic ---
+    total_customers = User.objects.filter(user_type=3).count()  # All-time clients
+    recent_customers = User.objects.filter(
+        user_type=3,
+        created_at__date__gte=last_week
+    ).count()
+    prev_week_customers = User.objects.filter(
+        user_type=3,
+        created_at__date__gte=last_week - timedelta(days=7),
+        created_at__date__lt=last_week
+    ).count()
+    if prev_week_customers > 0:
+        customer_growth_percent = round(((recent_customers - prev_week_customers) / prev_week_customers) * 100, 2)
+    else:
+        customer_growth_percent = 100 if recent_customers > 0 else 0
+
+    # --- NEW: Average Sale (last 30 days) ---
+    last_30_days = today - timedelta(days=30)
+    orders_last_30_days = Order.objects.filter(created_at__date__gte=last_30_days)
+
+    total_sales_last_30_days = orders_last_30_days.aggregate(
+        total=models.Sum('grand_total')
+    )['total'] or 0
+
+    average_sale_last_30_days = 0
+    if orders_last_30_days.exists():
+        average_sale_last_30_days = total_sales_last_30_days / orders_last_30_days.count()
+
+    prev_30_days_start = last_30_days - timedelta(days=30)
+    orders_prev_30_days = Order.objects.filter(
+        created_at__date__gte=prev_30_days_start,
+        created_at__date__lt=last_30_days
+    )
+    total_sales_prev_30_days = orders_prev_30_days.aggregate(
+        total=models.Sum('grand_total')
+    )['total'] or 0
+
+    if total_sales_prev_30_days > 0:
+        average_sale_growth_percent = round(
+            ((total_sales_last_30_days - total_sales_prev_30_days) / total_sales_prev_30_days) * 100, 2
+        )
+    else:
+        average_sale_growth_percent = 100 if total_sales_last_30_days > 0 else 0
+
+    # --- NEW: Gross Profit (last 30 days) ---
+    gross_profit_last_30_days = 0
+    for order in orders_last_30_days:
+        for vendor_order in order.vendor_orders.all():
+            for item in vendor_order.items.all():
+                product = item.product
+                if product:
+                    buy_price = product.buy_price or 0
+                    gross_profit_last_30_days += (item.final_price - buy_price) * item.quantity
+
+    prev_orders_30_days = Order.objects.filter(
+        created_at__date__gte=prev_30_days_start,
+        created_at__date__lt=last_30_days
+    )
+
+    gross_profit_prev_30_days = 0
+    for order in prev_orders_30_days:
+        for vendor_order in order.vendor_orders.all():
+            for item in vendor_order.items.all():
+                product = item.product
+                if product:
+                    buy_price = product.buy_price or 0
+                    gross_profit_prev_30_days += (item.final_price - buy_price) * item.quantity
+
+    if gross_profit_prev_30_days > 0:
+        gross_profit_growth_percent = round(
+            ((gross_profit_last_30_days - gross_profit_prev_30_days) / gross_profit_prev_30_days) * 100, 2
+        )
+    else:
+        gross_profit_growth_percent = 100 if gross_profit_last_30_days > 0 else 0
+        
+
+    # --- NEW: Top Customers (highest order amount regardless of payment status) ---
+    top_customers = (
+        Order.objects.values(
+            "customer__id",
+            "customer__first_name",
+            "customer__last_name",
+            "customer__email",
+            "customer__username",
+        )
+        .annotate(total_spent=Sum("grand_total"))
+        .order_by("-total_spent")[:5]
+    )
+    # --- Period selection for Orders card ---
+    period = request.GET.get("period", "this_month")  # default: this month
+
+    today = timezone.now().date()
+
+    if period == "this_month":
+        start_date = today.replace(day=1)
+        end_date = today
+    elif period == "previous_month":
+        first_day_current_month = today.replace(day=1)
+        last_day_previous_month = first_day_current_month - timedelta(days=1)
+        start_date = last_day_previous_month.replace(day=1)
+        end_date = last_day_previous_month
+    elif period == "last_3_months":
+        start_date = today - timedelta(days=90)
+        end_date = today
+    elif period == "last_6_months":
+        start_date = today - timedelta(days=180)
+        end_date = today
+    else:
+        start_date = today.replace(day=1)
+        end_date = today
+
+    orders_this_period = Order.objects.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date
+    )
+    orders_count = orders_this_period.count()
+
+    #recent transaction
+# --- Latest 15 orders for Recent Transactions ---
+    recent_transactions = (
+    Order.objects.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date
+    )
+    .order_by('-created_at')[:15]
+)
     
+    # New: last 3 orders only
+    latest_orders = (
+        Order.objects
+        .prefetch_related("vendor_orders__items__product")
+        .order_by("-created_at")[:3]
+    )
+    # get all categories that have products
+    categories = Category.objects.filter(products__isnull=False).distinct()
+    
+    # Get all active top-level categories (parent_category is None)
+    all_categories = Category.objects.filter(status=1) \
+                                     .annotate(product_count=Count('products')) \
+                                     .order_by('-product_count', 'position', 'name')
+
+    # --- Pass everything to template ---
+    context = {
+        "breadcrumb": {
+            "title": "E-Commerce",
+            "parent": "Dashboard",
+            "child": "E-Commerce"
+        },
+        # Orders
+        "total_orders": total_orders,
+        "recent_orders": recent_orders,
+        "growth_percent": growth_percent,
+        # Customers
+        "total_customers": total_customers,
+        "recent_customers": recent_customers,
+        "customer_growth_percent": customer_growth_percent,
+        # Average Sale
+        "average_sale_last_30_days": average_sale_last_30_days,
+        "average_sale_growth_percent": average_sale_growth_percent,
+        # Gross Profit
+        "gross_profit_last_30_days": gross_profit_last_30_days,
+        "gross_profit_growth_percent": gross_profit_growth_percent,
+        #top customers
+        "top_customers":top_customers,
+        #Orders This Month
+        "orders_this_month": orders_count,
+        'period':period,
+        #recent transaction
+        'recent_transactions':recent_transactions,
+        #recent orders
+        "latest_orders": latest_orders,
+        "categories": categories,
+        #top categories
+        'all_categories': all_categories
+    }
+
     return render(request, "general/dashboard/dashboard-02.html", context)
+
 
 
 @login_required(login_url="/admin-dashboard/login_home")
@@ -753,6 +944,8 @@ def create_product(request):
         description = data.get('description', '')
         model = data.get('model', '')
         short_description = data.get('short_description', '')
+         # Add buy_price handling
+        buy_price = data.get('initial_price') or data.get('buy_price')  # Support both field names
         
         print('********model about to be save*********: ', model)
         print('********short_description about to be save*********: ', short_description)
@@ -800,6 +993,7 @@ def create_product(request):
             short_description=short_description,
             description=description,
             thumbnail_image=thumbnail,
+            buy_price=buy_price,  # Add this line
             selling_price=selling_price,
             category_id=main_category_id,
             parent_category_id=category_id,

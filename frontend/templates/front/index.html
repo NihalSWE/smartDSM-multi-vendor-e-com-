@@ -982,7 +982,7 @@
                                                 <a href="{% url 'product_details' product.slug %}">{{ product.title }}</a>
                                             </h4>
                                             <div class="product-price">
-                                                <ins class="new-price">৳{{ product.selling_price }}</ins>
+                                                <ins class="new-price">৳{{ product.get_discounted_price }}</ins>
                                             </div>
                                         </div>
                                     </div>
@@ -1945,10 +1945,7 @@
                                         </a>
                                     </h4>
                                     <div class="product-price">
-                                        <ins class="new-price">৳{{ product.selling_price }}</ins>
-                                        {% if product.buy_price %}
-                                        <del class="old-price">৳{{ product.buy_price }}</del>
-                                        {% endif %}
+                                        ৳{{ product.get_discounted_price }}
                                     </div>
                                     </div>
                                 </div>

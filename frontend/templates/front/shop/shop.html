@@ -393,12 +393,9 @@
                                             </div>
                                             <div class="product-pa-wrapper">
                                                 <div class="product-price">
-                                                    {% if product.buy_price %}
-                                                      ${{ product.buy_price }} - ${{ product.selling_price }}
-                                                    {% else %}
-                                                      ${{ product.selling_price }}
-                                                    {% endif %}
+                                                    ৳{{ product.get_discounted_price }}
                                                 </div>
+                                                
                                             </div>
                                         </div>
                                     </div>

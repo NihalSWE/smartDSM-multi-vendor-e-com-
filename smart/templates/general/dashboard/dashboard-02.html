@@ -10,7 +10,417 @@
 
 {% block content %}
 
-{% include 'general/dashboard/components/dashboard-02.html' %}
+{% load static  %}
+
+<!-- Container-fluid starts-->
+<div class="container-fluid dashboard-2">
+  <div class="row size-column">
+    <div class="col-xxl-10 col-md-12 box-col-12 grid-ed-12">
+      <div class="row">
+        <div class="col-xxl-5 col-md-7 box-col-7">
+          <div class="row"> 
+            <div class="col-6"> 
+              <div class="card small-widget"> 
+                <div class="card-body primary"> 
+                    <span class="f-light">New Orders</span>
+                    <div class="d-flex align-items-end gap-1">
+                      <h4 class="counter" data-target="{{ total_orders }}">{{ total_orders }}</h4>
+                      <span class="font-primary f-12 f-w-500">
+                        <i class="icon-arrow-up"></i>
+                        <span>+{{ growth_percent }}%</span>
+                      </span>
+                    </div>
+                    <div class="bg-gradient"> 
+                      <svg class="stroke-icon svg-fill">
+                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#new-order"></use>
+                      </svg>
+                    </div>
+                  </div>
+              </div>
+            </div>
+            <div class="col-6"> 
+                <div class="card small-widget"> 
+                  <div class="card-body warning">
+                    <span class="f-light">New Customers</span>
+                    <div class="d-flex align-items-end gap-1">
+                      <h4 class="counter" data-target="{{ recent_customers }}"></h4>
+                      <span class="font-warning f-12 f-w-500">
+                        <i class="icon-arrow-up"></i>
+                        <span>+{{ customer_growth_percent }}%</span>
+                      </span>
+                    </div>
+                    <div class="bg-gradient"> 
+                      <svg class="stroke-icon svg-fill">
+                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#customers"></use>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-6"> 
+                <div class="card small-widget"> 
+                  <div class="card-body secondary">
+                    <span class="f-light">Average Sale</span>
+                    <div class="d-flex align-items-end gap-1">
+                      <h4>৳<span class="counter" data-target="{{ average_sale_last_30_days|floatformat:2 }}">0</span></h4>
+                      <span class="font-secondary f-12 f-w-500">
+                        <i class="icon-arrow-{% if average_sale_growth_percent >= 0 %}up{% else %}down{% endif %}"></i>
+                        <span>{{ average_sale_growth_percent }}%</span>
+                      </span>
+                    </div>
+                    <div class="bg-gradient"> 
+                      <svg class="stroke-icon svg-fill">
+                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#sale"></use>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-6"> 
+                <div class="card small-widget"> 
+                  <div class="card-body success">
+                    <span class="f-light">Gross Profit</span>
+                    <div class="d-flex align-items-end gap-1">
+                      <h4>
+                        ৳<span class="counter" data-target="{{ gross_profit_last_30_days|floatformat:2 }}">0</span>
+                      </h4>
+                      <span class="font-success f-12 f-w-500">
+                        <i class="icon-arrow-{% if gross_profit_growth_percent >= 0 %}up{% else %}down{% endif %}"></i>
+                        <span>
+                          {% if gross_profit_growth_percent >= 0 %}+{% endif %}{{ gross_profit_growth_percent|floatformat:2 }}%
+                        </span>
+                      </span>
+                    </div>
+                    <div class="bg-gradient"> 
+                      <svg class="stroke-icon svg-fill">
+                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#profit"></use>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+
+          </div>
+        </div>
+        <div class="col-xxl-3 col-md-5 col-sm-6 box-col-5"> 
+          <div class="appointment">
+            <div class="card">
+              <div class="card-header card-no-border">
+                <div class="header-top">
+                  <h5 class="m-0">Top Customer</h5>
+                </div>
+              </div>
+              <div class="card-body pt-0">
+                <div class="appointment-table customer-table table-responsive custom-scrollbar">
+                  <table class="table table-bordernone">
+                    <tbody>
+                        {% for customer in top_customers %}
+                          <tr>
+                            <td>
+                              <img class="img-fluid img-40 rounded-circle me-2" 
+                                   src="{% static 'assets/images/dashboard/user/1.jpg' %}" 
+                                   alt="user">
+                            </td>
+                            <td class="img-content-box">
+                                <div class="d-flex align-items-center">
+                                    <a class="f-w-500 me-2" href="#{{ customer.customer__id }}">
+                                      {% if customer.customer__first_name %}
+                                        {{ customer.customer__first_name }} {{ customer.customer__last_name }}
+                                      {% else %}
+                                        {{ customer.customer__username }}
+                                      {% endif %}
+                                    </a>
+                                    <span class="badge bg-light-success text-dark">
+                                      ৳{{ customer.total_spent|floatformat:2 }}
+                                    </span>
+                                  </div>
+                                  
+                              <span class="f-light">{{ customer.customer__email }}</span>
+                            </td>
+                          </tr>
+                        {% empty %}
+                          <tr>
+                            <td colspan="2">No customers found.</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                      
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xxl-4 col-sm-6 box-col-6 ord-xl-i box-ord-1">
+          <div class="card"> 
+            <div class="card-header card-no-border">
+              <div class="header-top">
+                <h5 class="m-0">Orders This Month</h5>
+                <div class="card-header-right-icon">
+                  <div class="dropdown icon-dropdown">
+                    <button class="btn dropdown-toggle" id="orderThisMonth" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-more-alt"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="orderThisMonth">
+                        <a class="dropdown-item {% if period == 'this_month' %}active{% endif %}" href="?period=this_month">This Month</a>
+                        <a class="dropdown-item {% if period == 'previous_month' %}active{% endif %}" href="?period=previous_month">Previous Month</a>
+                        <a class="dropdown-item {% if period == 'last_3_months' %}active{% endif %}" href="?period=last_3_months">Last 3 Months</a>
+                        <a class="dropdown-item {% if period == 'last_6_months' %}active{% endif %}" href="?period=last_6_months">Last 6 Months</a>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body pt-0">
+                <div class="light-card balance-card d-inline-block">
+                    <h4 class="mb-0">
+                      {{ orders_this_month }} <span class="f-light f-14">(To Goal)</span>
+                    </h4>
+                  </div>
+                  
+              <div class="order-wrapper"> 
+                <div id="order-goal"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xxl-3 col-md-6 box-col-6 ord-xl-ii box-ord-2">
+          <div class="card"> 
+            <div class="card-header card-no-border"> 
+              <div class="header-top">
+                <h5>Monthly Profits</h5>
+                <div class="card-header-right-icon">
+                  <div class="dropdown icon-dropdown">
+                    <button class="btn dropdown-toggle" id="monthlyProfit" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-more-alt"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="monthlyProfit"><a class="dropdown-item" href="#!">This Month</a><a class="dropdown-item" href="#!">Previous Month</a><a class="dropdown-item" href="#!">Last 3 Months</a><a class="dropdown-item" href="#!">Last 6 Months</a></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body pt-0"> 
+              <div class="monthly-profit">
+                <div id="profitmonthly"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xxl-9 box-col-12 ord-xl-iii box-ord-3">
+          <div class="card heading-space">
+            <div class="card-header card-no-border">
+              <div class="header-top">
+                <h5>Recent Transactions</h5>
+                <div class="card-header-right-icon">
+                  <div class="dropdown icon-dropdown">
+                    <button class="btn dropdown-toggle" id="recentTransaction" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-more-alt"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="recentTransaction">
+                      <a class="dropdown-item" href="?period=this_month">This Month</a>
+                      <a class="dropdown-item" href="?period=previous_month">Previous Month</a>
+                      <a class="dropdown-item" href="?period=last_3_months">Last 3 Months</a>
+                      <a class="dropdown-item" href="?period=last_6_months">Last 6 Months</a>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body px-0 pt-0 recent-transaction">
+              <div class="recent-table table-responsive custom-scrollbar">
+                <table class="table" id="recent-transaction"> 
+                  <thead> 
+                    <tr>
+                      <th> </th>
+                      <th>Transaction ID</th>
+                      <th>Date</th>
+                      <th>Customers</th>
+                      <th>Product</th>
+                      <th>QTY</th>
+                      <th>Payments</th>
+                      <th>Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody> 
+                    {% for order in recent_transactions %}
+                    <tr>
+                      <td> </td>
+                      <td class="f-w-500">{{ order.order_number }}</td>
+                      <td>{{ order.created_at|date:"d M Y" }}</td>
+                      <td>{{ order.customer.first_name }}</td>
+                      <td>
+                        {% for vendor_order in order.vendor_orders.all %}
+                          {% for item in vendor_order.items.all %}
+                            {{ item.product.title }}{% if not forloop.last %}, {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+                      </td>
+                      <td>
+                        {% for vendor_order in order.vendor_orders.all %}
+                          {% for item in vendor_order.items.all %}
+                            {{ item.quantity }}{% if not forloop.last %}, {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+                      </td>
+                      <td>{{ order.get_payment_method_display }}</td>
+                      <td> ৳{{ order.grand_total }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xxl-4 col-xl-4 col-md-6 box-col-4 ord-xl-v box-ord-5">
+          <div class="card visitor-card"> 
+            <div class="card-header card-no-border">
+              <div class="header-top">
+                <h5 class="m-0">Website Traffic<span class="f-14 font-primary f-w-500 ms-1">
+                    <svg class="svg-fill me-1">
+                      <use href="{% static 'assets/svg/icon-sprite.svg' %}#user-visitor"></use>
+                    </svg>(+2.8)</span></h5>
+                <div class="card-header-right-icon">
+                  <div class="dropdown icon-dropdown">
+                    <button class="btn dropdown-toggle" id="visitorButton" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="icon-more-alt"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="visitorButton"><a class="dropdown-item" href="#">Today</a><a class="dropdown-item" href="#">Yesterday</a><a class="dropdown-item" href="#">This Week </a><a class="dropdown-item" href="#">This Month</a><a class="dropdown-item" href="#">Previous Month</a></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body pt-0">
+              <div class="visitors-container">
+                <div id="visitor-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xxl-5 col-xl-4 box-col-4 ord-xl-vi box-ord-6">
+          <div class="card recent-order">
+            <div class="card-header card-no-border">
+              <div class="header-top">
+                <h5 class="m-0">Recent Orders</h5>
+              </div>
+            </div>
+            <div class="card-body pt-0"> 
+              <div class="recent-sliders">
+                <div class="nav nav-pills recent-order-scroll custom-scrollbar" id="v-pills-tab" role="tablist">
+                  {% for category in categories %}
+                    <a class="frame-box {% if forloop.first %}active{% endif %}" 
+                       id="v-pills-{{ category.id }}-tab" 
+                       data-bs-toggle="pill" 
+                       data-bs-target="#v-pills-{{ category.id }}" 
+                       role="tab" 
+                       aria-controls="v-pills-{{ category.id }}" 
+                       aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                       
+                      <span data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="{{ category.name }}">
+                        <span class="frame-image" >
+                          {% if category.thumbnail_small %}
+                            <img src="{{ category.thumbnail_small.url }}" alt="{{ category.name }}" style="width:75px; height 30px;">
+                          {% else %}
+                            <img src="{% static 'assets/images/dashboard-2/order/default.png' %}" alt="category">
+                          {% endif %}
+                        </span>
+                      </span>
+                    </a>
+                  {% endfor %}
+                </div>
+                
+                <div class="tab-content" id="v-pills-tabContent">
+                  {% for category in categories %}
+                    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                         id="v-pills-{{ category.id }}" role="tabpanel">
+                
+                      <div class="recent-table table-responsive custom-scrollbar recent-items">
+                        <table class="table">
+                          <thead>
+                            <tr>
+                              <th class="c-light">Item</th>
+                              <th class="c-light">Qty</th>
+                              <th class="c-light">Price</th>
+                              <th class="c-light">Total Price</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for order in latest_orders %}
+                              {% for vendor_order in order.vendor_orders.all %}
+                                {% for item in vendor_order.items.all %}
+                                  {% if item.product.category_id == category.id %}
+                                    <tr>
+                                      <td>
+                                        <div class="product-content">
+                                          <div class="order-image">
+                                            {% if item.product.thumbnail_image %}
+                                              <img src="{{ item.product.thumbnail_image.url }}" alt="{{ item.product.title }}" style="width:50px; height:50px">
+                                            {% else %}
+                                              <img src="{% static 'assets/images/dashboard-2/order/sub-product/4.png' %}" alt="product">
+                                            {% endif %}
+                                          </div>
+                                          <div>
+                                            <h6 class="f-14 mb-0">
+                                              <a href="/order_history">{{ item.product.title }}</a>
+                                            </h6>
+                                            <span class="f-light f-12">Id : #{{ order.order_number }}</span>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td class="f-w-500">X{{ item.quantity }}</td>
+                                      <td class="f-w-500">${{ item.final_price }}</td>
+                                      <td class="f-w-500">${{ item.get_total_price }}</td>
+                                    </tr>
+                                  {% endif %}
+                                {% endfor %}
+                              {% endfor %}
+                            {% empty %}
+                              <tr><td colspan="4" class="text-center">No orders in this category</td></tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xxl-2 col-xl-3 col-md-4 grid-ed-none box-col-none d-xxl-block d-none">
+      <div class="card">
+        <div class="card-header card-no-border"> 
+          <h5>Top Categories</h5>
+        </div>
+        <div class="card-body pt-0"> 
+          <ul class="categories-list">
+            {% for category in all_categories %}
+              <li class="d-flex"> 
+                <div class="bg-light">
+                  {% if category.thumbnail_small %}
+                    <img src="{{ category.thumbnail_small.url }}" alt="{{ category.name }}" style="width:50px;height:50px">
+                  {% else %}
+                    <img src="{% static 'assets/images/dashboard-2/category/default.png' %}" alt="default icon">
+                  {% endif %}
+                </div>
+                <div> 
+                  <h6 class="mb-0">
+                    <a href="{% url 'product_grid' %}?category={{ category.slug }}">{{ category.name }}</a>
+                  </h6>
+                  <span class="f-light f-12 f-w-500">({{ category.product_count }})</span>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+          
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+<!-- Container-fluid Ends-->
 
 {% endblock %}
 
