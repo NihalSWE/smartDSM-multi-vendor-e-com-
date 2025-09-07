@@ -1535,3 +1535,11 @@ def orderComplete(request):
 #login--
 def userlogin(request):
     return render(request,'front/pages/login.html')
+
+
+def categories(request):   
+    categories = Category.objects.all()
+    context = {
+        'categories': categories,
+    }
+    return render(request, 'front/shop/categories.html', context)
