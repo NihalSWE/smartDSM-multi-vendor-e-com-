@@ -31,7 +31,7 @@
             <!-- Start of Breadcrumb -->
             <nav class="breadcrumb-nav container">
                 <ul class="breadcrumb bb-no">
-                    <li><a href="demo1.html">Home</a></li>
+                    <li><a href="{% url 'home' %}">Home</a></li>
                     <li>Products</li>
                 </ul>
             </nav>
@@ -231,7 +231,7 @@
                                             <h4 class="product-name">
                                                 <a href="#">Electronics Black Wrist Watch</a>
                                             </h4>
-                                            <div class="product-price">$40.00</div>
+                                            <div class="product-price">৳40.00</div>
                                         </div>
                                     </div>
                                     <div class="product product-wrap text-center">
@@ -248,7 +248,7 @@
                                             <h4 class="product-name">
                                                 <a href="#">Apple Laptop</a>
                                             </h4>
-                                            <div class="product-price">$1,800.00</div>
+                                            <div class="product-price">৳1,800.00</div>
                                         </div>
                                     </div>
                                     <div class="product product-wrap text-center">
@@ -265,11 +265,11 @@
                                             <h4 class="product-name">
                                                 <a href="#">White Lenovo Headphone</a>
                                             </h4>
-                                            <div class="product-price">$34.00</div>
+                                            <div class="product-price">৳34.00</div>
                                         </div>
                                     </div>
                                     <div class="product-button">
-                                        <div class="bought-price font-weight-bolder text-primary ls-50">$1,874.00</div>
+                                        <div class="bought-price font-weight-bolder text-primary ls-50">৳1,874.00</div>
                                         <div class="bought-count">For 3 items</div>
                                         <a href="cart.html" class="btn btn-dark btn-rounded">Add All To Cart</a>
                                     </div>
@@ -677,7 +677,7 @@
                                                             <a href="product-default.html" class="rating-reviews">(3 reviews)</a>
                                                         </div>
                                                         <div class="product-pa-wrapper">
-                                                            <div class="product-price">$632.00</div>
+                                                            <div class="product-price">৳632.00</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -740,7 +740,7 @@
                                                             <a href="product-default.html" class="rating-reviews">(3 reviews)</a>
                                                         </div>
                                                         <div class="product-pa-wrapper">
-                                                            <div class="product-price">$632.00</div>
+                                                            <div class="product-price">৳632.00</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -793,12 +793,12 @@
                                                         </div> {% endcomment %}
                                                         <div class="product-price">
                                                             {% if product.has_discount %}
-                                                                ${{ product.get_discounted_price|floatformat:2 }}
+                                                                ৳{{ product.get_discounted_price|floatformat:2 }}
                                                                 {% if product.selling_price > product.get_discounted_price %}
-                                                                    <del>${{ product.selling_price|floatformat:2 }}</del>
+                                                                    <del>৳{{ product.selling_price|floatformat:2 }}</del>
                                                                 {% endif %}
                                                             {% else %}
-                                                                ${{ product.selling_price|floatformat:2 }}
+                                                                ৳{{ product.selling_price|floatformat:2 }}
                                                             {% endif %}
                                                         </div>
                                                     </div>

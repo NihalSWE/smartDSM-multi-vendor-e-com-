@@ -121,10 +121,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
-
 
     objects = UserManager()
 
@@ -532,7 +529,8 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-    
+        
+        
     def get_discounted_price(self):
         # If there’s an active discount with a discount_price, subtract it
         discount = self.discounts.filter(active=True, discount_price__isnull=False).first()

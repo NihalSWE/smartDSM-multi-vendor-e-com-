@@ -284,6 +284,31 @@
         font-style: italic;
     }
     /* drag and drop area */
+
+    .rejection-reason-div .alert {
+        background-color: rgba(255, 0, 0, 0.1); /* Light red transparent background */
+        border-left: 4px solid #dc3545;
+        border-radius: 4px;
+        color: #dc3545; /* Red text color */
+        border-color: rgba(220, 53, 69, 0.3); /* Light red border */
+    }
+
+    .rejection-reason-div .alert-heading {
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+        color: #dc3545; /* Red text for heading */
+    }
+
+    .rejection-content {
+        line-height: 1.6;
+        color: #dc3545; /* Red text for content */
+    }
+
+    /* Optional: Style the icon to match */
+    .rejection-reason-div .alert-heading i {
+        color: #dc3545;
+    }
 </style>
 {% endblock custom_css %}
 
@@ -292,6 +317,19 @@
 
     <!-- Container-fluid starts -->
     <div class="container-fluid">
+        <div id="rejection-reason-div" class="rejection-reason-div">
+            {% if product.publish_status == 3 and product.clean_rejection_reason %}
+                <div class="alert alert-danger mt-3">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-circle me-2"></i>Rejection Reason
+                    </h5>
+                    <hr>
+                    <div class="rejection-content">
+                        {{ product.clean_rejection_reason|safe }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -303,7 +341,23 @@
                             <div class="col-xxl-3 col-xl-4 box-col-4e sidebar-left-wrapper">
                                 <ul class="sidebar-left-icons nav nav-pills" id="add-product-pills-tab" role="tablist">
                                     <li class="nav-item">
-                                        <a class="nav-link active" id="detail-product-tab" data-bs-toggle="pill" href="#detail-product" role="tab" aria-controls="detail-product" aria-selected="false">
+                                        <a class="nav-link active" id="category-product-tab" data-bs-toggle="pill" href="#category-product" role="tab" aria-controls="category-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-category"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Categories</h6>
+                                                <p>Edit product category, status and tags</p>
+                                            </div>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="detail-product-tab" data-bs-toggle="pill" href="#detail-product" role="tab" aria-controls="detail-product" aria-selected="false">
                                             <div class="nav-rounded">
                                                 <div class="product-icons">
                                                     <svg class="stroke-icon">
@@ -317,6 +371,7 @@
                                             </div>
                                         </a>
                                     </li>
+
                                     <li class="nav-item">
                                         <a class="nav-link" id="gallery-product-tab" data-bs-toggle="pill" href="#gallery-product" role="tab" aria-controls="gallery-product" aria-selected="false">
                                             <div class="nav-rounded">
@@ -329,22 +384,6 @@
                                             <div class="product-tab-content">
                                                 <h6>Product Gallery</h6>
                                                 <p>Edit thumbnail & product gallery</p>
-                                            </div>
-                                        </a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="category-product-tab" data-bs-toggle="pill" href="#category-product" role="tab" aria-controls="category-product" aria-selected="false">
-                                            <div class="nav-rounded">
-                                                <div class="product-icons">
-                                                    <svg class="stroke-icon">
-                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-category"></use>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="product-tab-content">
-                                                <h6>Product Categories</h6>
-                                                <p>Edit product category, status and tags</p>
                                             </div>
                                         </a>
                                     </li>
@@ -381,13 +420,66 @@
                                     </li>
                                 </ul>
                             </div>
+
                             <div class="col-xxl-9 col-xl-8 box-col-8 position-relative">
                                 <form id="product-form" method="POST" enctype="multipart/form-data" novalidate>
                                     {% csrf_token %}
                                     <input type="hidden" name="slug" value="{{ product.id }}">
                                     
                                     <div class="tab-content custom-input" id="add-product-pills-tabContent">
-                                        <div class="tab-pane fade show active" id="detail-product" role="tabpanel" aria-labelledby="detail-product-tab">
+                                        <div class="tab-pane fade show active" id="category-product" role="tabpanel" aria-labelledby="category-product-tab">
+                                            <div class="sidebar-body common-form">
+                                                <div class="row g-3 common-form">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Category</label>
+                                                        <select id="category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="category">
+                                                            {% for category in categories %}
+                                                                <option value="{{ category.id }}" {% if product.category.id == category.id %}selected{% endif %}>
+                                                                    {{ category.name }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Sub Category</label>
+                                                        <select id="sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_category">
+                                                            {% if product.sub_category %}
+                                                                <option value="{{ product.sub_category.id }}" selected>
+                                                                    {{ product.sub_category.name }}
+                                                                </option>
+                                                            {% endif %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Sub Sub Category</label>
+                                                        <select id="sub-sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_sub_category">
+                                                            {% if product.sub_sub_category %}
+                                                                <option value="{{ product.sub_sub_category.id }}" selected>
+                                                                    {{ product.sub_sub_category.name }}
+                                                                </option>
+                                                            {% endif %}
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="col-sm-12 common-tagify">
+                                                        <label class="form-label">Tags</label>
+                                                        <input name="tags" value="{{ product.tags.all|join:', ' }}" />
+                                                    </div>
+
+                                                    <div class="col-12 product-buttons">
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('detail-product-tab')">
+                                                            Next<svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="detail-product" role="tabpanel" aria-labelledby="detail-product-tab">
                                             <div class="sidebar-body">
                                                 <!-- form -->
                                                 <div class="row g-3 common-form">
@@ -420,6 +512,11 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-12 product-buttons">
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                            <svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                            </svg>Previous
+                                                        </button>
                                                         <button id="next-button" class="btn m-0" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
                                                             Next<svg>
                                                                 <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
@@ -482,7 +579,7 @@
                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
                                                         </svg>Previous
                                                     </button>
-                                                    <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('pricings-tab')">
                                                         Next<svg>
                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
                                                         </svg>
@@ -490,62 +587,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="tab-pane fade" id="category-product" role="tabpanel" aria-labelledby="category-product-tab">
-                                            <div class="sidebar-body common-form">
-                                                <div class="row g-3 common-form">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Category</label>
-                                                        <select id="category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="category">
-                                                            {% for category in categories %}
-                                                                <option value="{{ category.id }}" {% if product.category.id == category.id %}selected{% endif %}>
-                                                                    {{ category.name }}
-                                                                </option>
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Sub Category</label>
-                                                        <select id="sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_category">
-                                                            {% if product.sub_category %}
-                                                                <option value="{{ product.sub_category.id }}" selected>
-                                                                    {{ product.sub_category.name }}
-                                                                </option>
-                                                            {% endif %}
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Sub Sub Category</label>
-                                                        <select id="sub-sub-category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="sub_sub_category">
-                                                            {% if product.sub_sub_category %}
-                                                                <option value="{{ product.sub_sub_category.id }}" selected>
-                                                                    {{ product.sub_sub_category.name }}
-                                                                </option>
-                                                            {% endif %}
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="col-sm-12 common-tagify">
-                                                        <label class="form-label">Tags</label>
-                                                        <input name="tags" value="{{ product.tags.all|join:', ' }}" />
-                                                    </div>
-
-                                                    <div class="col-12 product-buttons">
-                                                        <button class="btn" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
-                                                            <svg>
-                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
-                                                            </svg>Previous
-                                                        </button>
-                                                        <button class="btn" type="button" onclick="handleNextButtonClick('pricings-tab')">
-                                                            Next<svg>
-                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        
                                         <div class="tab-pane fade" id="pricings" role="tabpanel" aria-labelledby="pricings-tab">
                                             <div class="price-wrapper common-form row g-3">
                                                 <div class="col-sm-6">
@@ -667,21 +709,21 @@
                                         <div class="tab-pane fade" id="advance-product" role="tabpanel" aria-labelledby="advance-product-tab">
                                             <div class="sidebar-body advance-options">
                                                 <ul class="nav nav-tabs border-tab mb-0" id="advance-option-tab" role="tablist">
-                                                <li class="nav-item">
-                                                    <a class="nav-link active" id="inventory-option-tab" data-bs-toggle="tab" href="#inventory-option" role="tab" aria-controls="inventory-option" aria-selected="true">Inventory</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="seo-option-tab" data-bs-toggle="tab" href="#seo-option" role="tab" aria-controls="seo-option" aria-selected="false">SEO Tags</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="dropping-option-tab" data-bs-toggle="tab" href="#dropping-option" role="tab" aria-controls="dropping-option" aria-selected="false">Shipping</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
-                                                </li>
+                                                    {% comment %} <li class="nav-item">
+                                                        <a class="nav-link active" id="inventory-option-tab" data-bs-toggle="tab" href="#inventory-option" role="tab" aria-controls="inventory-option" aria-selected="true">Inventory</a>
+                                                    </li> {% endcomment %}
+                                                    <li class="nav-item">
+                                                        <a class="nav-link active" id="seo-option-tab" data-bs-toggle="tab" href="#seo-option" role="tab" aria-controls="seo-option" aria-selected="false">SEO Tags</a>
+                                                    </li>
+                                                    {% comment %} <li class="nav-item">
+                                                        <a class="nav-link" id="dropping-option-tab" data-bs-toggle="tab" href="#dropping-option" role="tab" aria-controls="dropping-option" aria-selected="false">Shipping</a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
+                                                    </li> {% endcomment %}
                                                 </ul>
                                                 <div class="tab-content" id="advance-option-tabContent">
                                                     <div class="tab-pane fade show active" id="inventory-option"    role="tabpanel" aria-labelledby="inventory-option-tab">
@@ -689,7 +731,7 @@
                                                             
                                                         </div>
                                                     </div>
-                                                    <div class="tab-pane fade" id="seo-option" role="tabpanel" aria-labelledby="seo-option-tab">
+                                                    <div class="tab-pane fade show active" id="seo-option" role="tabpanel" aria-labelledby="seo-option-tab">
                                                         <div class="meta-body">
                                                             <div class="row g-3 common-form">
                                                                 <div class="col-xxl-6">
@@ -722,7 +764,7 @@
                                                                     <p class="mb-0 mt-1 f-light">Enhance your SEO ranking with an added tag description for the product.</p>
                                                                 </div>
                                                                 <div class="col-md-12 product-buttons">
-                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('inventory-option-tab')">
+                                                                    {% comment %} <button class="btn" type="button" onclick="handleNextButtonClick('inventory-option-tab')">
                                                                         <svg>
                                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
                                                                         </svg>Previous
@@ -731,12 +773,17 @@
                                                                         Next<svg>
                                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
                                                                         </svg>
+                                                                    </button> {% endcomment %}
+                                                                    <button class="btn sweet-15" type="submit">
+                                                                        Submit<svg>
+                                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                        </svg>
                                                                     </button>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="tab-pane fade" id="dropping-option" role="tabpanel" aria-labelledby="dropping-option-tab">
+                                                    {% comment %} <div class="tab-pane fade" id="dropping-option" role="tabpanel" aria-labelledby="dropping-option-tab">
                                                         <div class="meta-body">
                                                             <div class="common-form">
                                                                 <div class="row g-3">
@@ -804,8 +851,8 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="tab-pane fade" id="variation-option" role="tabpanel" aria-labelledby="variation-option-tab">
+                                                    </div> {% endcomment %}
+                                                    {% comment %} <div class="tab-pane fade" id="variation-option" role="tabpanel" aria-labelledby="variation-option-tab">
                                                         <div class="meta-body">
                                                             <div class="row g-3 common-form">
                                                                 <div class="col-12">
@@ -883,7 +930,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </div> {% endcomment %}
                                                 </div>
                                             </div>
                                         </div>

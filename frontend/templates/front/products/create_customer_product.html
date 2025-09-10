@@ -284,28 +284,47 @@
         font-style: italic;
     }
     /* drag and drop area */
+
+    /* loading modal*/
+    .loading-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7); /* Transparent black background */
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 {% endblock custom_css %}
 
 
 {% block content %}
-
-
-
-{% if request.user.user_type == 3 %}
-<div class="container-fluid mb-3">
-    <div class="row">
-        <div class="col-12">
-            <button onclick="window.history.back()" class="btn btn-secondary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-                </svg>
-                Back
-            </button>
-        </div>
-    </div>
-</div>
-{% endif %}
 
     <!-- Container-fluid starts -->
     <div class="container-fluid">
@@ -320,7 +339,23 @@
                             <div class="col-xxl-3 col-xl-4 box-col-4e sidebar-left-wrapper">
                                 <ul class="sidebar-left-icons nav nav-pills" id="add-product-pills-tab" role="tablist">
                                     <li class="nav-item">
-                                        <a class="nav-link active" id="detail-product-tab" data-bs-toggle="pill" href="#detail-product" role="tab" aria-controls="detail-product" aria-selected="false">
+                                        <a class="nav-link active" id="category-product-tab" data-bs-toggle="pill" href="#category-product" role="tab" aria-controls="category-product" aria-selected="false">
+                                            <div class="nav-rounded">
+                                                <div class="product-icons">
+                                                    <svg class="stroke-icon">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-category"></use>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="product-tab-content">
+                                                <h6>Product Categories</h6>
+                                                <p>Add product category, status and tags</p>
+                                            </div>
+                                        </a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="detail-product-tab" data-bs-toggle="pill" href="#detail-product" role="tab" aria-controls="detail-product" aria-selected="false">
                                             <div class="nav-rounded">
                                                 <div class="product-icons">
                                                     <svg class="stroke-icon">
@@ -334,6 +369,7 @@
                                             </div>
                                         </a>
                                     </li>
+
                                     <li class="nav-item">
                                         <a class="nav-link" id="gallery-product-tab" data-bs-toggle="pill" href="#gallery-product" role="tab" aria-controls="gallery-product" aria-selected="false">
                                             <div class="nav-rounded">
@@ -346,22 +382,6 @@
                                             <div class="product-tab-content">
                                                 <h6>Product Gallery</h6>
                                                 <p>Thumbnail & add product gallery</p>
-                                            </div>
-                                        </a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="category-product-tab" data-bs-toggle="pill" href="#category-product" role="tab" aria-controls="category-product" aria-selected="false">
-                                            <div class="nav-rounded">
-                                                <div class="product-icons">
-                                                    <svg class="stroke-icon">
-                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#product-category"></use>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div class="product-tab-content">
-                                                <h6>Product Categories</h6>
-                                                <p>Add product category, status and tags</p>
                                             </div>
                                         </a>
                                     </li>
@@ -402,222 +422,8 @@
                                 <form id="product-form" method="POST" enctype="multipart/form-data" novalidate>
                                     {% csrf_token %}
                                     <div class="tab-content custom-input" id="add-product-pills-tabContent">
-                                        <div class="tab-pane fade show active" id="detail-product" role="tabpanel" aria-labelledby="detail-product-tab">
-                                            <div class="sidebar-body">
-                                                <!-- form -->
-                                                <div class="row g-3 common-form">
-                                                    <div class="col-12">
-                                                        <label class="form-label" for="exampleFormControlInput1">Product SKU</label>
-                                                        <input class="form-control" id="exampleFormControlInput1" type="text" placeholder="Enter a number" name="sku" required />
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <label class="form-label" for="validationProductTitle">Product Title</label>
-                                                        <input class="form-control" id="validationProductTitle" type="text" placeholder="Title" name="title" required />
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <label class="form-label" for="validationProductModel">Product Model</label>
-                                                        <input class="form-control" id="validationProductModel" type="text" placeholder="Product Model" name="model" />
-                                                    </div>
-
-                                                    <div class="col-md-12">
-                                                        <label class="form-label">Short Description</label>
-                                                        <div class="toolbar-box">
-                                                            <div id="toolbar2">
-                                                                <button class="ql-bold">Bold</button>
-                                                                <button class="ql-italic">Italic</button>
-                                                                <button class="ql-underline">underline</button>
-                                                                <button class="ql-strike">Strike</button>
-                                                                <button class="ql-list" value="ordered">List</button>
-                                                                <button class="ql-list" value="bullet"></button>
-                                                                <button class="ql-indent" value="-1"></button>
-                                                                <button class="ql-indent" value="+1"></button>
-                                                                <button class="ql-link"></button>
-                                                            </div>
-                                                            <div id="editor5"></div>
-                                                            <textarea name="short_description" id="short-description" style="display: none"></textarea>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-12">
-                                                        <label class="form-label">Product Description</label>
-                                                        <div class="toolbar-box">
-                                                            <div id="toolbar2">
-                                                                <button class="ql-bold">Bold</button>
-                                                                <button class="ql-italic">Italic</button>
-                                                                <button class="ql-underline">underline</button>
-                                                                <button class="ql-strike">Strike</button>
-                                                                <button class="ql-list" value="ordered">List</button>
-                                                                <button class="ql-list" value="bullet"></button>
-                                                                <button class="ql-indent" value="-1"></button>
-                                                                <button class="ql-indent" value="+1"></button>
-                                                                <button class="ql-link"></button>
-                                                            </div>
-                                                            <div id="editor2"></div>
-                                                            <textarea name="description" id="product-description" style="display: none"></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-12 product-buttons">
-                                                        <button id="next-button" class="btn m-0" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
-                                                            Next<svg>
-                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="tab-pane fade" id="gallery-product" role="tabpanel" aria-labelledby="gallery-product-tab">
+                                        <div class="tab-pane fade show active" id="category-product" role="tabpanel" aria-labelledby="category-product-tab">
                                             <div class="sidebar-body common-form">
-                                                <div class="product-upload">
-                                                    <p>
-                                                        Product Thumbnail Image
-                                                        <span class="c-o-light">(Main Image)</span>
-                                                    </p>
-                                                    <div class="dropzone dropzone-secondary" id="thumbnailDropzone">
-                                                        <div class="dz-message needsclick">
-                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
-                                                            <h6>Drop file here or click to upload</h6>
-                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
-                                                        </div>
-                                                        <div class="preview-container" id="thumbnailPreviewContainer"></div>
-                                                        <input type="file" name="thumbnail" id="thumbnailFileInput" style="display: none" accept="image/*" />
-                                                    </div>
-                                                    <p class="instruction">Upload one high-quality image as your main product thumbnail</p>
-                                                </div>
-                                                
-                                                <div class="product-upload">
-                                                    <p>Product Gallery</p>
-                                                    <div class="dropzone dropzone-secondary" id="galleryDropzone">
-                                                        <div class="dz-message needsclick">
-                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
-                                                            <h6>Drop files here or click to upload</h6>
-                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
-                                                        </div>
-                                                        <div class="preview-container" id="galleryPreviewContainer"></div>
-                                                        <input type="file" name="gallery[]" id="galleryFileInput" style="display: none" multiple accept="image/*" />
-                                                    </div>
-                                                    <p class="instruction">Upload up to 3 images for your product gallery</p>
-                                                </div>
-                                                
-                                                <div class="product-buttons">
-                                                    <button class="btn" type="button" onclick="handleNextButtonClick('detail-product-tab')">
-                                                        <svg>
-                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
-                                                        </svg>Previous
-                                                    </button>
-                                                    <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
-                                                        Next<svg>
-                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="tab-pane fade" id="category-product" role="tabpanel" aria-labelledby="category-product-tab">
-                                            <div class="sidebar-body common-form">
-                                                {% comment %} <div class="modal fade" id="category-pill-modal" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                        <div class="modal-content category-popup">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="modaldashboard">Add Categories</h5>
-                                                                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body p-0 custom-input">
-                                                                <div class="text-start">
-                                                                    <div class="p-20">
-                                                                        <div class="row g-3 needs-validation" novalidate="">
-                                                                            <div class="col-md-6">
-                                                                                <label class="form-label" for="validationCategory">Category Name<span class="txt-danger">*</span></label>
-                                                                                <input class="form-control" name="category" id="validationCategory" type="text" placeholder="Enter your category name" required="" />
-                                                                                <div class="invalid-feedback">Please choose a category name.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-12">
-                                                                                <label class="form-label">Parent Category<span class="txt-danger">*</span></label>
-                                                                                <select class="form-select" name="parent_category" aria-label="Select parent category">
-                                                                                    <option selected="">T-shirts</option>
-                                                                                    <option value="1">Purse</option>
-                                                                                    <option value="2">Cameras</option>
-                                                                                </select>
-                                                                                <div class="invalid-feedback">Please choose a parent category.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-6">
-                                                                                <label class="form-label">Category Type<span class="txt-danger">*</span></label>
-                                                                                <select class="form-select" name="category_type" aria-label="Select parent category">
-                                                                                    <option selected="">Electronic</option>
-                                                                                    <option value="1">Accessories</option>
-                                                                                    <option value="2">Footwear</option>
-                                                                                    <option value="3">Clothing</option>
-                                                                                    <option value="4">Furniture</option>
-                                                                                </select>
-                                                                                <div class="invalid-feedback">Please choose a category type.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-6">
-                                                                                <label class="form-label">Category Status<span class="txt-danger">*</span></label>
-                                                                                <select class="form-select" name="category_status" aria-label="Select parent category">
-                                                                                    <option selected="">Active</option>
-                                                                                    <option value="1">Inactive</option>
-                                                                                </select>
-                                                                                <div class="invalid-feedback">Please choose a category status.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-12">
-                                                                                <label class="form-label" for="validationDescription">Category Description</label>
-                                                                                <textarea name="category_description" class="form-control" id="validationDescription" placeholder="Description here..." required=""></textarea>
-                                                                                <div class="invalid-feedback">Please enter a category description.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-12">
-                                                                                <div class="main-divider">
-                                                                                    <div class="divider-body">
-                                                                                        <h6>SEO Tags</h6>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="col-lg-6">
-                                                                                <label class="form-label" for="validationMetaTitle1">Meta Title<span class="txt-danger">*</span></label>
-                                                                                <input class="form-control" name="meta_title" id="validationMetaTitle1" type="text" placeholder="Enter meta title" required="" />
-                                                                                <div class="invalid-feedback">Please choose a meta title.</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-lg-6">
-                                                                                <label class="form-label" for="validationKeywords">Meta Keywords<span class="txt-danger">*</span><span class="c-o-light">&nbsp;(In comma separated)</span></label>
-                                                                                <input class="form-control" name="meta_keywords" id="validationKeywords" type="text" placeholder="Enter meta keywords" required="" />
-                                                                                <div class="invalid-feedback">Please enter a meta keywords(In comma separated).</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-12">
-                                                                                <label class="form-label">Meta Description</label>
-                                                                                <div class="toolbar-box">
-                                                                                    <div id="toolbar3">
-                                                                                        <button class="ql-bold">Bold</button>
-                                                                                        <button class="ql-italic">Italic</button>
-                                                                                        <button class="ql-underline">underline</button>
-                                                                                        <button class="ql-strike">Strike</button>
-                                                                                        <button class="ql-list" value="ordered">List</button>
-                                                                                        <button class="ql-list" value="bullet"></button>
-                                                                                        <button class="ql-indent" value="-1"></button>
-                                                                                        <button class="ql-indent" value="+1"></button>
-                                                                                        <button class="ql-link"></button>
-                                                                                    </div>
-                                                                                    <div id="editor3"></div>
-                                                                                </div>
-                                                                                <div class="invalid-feedback">Please enter a meta description</div>
-                                                                                <div class="valid-feedback">Looks good!</div>
-                                                                            </div>
-                                                                            <div class="col-md-12 d-flex justify-content-end">
-                                                                                <button class="btn button-light-primary" type="button" data-bs-dismiss="modal">Cancel</button>
-                                                                                <button class="btn btn-primary ms-2" type="submit">Create +</button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div> {% endcomment %}
                                                 <div class="row g-3 common-form">
                                                     <div class="col-md-6">
                                                         <label class="form-label">Add Category</label>
@@ -658,12 +464,7 @@
                                                     </div>
 
                                                     <div class="col-12 product-buttons">
-                                                        <button class="btn" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
-                                                            <svg>
-                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
-                                                            </svg>Previous
-                                                        </button>
-                                                        <button class="btn" type="button" onclick="handleNextButtonClick('pricings-tab')">
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('detail-product-tab')">
                                                             Next<svg>
                                                                 <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
                                                             </svg>
@@ -672,10 +473,133 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <div class="tab-pane fade" id="detail-product" role="tabpanel" aria-labelledby="detail-product-tab">
+                                            <div class="sidebar-body">
+                                                <!-- form -->
+                                                <div class="row g-3 common-form">
+                                                    <div class="col-12">
+                                                        <label class="form-label" for="exampleFormControlInput1">Product SKU</label>
+                                                        <input class="form-control" id="exampleFormControlInput1" type="text" placeholder="Enter a number" name="sku" required />
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" for="validationProductTitle">Product Title</label>
+                                                        <input class="form-control" id="validationProductTitle" type="text" placeholder="Title" name="title" required />
+                                                    </div>
+
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" for="validationProductModel">Product Model</label>
+                                                        <input class="form-control" id="validationProductModel" type="text" 
+                                                            placeholder="Product Model" name="model"
+                                                            oninput="this.value = this.value.toUpperCase()" />
+                                                    </div>
+
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Short Description</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar2">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor5"></div>
+                                                            <textarea name="short_description" id="short-description" style="display: none"></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Product Description</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar3">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor2"></div>
+                                                            <textarea name="description" id="product-description" style="display: none"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 product-buttons">
+                                                        <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                            <svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                            </svg>Previous
+                                                        </button>
+                                                        <button id="next-button" class="btn m-0" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
+                                                            Next<svg>
+                                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="gallery-product" role="tabpanel" aria-labelledby="gallery-product-tab">
+                                            <div class="sidebar-body common-form">
+                                                <div class="product-upload">
+                                                    <p>
+                                                        Product Thumbnail Image
+                                                        <span class="c-o-light">(Main Image)</span>
+                                                    </p>
+                                                    <div class="dropzone dropzone-secondary" id="thumbnailDropzone">
+                                                        <div class="dz-message needsclick">
+                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
+                                                            <h6>Drop file here or click to upload</h6>
+                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
+                                                        </div>
+                                                        <div class="preview-container" id="thumbnailPreviewContainer"></div>
+                                                        <input type="file" name="thumbnail" id="thumbnailFileInput" style="display: none" accept="image/*" />
+                                                    </div>
+                                                    <p class="instruction">Image Ratio: 1:1. Image will be resized to 800px x 800px</p>
+                                                </div>
+                                                
+                                                <div class="product-upload">
+                                                    <p>Product Gallery</p>
+                                                    <div class="dropzone dropzone-secondary" id="galleryDropzone">
+                                                        <div class="dz-message needsclick">
+                                                            <i class="fa-solid fa-cloud-arrow-up fa-fade"></i>
+                                                            <h6>Drop files here or click to upload</h6>
+                                                            <span class="note needsclick">SVG, PNG, JPG <strong>or</strong> GIF</span>
+                                                        </div>
+                                                        <div class="preview-container" id="galleryPreviewContainer"></div>
+                                                        <input type="file" name="gallery[]" id="galleryFileInput" style="display: none" multiple accept="image/*" />
+                                                    </div>
+                                                    <p class="instruction">Upload up to 3 images for your product gallery</p>
+                                                    <p class="instruction">Image Ratio: 1:1. Image will be resized to 800px x 800px</p>
+                                                </div>
+                                                
+                                                <div class="product-buttons">
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('detail-product-tab')">
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
+                                                        </svg>Previous
+                                                    </button>
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('pricings-tab')">
+                                                        Next<svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
                                         <div class="tab-pane fade" id="pricings" role="tabpanel" aria-labelledby="pricings-tab">
                                             <div class="price-wrapper common-form row g-3">
                                                 <div class="col-sm-6">
-                                                    <label class="form-label" for="initialCost">Initial Price</label>
+                                                    <label class="form-label" for="initialCost">Buy Price</label>
                                                     <input class="form-control" id="initialCost" type="number" step="0.01" placeholder="Price" name="initial_price" />
                                                 </div>
                                                 <div class="col-sm-6">
@@ -769,7 +693,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-12 product-buttons">
-                                                    <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
+                                                    <button class="btn" type="button" onclick="handleNextButtonClick('gallery-product-tab')">
                                                         <svg>
                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
                                                         </svg>Previous
@@ -785,21 +709,21 @@
                                         <div class="tab-pane fade" id="advance-product" role="tabpanel" aria-labelledby="advance-product-tab">
                                             <div class="sidebar-body advance-options">
                                                 <ul class="nav nav-tabs border-tab mb-0" id="advance-option-tab" role="tablist">
-                                                {% comment %} <li class="nav-item">
-                                                    <a class="nav-link active" id="manifest-option-tab" data-bs-toggle="tab" href="#manifest-option" role="tab" aria-controls="manifest-option" aria-selected="true">Inventory</a>
-                                                </li> {% endcomment %}
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="seo-option-tab" data-bs-toggle="tab" href="#seo-option" role="tab" aria-controls="seo-option" aria-selected="false">SEO Tags</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="dropping-option-tab" data-bs-toggle="tab" href="#dropping-option" role="tab" aria-controls="dropping-option" aria-selected="false">Shipping</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
-                                                </li>
+                                                    {% comment %} <li class="nav-item">
+                                                        <a class="nav-link active" id="manifest-option-tab" data-bs-toggle="tab" href="#manifest-option" role="tab" aria-controls="manifest-option" aria-selected="true">Inventory</a>
+                                                    </li> {% endcomment %}
+                                                    <li class="nav-item">
+                                                        <a class="nav-link active" id="seo-option-tab" data-bs-toggle="tab" href="#seo-option" role="tab" aria-controls="seo-option" aria-selected="false">SEO Tags</a>
+                                                    </li>
+                                                    {% comment %} <li class="nav-item">
+                                                        <a class="nav-link" id="dropping-option-tab" data-bs-toggle="tab" href="#dropping-option" role="tab" aria-controls="dropping-option" aria-selected="false">Shipping</a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
+                                                    </li> {% endcomment %}
                                                 </ul>
                                                 <div class="tab-content" id="advance-option-tabContent">
                                                     {% comment %} <div class="tab-pane fade show active" id="manifest-option" role="tabpanel" aria-labelledby="manifest-option-tab">
@@ -864,7 +788,7 @@
                                                             </div>
                                                         </div>
                                                     </div> {% endcomment %}
-                                                    <div class="tab-pane fade" id="seo-option" role="tabpanel" aria-labelledby="seo-option-tab">
+                                                    <div class="tab-pane fade show active" id="seo-option" role="tabpanel" aria-labelledby="seo-option-tab">
                                                         <div class="meta-body">
                                                             <div class="row g-3 common-form">
                                                                 <div class="col-xxl-6">
@@ -895,7 +819,7 @@
                                                                     <p class="mb-0 mt-1 f-light">Enhance your SEO ranking with an added tag description for the product.</p>
                                                                 </div>
                                                                 <div class="col-md-12 product-buttons">
-                                                                    <button class="btn" type="button" onclick="handleNextButtonClick('manifest-option-tab')">
+                                                                    {% comment %} <button class="btn" type="button" onclick="handleNextButtonClick('manifest-option-tab')">
                                                                         <svg>
                                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#back-arrow"></use>
                                                                         </svg>Previous
@@ -904,12 +828,17 @@
                                                                         Next<svg>
                                                                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
                                                                         </svg>
+                                                                    </button> {% endcomment %}
+                                                                    <button class="btn sweet-15" type="submit">
+                                                                        Submit<svg>
+                                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#front-arrow"></use>
+                                                                        </svg>
                                                                     </button>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="tab-pane fade" id="dropping-option" role="tabpanel" aria-labelledby="dropping-option-tab">
+                                                    {% comment %} <div class="tab-pane fade" id="dropping-option" role="tabpanel" aria-labelledby="dropping-option-tab">
                                                         <div class="meta-body">
                                                             <div class="common-form">
                                                                 <div class="row g-3">
@@ -1047,7 +976,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </div> {% endcomment %}
                                                 </div>
                                             </div>
                                         </div>
@@ -1078,6 +1007,14 @@
         </div>
     </div>
     <!-- Success Popup -->
+
+    <!-- Loading Modal (hidden by default) -->
+    <div id="loading-modal" class="loading-modal" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Saving product...</p>
+        </div>
+    </div>
 {% endblock %} 
 {% block scriptcontent %}
     <script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
@@ -1104,7 +1041,7 @@
         // Initialize editors
         const descriptionEditor = new Quill('#editor2', {
             theme: 'snow',
-            modules: { toolbar: '#toolbar2' }
+            modules: { toolbar: '#toolbar3' }
         })
         
         const metaEditor = new Quill('#editor4', {
@@ -1115,7 +1052,7 @@
         // Initialize editors
         const shortDescriptionEditor = new Quill('#editor5', {
             theme: 'snow',
-            modules: { toolbar: '#toolbar4' }
+            modules: { toolbar: '#toolbar2' }
         })
         
         // Initialize Tagify
@@ -1237,10 +1174,10 @@
 
             function updateHiddenDescription() {
                 const description = document.querySelector('#product-description');
-                const short_description = document.querySelector('#short-description');
+                const shortDescription = document.querySelector('#short-description');
 
                 description.value = quillEditor.root.innerHTML;
-                short_description.value = quillEditor.root.innerHTML;
+                shortDescription.value = quillEditor.root.innerHTML;
             }
 
             function checkFieldsFilled() {
@@ -1390,7 +1327,7 @@
         }
 
         // create a product
-        $('#product-form').on('submit', function(e) {
+        /*$('#product-form').on('submit', function(e) {
             e.preventDefault();
 
             const form = document.getElementById('product-form');
@@ -1417,6 +1354,47 @@
                 }
             })
             .catch(error => {
+                console.error('Error:', error);
+                showMessage("error", "Something went wrong on the server.");
+            });
+        });*/
+
+        $('#product-form').on('submit', function(e) {
+            e.preventDefault();
+
+            // Show loading modal
+            const loadingModal = document.getElementById('loading-modal');
+            loadingModal.style.display = 'flex';
+
+            const form = document.getElementById('product-form');
+            const formData = new FormData(form);
+
+            fetch("{% url 'create_product' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading modal regardless of success or error
+                loadingModal.style.display = 'none';
+                
+                if (data.success) {
+                    showSuccessPopup(data.message || "Product created successfully!");
+                    showMessage("success", data.message || "Product created successfully!");
+                } else {
+                    let message = "Something went wrong.";
+                    if (data.errors) {
+                        message = Object.values(data.errors).join("<br>");
+                    }
+                    showMessage("error", message);
+                }
+            })
+            .catch(error => {
+                // Hide loading modal on error too
+                loadingModal.style.display = 'none';
                 console.error('Error:', error);
                 showMessage("error", "Something went wrong on the server.");
             });

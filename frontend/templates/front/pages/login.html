@@ -363,16 +363,26 @@
         transition: max-height 0.3s ease, opacity 0.3s ease;
     }
 
+    /* Common styles for showing the div */
     .login-error-success-div.show {
-        /* adjust 200px to be comfortably larger than your tallest message */
-        background-color: #ff000030;
-        color: red;
         padding-left: 20px;
         padding-right: 20px;
         margin-bottom: 10px;
         max-height: 200px;
         opacity: 1;
     }
+
+    /* Type-specific styles */
+    .login-error-success-div.error-message.show {
+        background-color: rgba(255, 0, 0, 0.2); /* light transparent red */
+        color: red;
+    }
+
+    .login-error-success-div.success-message.show {
+        background-color: rgba(0, 128, 0, 0.2); /* light transparent green */
+        color: green;
+    }
+
 
 
     /* Success Modal Styles */
@@ -819,33 +829,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function loginShowMessage(type, message) {
-        const div = $(".login-error-success-div");
+        const div = document.querySelector(".login-error-success-div");
 
-        // routine to set text + color and then expand
         function expand() {
-            div
-            .removeClass("login-error-message success-message")
-            .addClass(type + "-message")
-            .text(message);
+            // First, remove any existing message type classes
+            div.classList.remove("success-message", "error-message");
+            
+            // Add the correct class based on the 'type' parameter
+            div.classList.add(type + "-message");
+            div.textContent = message;
 
-            // small delay so the browser “sees” the reset
+            // Small delay so the browser “sees” the reset before applying new styles
             requestAnimationFrame(() => {
-            div.addClass("show");
+                div.classList.add("show");
             });
-
-            /*if (type === "success") {
-            setTimeout(() => location.reload(), 2000);
-            }*/
         }
 
-        if (div.hasClass("show")) {
+        if (div.classList.contains("show")) {
             // 1. If already shown, collapse first
-            div.removeClass("show");
+            div.classList.remove("show");
 
             // 2. Wait for collapse transition to finish, then expand
-            div.one("transitionend", expand);
+            div.addEventListener("transitionend", expand, { once: true });
         } else {
-            // first time: just expand
+            // First time: just expand
             expand();
         }
     }
@@ -857,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = this;
         const formData = new FormData(form);
 
-        // Clear any old error
+        // Clear any old errors
         document.getElementById("login-identifier-error").textContent = "";
         document.getElementById("login-password-error").textContent = "";
 

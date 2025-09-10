@@ -59,7 +59,7 @@
                                                     </a>
                                                     <div class="price-box">
                                                         <span class="product-quantity">{{ item.quantity }}</span>
-                                                        <span class="product-price">${{ item.price }}</span>
+                                                        <span class="product-price">৳{{ item.price }}</span>
                                                     </div>
                                                 </div>
                                                 <figure class="product-media">
@@ -79,17 +79,17 @@
 
                                 <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
                                     <label>Subtotal:</label>
-                                    <span class="price subtotal">${{ subtotal }}</span>
+                                    <span class="price subtotal">৳{{ subtotal }}</span>
                                 </div>
 
                                 <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
                                     <label>Discount:</label>
-                                    <span class="price discount">${{ discount_total }}</span>
+                                    <span class="price discount">৳{{ discount_total }}</span>
                                 </div>
 
                                 <div class="cart-total" style="padding-top: 5px; margin-top: 2px; padding-bottom: 5px; margin-bottom: 2px;">
                                     <label>Total:</label>
-                                    <span class="price grand-total">${{ grand_total }}</span>
+                                    <span class="price grand-total">৳{{ grand_total }}</span>
                                 </div>
 
                                 <div class="cart-action">

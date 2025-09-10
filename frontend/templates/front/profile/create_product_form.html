@@ -1,0 +1,265 @@
+
+
+<div class="tab-pane mb-4" id="add-product">
+    <!-- Form starts from here -->
+    <div class="product-form-container">
+        <div class="form-tabs">
+            <div class="form-tab active" data-tab="1">Product Categories</div>
+            <div class="form-tab" data-tab="2">Product Details</div>
+            <div class="form-tab" data-tab="3">Product Gallery</div>
+            <div class="form-tab" data-tab="4">Price & Discounts</div>
+            <div class="form-tab" data-tab="5">Additional Options</div>
+        </div>
+        
+        <form id="add-product-form">
+            {% csrf_token %}
+            <!-- Section 1: Product Categories -->
+            <div class="form-section active" id="section-1">
+                <h3 class="section-title">Product Categories</h3>
+                
+                <div class="form-group">
+                    <label for="main-category" class="required">Category</label>
+                    <select id="main-category" class="form-control form-control-md select2" name="category" required>
+                        <option value="">Select a Main Category</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="error" id="category-error">Please select a category</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sub-category">Sub Category</label>
+                    <select id="sub-category" class="form-control form-control-md select2" name="sub_category">
+                        <option value="">Select a Sub Category</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sub-sub-category">Sub Sub Category</label>
+                    <select id="sub-sub-category" class="form-control form-control-md select2" name="sub_sub_category">
+                        <option value="" disabled selected>Select a Sub-Sub Category</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tags">Product Tags (Optional)</label>
+                    <input type="text" id="tags" name="tags" placeholder="Type and press Enter to add tags">
+                    <div class="tags-container" id="tags-container"></div>
+                    <input type="hidden" id="tags-json" name="tags">
+
+                </div>
+                
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev" disabled>Previous</button>
+                    <button type="button" class="btn-next">Next</button>
+                </div>
+            </div>
+            
+            <!-- Section 2: Product Details -->
+            <div class="form-section" id="section-2">
+                <h3 class="section-title">Add Product Details</h3>
+                
+                <div class="form-group">
+                    <label for="sku" class="required">Product SKU</label>
+                    <input type="text" name="sku" class="form-control form-control-md" id="sku" required placeholder="e.g., PROD-12345">
+                    <div class="error" id="sku-error">Please enter a product SKU</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="title" class="required">Product Title</label>
+                    <input type="text" name="title" id="title" class="form-control form-control-md" required placeholder="e.g., Premium Wireless Headphones">
+                    <div class="error" id="title-error">Please enter a product title</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="model">Product Model (Optional)</label>
+                    <input type="text" name="model" id="model" class="form-control form-control-md" placeholder="e.g., WH-2000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="short-desc">Short Description (Optional)</label>
+                    <textarea id="short-desc" name="short_description" rows="3" placeholder="Brief product description"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description" class="required">Product Description</label>
+                    <textarea id="description" name="description" required rows="5" placeholder="Detailed product description"></textarea>
+                    <div class="error" id="description-error">Please enter a product description</div>
+                </div>
+                
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev">Previous</button>
+                    <button type="button" class="btn-next">Next</button>
+                </div>
+            </div>
+            
+            <!-- Section 3: Product Gallery -->
+            <div class="form-section" id="section-3">
+                <h3 class="section-title">Product Gallery</h3>
+                
+                <div class="form-group">
+                    <label for="thumbnail" class="required">Thumbnail Image</label>
+                    <div class="image-upload" id="thumbnail-upload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & drop your image here or click to browse</p>
+                        <button type="button">Select Image</button>
+                        <input type="file" name="thumbnail" id="thumbnail" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="error" id="thumbnail-error">Please upload a thumbnail image</div>
+                    <div class="image-preview" id="thumbnail-preview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gallery">Gallery Images (Max 3)</label>
+                    <div class="image-upload" id="gallery-upload">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & drop up to 3 images here or click to browse</p>
+                        <button type="button">Select Images</button>
+                        <input type="file" name="gallery[]" id="gallery" accept="image/*" multiple style="display: none;">
+                    </div>
+                    <div class="image-preview" id="gallery-preview"></div>
+                </div>
+                
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev">Previous</button>
+                    <button type="button" class="btn-next">Next</button>
+                </div>
+            </div>
+            
+            <!-- Section 4: Price & Discounts -->
+            <div class="form-section" id="section-4">
+                <h3 class="section-title">Product Price & Discounts</h3>
+                
+                <div class="form-group">
+                    <label for="buy-price" class="required">Buy Price ($)</label>
+                    <input type="number" name="initial_price" id="buy-price" class="form-control form-control-md" required step="0.01" placeholder="0.00">
+                    <div class="error" id="buy-price-error">Please enter a valid buy price</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sell-price" class="required">Selling Price ($)</label>
+                    <input type="number" name="selling_price" id="sell-price" class="form-control form-control-md" required step="0.01" placeholder="0.00">
+                    <div class="error" id="sell-price-error">Please enter a valid selling price</div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Product Discount Options<i class="icon-help-alt ms-1" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Choose the kind of discount that will be used on that particular item."></i></label>
+                    <div class="row discount-options" id="product-discount-pills-tab" role="tablist">
+                        <div class="nav-item">
+                            <a class="nav-link active" id="fixed-price-tab" data-bs-toggle="pill" href="#fixed-price" role="tab" aria-controls="fixed-price" aria-selected="false"><span>Fixed Price Discount</span></a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" id="bogo-offer-tab" data-bs-toggle="pill" href="#bogo-offer" role="tab" aria-controls="bogo-offer" aria-selected="false"><span>BOGO (Buy One, Get One)</span></a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" id="percentage-base-tab" data-bs-toggle="pill" href="#percentage-base" role="tab" aria-controls="percentage-base" aria-selected="false"><span>Percentage Based Discount(%)</span></a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link" id="bulk-discount-tab" data-bs-toggle="pill" href="#bulk-discount" role="tab" aria-controls="bulk-discount" aria-selected="false"><span>Volume or Bulk Discount</span></a>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="product-discount-pills-tabContent">
+                        <div class="tab-pane fade show active" id="fixed-price" role="tabpanel" aria-labelledby="fixed-price-tab">
+                            <div class="meta-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label" for="validationDiscountPrice">Discount Price</label>
+                                        <input class="form-control" id="validationDiscountPrice" type="number" placeholder="Discount" name="fixed_discount" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% comment %} <div class="tab-pane fade" id="bogo-offer" role="tabpanel" aria-labelledby="bogo-offer-tab">
+                            <div class="meta-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Product Name<span class="c-o-light">&nbsp;(Free)</span></label>
+                                        <select name="discount_product_name" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true" name="bogo_product">
+                                            <option value="1" selected>Women Pink T-shirt</option>
+                                            <option value="2">Solid Hooded Sweatshirt</option>
+                                            
+                                        </select>
+                                    </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label" for="validationMinQuantity">Minimum Quantity</label>
+                                    <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" placeholder="Quantity" name="bogo_min_qty" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label" for="validationMaxQuantity">Maximum Quantity</label>
+                                    <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" placeholder="Quantity" name="bogo_max_qty" />
+                                </div>
+                                </div>
+                            </div>
+                        </div> {% endcomment %}
+                        <div class="tab-pane fade" id="percentage-base" role="tabpanel" aria-labelledby="percentage-base-tab">
+                            <div class="meta-body">
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label" for="validationDiscount">Discount Percentage</label>
+                                        <input class="form-control" name="discount_percentage" id="validationDiscount" type="number" placeholder="Discount" name="percentage_discount" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% comment %} <div class="tab-pane fade" id="bulk-discount" role="tabpanel" aria-labelledby="bulk-discount-tab">
+                            <div class="meta-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label" for="validationQuantity">Quantity</label>
+                                        <input class="form-control" name="quantity" id="validationQuantity" type="number" placeholder="Quantity" name="bulk_qty" />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="row g-3">
+                                            <div class="col-sm-6">
+                                                <label class="form-label" for="projectType">Discount Type</label>
+                                                <select class="form-select" name="discount_Type" id="projectType" name="bulk_discount_type">
+                                                <option selected="">Fixed Price</option>
+                                                <option value="1">Percentage(%)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="form-label" for="projectType">Value</label>
+                                                <input class="form-control" name="discount_value" type="number" placeholder="Discount" name="bulk_discount_value" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> {% endcomment %}
+                    </div>
+                </div>
+                
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev">Previous</button>
+                    <button type="button" class="btn-next">Next</button>
+                </div>
+            </div>
+            
+            <!-- Section 5: Additional Options -->
+            <div class="form-section" id="section-5">
+                <h3 class="section-title">Additional Options</h3>
+                
+                <div class="form-group">
+                    <label for="meta-title">Meta Title</label>
+                    <input type="text" name="meta_title" id="meta-title" class="form-control form-control-md" placeholder="Meta title for SEO">
+                </div>
+                
+                <div class="form-group">
+                    <label for="meta-keywords">Meta Keywords (Comma separated)</label>
+                    <textarea id="meta-keywords" name="meta_keywords" rows="3" placeholder="keyword1, keyword2, keyword3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="meta-description">Meta Description</label>
+                    <textarea id="meta-description" name="meta_description" rows="3" placeholder="Meta description for SEO"></textarea>
+                </div>
+                
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev">Previous</button>
+                    <button type="submit" class="btn-submit">Submit Product</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

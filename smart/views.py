@@ -13,6 +13,7 @@ from django.db import IntegrityError
 from django.contrib.auth import login,logout,authenticate
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.db.models import ProtectedError
 from .forms import *
 import traceback
 from django.utils.dateparse import parse_datetime
@@ -24,21 +25,15 @@ import json
 import os
 import re
 from .models import *
-from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
-
+from django.db.models import Sum
+from django.db.models import Count
 
 
 def is_valid_email(email):
     """Simple regex for email validation"""
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
-
-
-from django.utils import timezone
-from datetime import timedelta
-from django.db import models
-from django.db.models import Sum
 
 
 @login_required(login_url="/admin-dashboard/login_home")
@@ -174,8 +169,8 @@ def dashboard(request):
         created_at__date__lte=end_date
     )
     orders_count = orders_this_period.count()
-
-    #recent transaction
+    
+        #recent transaction
 # --- Latest 15 orders for Recent Transactions ---
     recent_transactions = (
     Order.objects.filter(
@@ -184,8 +179,7 @@ def dashboard(request):
     )
     .order_by('-created_at')[:15]
 )
-    
-    # New: last 3 orders only
+# New: last 3 orders only
     latest_orders = (
         Order.objects
         .prefetch_related("vendor_orders__items__product")
@@ -194,10 +188,12 @@ def dashboard(request):
     # get all categories that have products
     categories = Category.objects.filter(products__isnull=False).distinct()
     
-    # Get all active top-level categories (parent_category is None)
+     # Get all active top-level categories (parent_category is None)
     all_categories = Category.objects.filter(status=1) \
                                      .annotate(product_count=Count('products')) \
                                      .order_by('-product_count', 'position', 'name')
+
+
 
     # --- Pass everything to template ---
     context = {
@@ -230,11 +226,12 @@ def dashboard(request):
         #recent orders
         "latest_orders": latest_orders,
         "categories": categories,
-        #top categories
+         #top categories
         'all_categories': all_categories
     }
 
     return render(request, "general/dashboard/dashboard-02.html", context)
+
 
 
 
@@ -715,24 +712,24 @@ def edit_user_account(request):
 def delete_user_account(request):
     if request.method == 'POST':
         try:
-            import json
             data = json.loads(request.body)
             user_id = data.get('id')
             
             if not user_id:
                 return JsonResponse({'success': False, 'message': 'User ID is required.'}, status=400)
             
-            # Get the user object
             user = get_object_or_404(User, pk=user_id)
-            
-            # Delete the user
             user.delete()
             
             return JsonResponse({'success': True, 'message': 'User account deleted successfully.'})
             
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'message': 'Invalid JSON data.'}, status=400)
+        except ProtectedError:
+            # Catch the specific ProtectedError and return a custom, user-friendly message
+            return JsonResponse({'success': False, 'message': 'The user cannot be deleted because they are associated with existing orders or addresses. Please remove the user\'s orders first.'}, status=409)
         except Exception as e:
+            print(f"Error deleting user: {str(e)}")
             return JsonResponse({'success': False, 'message': f'Error deleting user: {str(e)}'}, status=500)
     
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
@@ -848,14 +845,20 @@ def update_product_from_request(product, request):
 def edit_product(request, id):
     product = get_object_or_404(Product, id=id)
     categories = Category.objects.all()
-
-    if request.method == 'POST':
+    
+    # Clean rejection reason if it contains Quill wrapper HTML
+    rejection_reason = product.rejection_reason
+    if rejection_reason and '<div class="ql-editor"' in rejection_reason:
         try:
-            update_product_from_request(product, request)
-            return JsonResponse({'success': True, 'message': 'Product updated successfully!'})
-        except Exception as e:
-            print(traceback.format_exc())
-            return JsonResponse({'success': False, 'message': str(e), 'errors': {'server_error': [str(e)]}})
+            # Extract just the content inside ql-editor
+            start = rejection_reason.find('<div class="ql-editor"') + len('<div class="ql-editor"')
+            start = rejection_reason.find('>', start) + 1
+            end = rejection_reason.find('</div>', start)
+            product.clean_rejection_reason = rejection_reason[start:end]
+        except:
+            product.clean_rejection_reason = rejection_reason
+    else:
+        product.clean_rejection_reason = rejection_reason
         
     context = {
         "product": product,
@@ -2358,6 +2361,8 @@ def deliveryCharge(request):
                 delivery_type_id = data.get('delivery_type')
                 amount = data.get('amount', '').strip()
                 
+                print('Edit hit')
+                
                 if not delivery_type_id or not amount:
                     return JsonResponse({'status': 'error', 'message': 'All fields are required'})
                 
@@ -2369,7 +2374,7 @@ def deliveryCharge(request):
                     return JsonResponse({'status': 'error', 'message': 'Invalid amount format'})
                 
                 delivery_charge = get_object_or_404(DeliveryCharge, id=charge_id, vendor=vendor)
-                delivery_type = get_object_or_404(DeliveryType, id=delivery_type_id, vendor=vendor)
+                delivery_type = get_object_or_404(DeliveryType, id=delivery_type_id)
                 
                 # Check if another charge exists for this delivery type (excluding current)
                 if DeliveryCharge.objects.filter(delivery_type=delivery_type, vendor=vendor).exclude(id=charge_id).exists():
@@ -2404,6 +2409,11 @@ def deliveryCharge(request):
 
 
 
+
+
+
+
+
 @login_required(login_url="/admin-dashboard/login_home")
 def invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
@@ -2418,6 +2428,12 @@ def invoice(request, order_id):
         "order_items": order_items,
     }
     return render(request, "invoice/invoice-4.html", context)
+
+
+
+
+
+
 
 
 

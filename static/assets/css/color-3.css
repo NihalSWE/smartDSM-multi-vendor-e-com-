@@ -22444,7 +22444,7 @@ p.data-attributes svg {
 }
 
 .balance-widget {
-
+  background-image: url(../images/dashboard-2/balance-bg.png);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: right;

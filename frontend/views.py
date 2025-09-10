@@ -1500,16 +1500,21 @@ def myAccount(request):
     product_count = products.count()
 
     if request.user.user_type == 0:
-        can_upload = False
+        can_upload = True
     elif request.user.user_type == 3 or (request.user.user_type == 1 and vendor_status in ['0', '2']):
         can_upload = product_count < 2
     else:
         can_upload = True
+        
+    categories = Category.objects.filter(parent_category__isnull=True)
+    delivery = DeliveryCharge.objects.filter(vendor=request.user).order_by('-created_at')
 
     context = {
         'orders': orders,
         'products': products,
         'can_upload': can_upload,  # pass to template for "Add Products" link visibility
+        'categories': categories,
+        'delivery': delivery
     }
     return render(request, 'front/profile/my-account.html', context)
 
@@ -1535,11 +1540,34 @@ def orderComplete(request):
 #login--
 def userlogin(request):
     return render(request,'front/pages/login.html')
-
-
+    
+    
+    
 def categories(request):   
     categories = Category.objects.all()
     context = {
         'categories': categories,
     }
-    return render(request, 'front/shop/categories.html', context)
+    return render(request, 'front/shop/categories.html', context)    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

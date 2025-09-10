@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block custom_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     .tab-vertical .nav-product {
         position: relative;
@@ -108,6 +109,494 @@
         pointer-events: none;
         opacity: 0.5;
     }
+
+    .select2-container--default .select2-selection--single{
+        min-height: 4.4rem;
+        padding: 6px;
+        border: 1px solid #ededed;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow{
+        top: 8px;
+    }
+
+
+
+    /* product tab styles starts */
+    .product-form-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .form-tabs {
+            display: flex;
+            background: #f0f4f8;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .form-tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            text-align: center;
+            flex: 1;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .form-tab.active {
+            color: #3b82f6;
+            border-bottom: 3px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .form-tab:hover:not(.active) {
+            background: rgba(59, 130, 246, 0.03);
+            color: #334155;
+        }
+        
+        #add-product-form {
+            padding: 30px;
+        }
+        
+        .form-section {
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section-title {
+            margin-bottom: 25px;
+            color: #1e293b;
+            font-size: 1.5rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        label.required::after {
+            content: " *";
+            color: #ef4444;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .tag {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tag i {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        .image-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .image-upload:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        
+        .image-upload i {
+            font-size: 40px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        
+        .image-upload p {
+            margin-bottom: 15px;
+            color: #64748b;
+        }
+        
+        .image-upload button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .image-upload button:hover {
+            background: #2563eb;
+        }
+        
+        .image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-item .remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .btn-prev, .btn-next, .btn-submit {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-prev {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .btn-prev:hover:not(:disabled) {
+            background: #e2e8f0;
+        }
+        
+        .btn-next, .btn-submit {
+            background: #3f6cb7;
+            color: white;
+        }
+        
+        .btn-next:hover:not(:disabled), .btn-submit:hover {
+            background: #2563eb;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+
+        /* Discount Options Styles */
+        .discount-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .discount-options .nav-item {
+            flex: 1;
+            min-width: 160px;
+        }
+        
+        .discount-options .nav-link {
+            display: block;
+            text-align: center;
+            padding: 15px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        .discount-options .nav-link:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        
+        .discount-options .nav-link.active {
+            background: #e0f2fe;
+            border-color: #3b82f6;
+            color: #0369a1;
+            font-weight: 500;
+        }
+    /* product tab styles ends */
+
+    /* deliverr charge starts */
+    /* Modernized Delivery Charges Section */
+    #account-delivery-charges {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: #333;
+    }
+
+    /* Icon Box */
+    .icon-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .icon-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        color: #0d6efd;
+        border-radius: 14px;
+        width: 54px;
+        height: 54px;
+        font-size: 24px;
+    }
+
+    .icon-box-content h4 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Cards */
+    .card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: #f8fafc;
+        padding: 18px 22px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .card-header h5 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+        color: #111827;
+    }
+
+    .card-body {
+        padding: 22px;
+    }
+
+    /* Form */
+    .form-group label {
+        font-weight: 500;
+        font-size: 1.5rem;
+        margin-bottom: 6px;
+        color: #374151;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        padding: 12px 16px;
+        font-size: 1.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+    }
+
+    /* Buttons */
+    .btn {
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 12px 18px;
+        font-size: 1.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-primary {
+        background: #0d6efd;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #0b5ed7;
+    }
+
+    .btn-warning {
+        background: #fbbf24;
+        border: none;
+        color: #111;
+    }
+
+    .btn-warning:hover {
+        background: #f59e0b;
+    }
+
+    .btn-danger {
+        background: #ef4444;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+    }
+
+    /* Table */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        width: 100%;
+    }
+
+    .table thead th {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #4b5563;
+        border-bottom: none;
+        background: #f9fafb;
+        padding: 16px;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .table tbody tr {
+        background: #fff;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .table tbody tr:hover {
+        background: #f3f4f6;
+    }
+
+    .table td {
+        padding: 16px;
+        font-size: 1.5rem;
+        color: #374151;
+        border-top: none !important;
+        vertical-align: middle;
+    }
+
+    /* Alignments */
+    .table td:nth-child(1) { width: 25%; font-weight: 500; }   /* Delivery Type */
+    .table td:nth-child(2) { width: 20%; }                    /* Amount */
+    .table td:nth-child(3) { width: 25%; }                    /* Date */
+    .table td:nth-child(4) { width: 20%; text-align: right; } /* Actions */
+
+    /* Amount Badge */
+    .amount-badge {
+        background: #16a34a;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    /* Actions */
+    .delivery-actions .btn {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        margin-left: 6px;
+    }
+
+    /* Messages */
+    .message-success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-size: 1rem;
+    }
+
+    .message-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-size: 1rem;
+    }
+    /* delivery charge ends */
+
 </style>
 
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -156,17 +645,21 @@
                         {% if request.user.user_type == 1 %}
                             <a href="{% url 'add_products' %}" class="nav-product">Add Products</a>
                         {% elif request.user.user_type == 3 %}
-                            <a href="{% url 'create_customer_product' %}" class="nav-product">Add Products</a>
+                            <a href="#add-product" class="nav-product">Add Products</a>
                         {% endif %}
                     </li>
-                    {% else %}
+                {% else %}
                     <li class="nav-item">
                     <span class="nav-product disabled" aria-disabled="true">Add Products</span>
                     </li>
                     <div class="alert alert-warning mt-2">
                         Update Or Buy a package — your commonly 2-product limit is finished.
                     </div>
-                    {% endif %}
+                {% endif %}
+
+                 <li class="nav-item">
+                    <a href="#account-delivery-charges" class="nav-link">Delivery Charges</a>
+                </li>
 
                 <li class="nav-item">
                     <a href="#account-products" class="nav-link">Products</a>
@@ -320,10 +813,6 @@
                                         </span>
                                     </td>
                                 </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">You haven't uploaded any products yet.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -370,15 +859,111 @@
                                         <a href="#" class="btn btn-outline btn-default btn-block btn-sm btn-rounded">View</a>
                                     </td>
                                 </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">You haven't placed any orders yet.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                {% include "front/profile/create_product_form.html" %}
+
+                <!--delivery charge starts-->
+                <!-- Add this to your my-account.html template as a new tab -->
+                <div class="tab-pane" id="account-delivery-charges">
+                    <div class="icon-box icon-box-side icon-box-light">
+                        <span class="icon-box-icon icon-orders">
+                            <i class="w-icon-truck"></i>
+                        </span>
+                        <div class="icon-box-content">
+                            <h4 class="icon-box-title text-capitalize ls-normal mb-0">My Delivery Charges</h4>
+                        </div>
+                    </div>
+
+                    <!-- Add New Delivery Charge Form -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                        <form id="newDeliveryForm" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" id="editingDeliveryId" name="editing_id" value="">
+
+                            <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                <label>Delivery Type *</label>
+                                <select id="newDeliveryType" class="form-control" required>
+                                    <!-- options will be filled by JS -->
+                                </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                <label>Amount (BDT) *</label>
+                                <input type="number" id="newDeliveryAmount" class="form-control" step="0.01" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" id="newDeliverySubmit" class="btn btn-primary">Add Charge</button>
+                                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display:none;margin-left:8px;">Cancel</button>
+                                </div>
+                                </div>
+                            </div>
+                            </div>
+                        </form>
+
+                        <div id="messageArea" style="display: none; margin-top: 10px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Charges List -->
+                    <div class="card">
+                        <div class="card-header"><h5>Your Delivery Charges</h5></div>
+                        <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                <th>Delivery Type</th>
+                                <th>Amount (BDT)</th>
+                                <th>Date Added</th>
+                                <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deliveryChargesList">
+                                {% if delivery %}
+                                {% for d in delivery %}
+                                    <tr data-id="{{ d.id }}">
+                                    <td class="col-delivery-type">{{ d.delivery_type.name }}</td>
+                                    <td class="col-delivery-amount">{{ d.amount }}</td>
+                                    <td class="col-delivery-created">{{ d.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <!-- Only Edit button -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-warning edit-delivery-btn"
+                                                data-id="{{ d.id }}"
+                                                data-amount="{{ d.amount }}"
+                                                data-type="{{ d.delivery_type.id }}">
+                                        Edit
+                                        </button>
+                                    </td>
+                                    </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No delivery charges added yet</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                            </table>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <!--delivery charge ends-->
 
                 <div class="tab-pane" id="account-downloads">
                     <div class="icon-box icon-box-side icon-box-light">
@@ -576,11 +1161,13 @@
 {% endblock content %}
 
 {% block custom_js %}
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
     $(document).ready(function() {
-        
+        $('.select2').select2();
         
 
         // Products Table
@@ -616,5 +1203,574 @@
             "order": [[1, "desc"]] // Default sort by date (column index 1) descending
         });
     });
+</script>
+
+<script>
+    $(document).ready(function(){
+        $('a[href="#add-product"]').on('click', function(event) {
+            // Prevent the default anchor link behavior
+            event.preventDefault();
+
+            // 1. Remove 'active' and 'in' from all tab panes
+            $('.tab-pane').removeClass('active in');
+
+            // 2. Add 'active' and 'in' to the target tab pane
+            var target = $(this).attr('href'); // Gets '#add-product'
+            $(target).addClass('active in');
+        });
+    });
+</script>
+
+
+
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab navigation functionality
+            const tabs = document.querySelectorAll('.form-tab');
+            const sections = document.querySelectorAll('.form-section');
+            const nextButtons = document.querySelectorAll('.btn-next');
+            const prevButtons = document.querySelectorAll('.btn-prev');
+            
+            // Initialize current tab
+            let currentTab = 0;
+            
+            // Show current tab
+            function showTab(index) {
+                // Hide all tabs
+                sections.forEach(section => section.classList.remove('active'));
+                tabs.forEach(tab => tab.classList.remove('active'));
+                
+                // Show the selected tab
+                sections[index].classList.add('active');
+                tabs[index].classList.add('active');
+                
+                // Update currentTab
+                currentTab = index;
+                
+                // Handle button states
+                if (currentTab === 0) {
+                    prevButtons.forEach(btn => btn.disabled = true);
+                } else {
+                    prevButtons.forEach(btn => btn.disabled = false);
+                }
+                
+                if (currentTab === sections.length - 1) {
+                    nextButtons.forEach(btn => btn.style.display = 'none');
+                } else {
+                    nextButtons.forEach(btn => btn.style.display = 'block');
+                }
+            }
+            
+            // Next button click handler
+            nextButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (currentTab < sections.length - 1) {
+                        showTab(currentTab + 1);
+                    }
+                });
+            });
+            
+            // Previous button click handler
+            prevButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (currentTab > 0) {
+                        showTab(currentTab - 1);
+                    }
+                });
+            });
+            
+            // Tab click handler
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabIndex = parseInt(this.getAttribute('data-tab')) - 1;
+                    showTab(tabIndex);
+                });
+            });
+            
+        
+            // Tags functionality
+            const tagsInput = document.getElementById('tags');
+            const tagsContainer = document.getElementById('tags-container');
+            const tagsJsonInput = document.getElementById('tags-json');
+            let tagsArray = [];
+
+            // Function to update the hidden input with the current tags array
+            function updateTagsJsonInput() {
+                // Format the array as a JSON string with 'value' keys
+                const tagsData = tagsArray.map(tag => ({ value: tag }));
+                tagsJsonInput.value = JSON.stringify(tagsData);
+            }
+
+            // Add a tag on Enter key press
+            tagsInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tagText = tagsInput.value.trim();
+
+                    if (tagText !== '' && !tagsArray.includes(tagText)) {
+                        // Add the new tag to the tags array
+                        tagsArray.push(tagText);
+                        
+                        // Create the tag element
+                        const tag = document.createElement('div');
+                        tag.className = 'tag';
+                        tag.innerHTML = `${tagText} <i class="fas fa-times"></i>`;
+
+                        // Add the remove functionality
+                        tag.querySelector('i').addEventListener('click', function() {
+                            // Remove the tag from the array
+                            tagsArray = tagsArray.filter(t => t !== tagText);
+                            tag.remove();
+                            updateTagsJsonInput(); // Update the hidden input after removal
+                        });
+
+                        tagsContainer.appendChild(tag);
+                        tagsInput.value = '';
+                        updateTagsJsonInput(); // Update the hidden input after adding
+                    }
+                }
+            });
+            
+            // Image upload functionality
+            const thumbnailUpload = document.getElementById('thumbnail-upload');
+            const thumbnailInput = document.getElementById('thumbnail');
+            const thumbnailPreview = document.getElementById('thumbnail-preview');
+            
+            thumbnailUpload.addEventListener('click', function() {
+                thumbnailInput.click();
+            });
+            
+            thumbnailInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        thumbnailPreview.innerHTML = `
+                            <div class="preview-item">
+                                <img src="${e.target.result}" alt="Thumbnail Preview">
+                                <div class="remove"><i class="fas fa-times"></i></div>
+                            </div>
+                        `;
+                        
+                        thumbnailPreview.querySelector('.remove').addEventListener('click', function() {
+                            thumbnailPreview.innerHTML = '';
+                            thumbnailInput.value = '';
+                        });
+                    };
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // Gallery upload functionality
+            const galleryUpload = document.getElementById('gallery-upload');
+            const galleryInput = document.getElementById('gallery');
+            const galleryPreview = document.getElementById('gallery-preview');
+            
+            galleryUpload.addEventListener('click', function() {
+                galleryInput.click();
+            });
+            
+            galleryInput.addEventListener('change', function() {
+                if (this.files) {
+                    galleryPreview.innerHTML = '';
+                    
+                    for (let i = 0; i < Math.min(this.files.length, 3); i++) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'preview-item';
+                            previewItem.innerHTML = `
+                                <img src="${e.target.result}" alt="Gallery Preview">
+                                <div class="remove"><i class="fas fa-times"></i></div>
+                            `;
+                            
+                            previewItem.querySelector('.remove').addEventListener('click', function() {
+                                previewItem.remove();
+                            });
+                            
+                            galleryPreview.appendChild(previewItem);
+                        };
+                        
+                        reader.readAsDataURL(this.files[i]);
+                    }
+                }
+            });
+        });
+    </script>
+
+<script>
+    $(document).ready(function () {
+        // Populate select with options
+        // Initialize Select2 on all select elements with the .select2 class
+        $('.select2').select2();
+
+        // Populate select with options
+        function populateSelect(select, data, placeholder = 'Select an option') {
+            // Clear existing options and disable Select2 before manipulation
+            select.empty().val(null).trigger('change');
+            
+            // Add the placeholder option
+            select.append(`<option value="">${placeholder}</option>`);
+
+            if (data.length > 0) {
+                data.forEach(item => {
+                    select.append(`<option value="${item.id}">${item.name}</option>`);
+                });
+                select.prop('disabled', false); // Enable the select
+            } else {
+                select.prop('disabled', true); // Disable if no options are returned
+            }
+            
+            // Re-enable and update the Select2 display
+            select.trigger('change');
+        }
+
+        // When a main category is selected, fetch its subcategories
+        $('#main-category').on('change', function () {
+            const categoryId = $(this).val();
+
+            console.log('Selected Main Category ID:', categoryId);
+
+            // Reset and disable sub and sub-sub categories
+            populateSelect($('#sub-category'), [], 'Select a Sub Category');
+            populateSelect($('#sub-sub-category'), [], 'Select a Sub-Sub Category');
+
+            if (categoryId) {
+                fetch(`/admin-dashboard/get-subcategories/${categoryId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        populateSelect($('#sub-category'), data, 'Select a Sub Category');
+                    })
+                    .catch(err => console.error('Error loading subcategories:', err));
+            }
+        });
+
+        // When a sub-category is selected, fetch its sub-sub-categories
+        $('#sub-category').on('change', function () {
+            const subCategoryId = $(this).val();
+            
+            // Reset and disable the sub-sub-category select
+            populateSelect($('#sub-sub-category'), [], 'Select a Sub-Sub Category');
+
+            if (subCategoryId) {
+                fetch(`/admin-dashboard/get-subcategories/${subCategoryId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        populateSelect($('#sub-sub-category'), data, 'Select a Sub-Sub Category');
+                    })
+                    .catch(err => console.error('Error loading sub-sub-categories:', err));
+            }
+        });
+
+        // Initially disable sub and sub-sub selects on page load
+        populateSelect($('#sub-category'), [], 'Select a Sub Category');
+        populateSelect($('#sub-sub-category'), [], 'Select a Sub-Sub Category');
+
+        function showMessage(type, message) {
+            const div = $(".error-success-div");
+
+            // routine to set text + color and then expand
+            function expand() {
+                div
+                .removeClass("error-message success-message")
+                .addClass(type + "-message")
+                .text(message);
+
+                // small delay so the browser "sees" the reset
+                requestAnimationFrame(() => {
+                div.addClass("show");
+                });
+
+                if (type === "success") {
+                setTimeout(() => location.reload(), 1000);
+                }
+            }
+
+            if (div.hasClass("show")) {
+                // 1. If already shown, collapse first
+                div.removeClass("show");
+
+                // 2. Wait for collapse transition to finish, then expand
+                div.one("transitionend", expand);
+            } else {
+                // first time: just expand
+                expand();
+            }
+        }
+
+        function showSuccessPopup(message) {
+            const popup = document.getElementById('success-popup');
+            const messageElement = document.getElementById('success-message');
+            
+            // Reset animations
+            const checkmarkCircle = document.querySelector('.checkmark-circle');
+            const checkmarkPath = document.querySelector('.checkmark-path');
+            checkmarkCircle.style.animation = 'none';
+            checkmarkPath.style.animation = 'none';
+            void checkmarkCircle.offsetWidth; // Trigger reflow
+            void checkmarkPath.offsetWidth; // Trigger reflow
+            checkmarkCircle.style.animation = 'draw-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards';
+            checkmarkPath.style.animation = 'draw-check 0.5s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards';
+            
+            messageElement.textContent = message;
+            popup.classList.add('active');
+            
+            // Close popup when close button is clicked
+            document.querySelector('.close-popup-btn').addEventListener('click', function() {
+                popup.classList.remove('active');
+            });
+            
+            // Close popup when clicking outside the content
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    popup.classList.remove('active');
+                }
+            });
+        }
+
+        // create a product
+        $('#add-product-form').on('submit', function(e) {
+            e.preventDefault();
+
+            // Use the correct form ID from the HTML
+            const form = document.getElementById('add-product-form');
+            const formData = new FormData(form);
+
+            // Optional: Log FormData entries to verify they are correct before sending
+            // for (let [key, value] of formData.entries()) {
+            //     console.log(`${key}: ${value}`);
+            // }
+
+            fetch("{% url 'create_product' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}' // Standard Django CSRF token handling
+                }
+            })
+            .then(response => {
+                // Check for non-2xx status codes (e.g., 400, 500)
+                if (!response.ok) {
+                    // Get the error message from the response body if available
+                    return response.json().then(errorData => Promise.reject(errorData));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Assuming showSuccessPopup and showMessage are defined elsewhere
+                    showSuccessPopup(data.message || "Product created successfully!");
+                    showMessage("success", data.message || "Product created successfully!");
+                    // Optionally, clear the form or redirect the user
+                    // form.reset(); 
+                } else {
+                    let message = "Something went wrong.";
+                    if (data.errors) {
+                        // Display all error messages from the backend
+                        message = Object.values(data.errors).map(error => Array.isArray(error) ? error.join(', ') : error).join("<br>");
+                    }
+                    showMessage("error", message);
+                }
+            })
+            .catch(error => {
+                console.error('Submission Error:', error);
+                const errorMessage = (error && error.message) ? error.message : "Something went wrong on the server.";
+                showMessage("error", errorMessage);
+            });
+        });
+    });
+</script>
+
+
+<script>
+/* ---------------- CSRF helper ---------------- */
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+function getCsrfToken() {
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  return el ? el.value : getCookie('csrftoken');
+}
+
+/* ---------------- showMessage helper ---------------- */
+function showMessage(message, type) {
+  const messageArea = document.getElementById('messageArea');
+  if (!messageArea) { alert(message); return; }
+  messageArea.className = `message-${type}`;
+  messageArea.textContent = message;
+  messageArea.style.display = 'block';
+  setTimeout(() => { messageArea.style.display = 'none'; }, 3000);
+}
+
+/* ---------------- load delivery types ---------------- */
+let deliveryTypes = [];
+function loadDeliveryTypes() {
+  return fetch('{% url "get_delivery_types" %}')
+    .then(r => r.json())
+    .then(data => {
+      deliveryTypes = data.types || [];
+      const select = document.getElementById('newDeliveryType');
+      if (!select) return;
+      if (deliveryTypes.length === 0) {
+        select.innerHTML = '<option value="">No delivery types available</option>';
+        select.disabled = true;
+      } else {
+        select.innerHTML = '<option value="">Select Delivery Type</option>' +
+          deliveryTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        select.disabled = false;
+      }
+    })
+    .catch(err => {
+      console.error('Error loading delivery types', err);
+      const select = document.getElementById('newDeliveryType');
+      if (select) select.innerHTML = '<option value="">Error loading types</option>';
+    });
+}
+function getDeliveryTypeName(typeId) {
+  const t = deliveryTypes.find(x => String(x.id) === String(typeId));
+  return t ? t.name : 'Unknown';
+}
+
+/* ---------------- start edit mode ---------------- */
+function startEdit({ id, amount, type }) {
+  const populate = () => {
+    document.getElementById('editingDeliveryId').value = id;
+    const typeSelect = document.getElementById('newDeliveryType');
+    typeSelect.value = type;
+    typeSelect.disabled = true; // disable type editing
+    document.getElementById('newDeliveryAmount').value = amount;
+    document.getElementById('newDeliverySubmit').textContent = 'Save Changes';
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    if (cancelBtn) cancelBtn.style.display = 'inline-block';
+    document.getElementById('newDeliveryAmount').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  if (deliveryTypes.length === 0) {
+    loadDeliveryTypes().then(populate).catch(populate);
+  } else populate();
+}
+
+/* ---------------- reset form ---------------- */
+function resetFormToAddMode() {
+  document.getElementById('editingDeliveryId').value = '';
+  const form = document.getElementById('newDeliveryForm');
+  form.reset();
+  document.getElementById('newDeliverySubmit').textContent = 'Add Charge';
+  const typeSelect = document.getElementById('newDeliveryType');
+  typeSelect.disabled = false; // enable for new charges
+  const cancelBtn = document.getElementById('cancelEditBtn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+/* ---------------- init handlers ---------------- */
+document.addEventListener('DOMContentLoaded', function () {
+  loadDeliveryTypes();
+
+  document.querySelectorAll('.edit-delivery-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      startEdit({
+        id: this.dataset.id,
+        amount: this.dataset.amount,
+        type: this.dataset.type
+      });
+    });
+  });
+
+  const cancelBtn = document.getElementById('cancelEditBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () {
+      resetFormToAddMode();
+    });
+  }
+
+  const form = document.getElementById('newDeliveryForm');
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const editingId = document.getElementById('editingDeliveryId').value || null;
+    const deliveryTypeId = document.getElementById('newDeliveryType').value;
+    const amount = document.getElementById('newDeliveryAmount').value;
+
+    if (!deliveryTypeId || !amount) {
+      showMessage('Please fill all fields', 'error');
+      return;
+    }
+    if (parseFloat(amount) <= 0) {
+      showMessage('Amount must be greater than 0', 'error');
+      return;
+    }
+
+    const payload = {
+      action: editingId ? 'edit' : 'add',
+      delivery_type: deliveryTypeId,
+      amount: amount
+    };
+    if (editingId) payload.id = editingId;
+
+    try {
+      const resp = await fetch('{% url "deliveryCharge" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.status === 'success') {
+        showMessage(data.message || (editingId ? 'Updated' : 'Added'), 'success');
+
+        if (editingId) {
+          const tr = document.querySelector(`tr[data-id="${editingId}"]`);
+          if (tr) {
+            tr.querySelector('.col-delivery-type').textContent = getDeliveryTypeName(deliveryTypeId);
+            tr.querySelector('.col-delivery-amount').textContent = parseFloat(amount).toFixed(2);
+          }
+        } else {
+          const newId = data.id || data.new_id || '';
+          const tbody = document.getElementById('deliveryChargesList');
+          const createdDate = (new Date()).toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          const newTr = document.createElement('tr');
+          newTr.setAttribute('data-id', newId);
+          newTr.innerHTML = `
+            <td class="col-delivery-type">${getDeliveryTypeName(deliveryTypeId)}</td>
+            <td class="col-delivery-amount">${parseFloat(amount).toFixed(2)}</td>
+            <td class="col-delivery-created">${createdDate}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-warning edit-delivery-btn" data-id="${newId}" data-amount="${amount}" data-type="${deliveryTypeId}">Edit</button>
+            </td>
+          `;
+          if (tbody.firstChild) tbody.insertBefore(newTr, tbody.firstChild);
+          else tbody.appendChild(newTr);
+
+          newTr.querySelector('.edit-delivery-btn').addEventListener('click', function () {
+            startEdit({
+              id: this.dataset.id,
+              amount: this.dataset.amount,
+              type: this.dataset.type
+            });
+          });
+        }
+
+        resetFormToAddMode();
+        location.reload();
+
+      } else {
+        showMessage(data.message || 'Error saving delivery charge', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showMessage('Network error saving delivery charge', 'error');
+    }
+  });
+});
 </script>
 {% endblock custom_js %}

@@ -474,36 +474,47 @@
             },
             body: JSON.stringify({ action: "delete", id: pendingDeleteId })
         })
-        .then(r => r.json())
-        .then(d => {
-            // 1. Hide delete modal
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    // If it's a 500 error, log it to the console
+                    if (response.status === 500) {
+                        console.error("Internal Server Error:", errorData.message);
+                    }
+                    throw new Error(errorData.message);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Success case
             bootstrap.Modal.getInstance($("#deleteConfirmationModal")[0]).hide();
-
-            // 2. Show success modal
             const successModal = new bootstrap.Modal($("#successModal")[0]);
             successModal.show();
-
-            // 3. After animation+delay, reload
             setTimeout(() => {
                 successModal.hide();
                 location.reload();
-            }, 1500); // 1.5s gives time for checkmark animation
+            }, 1500);
         })
-        .catch(() => {
+        .catch(error => {
+            // Error case
+            console.error("Error:", error);
             bootstrap.Modal.getInstance($("#deleteConfirmationModal")[0]).hide();
-            alert("Error deleting user");
+            // Display the user-friendly message from the backend
+            alert(`Error: ${error.message}`);
+            location.reload();
         });
     });
 
     // Explicitly hide modal & backdrop on Cancel
     $(document).on("click", ".close-btn", function() {
-    const modalEl = document.getElementById("deleteConfirmationModal");
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) {
-        modal.hide();                     // hide the modal
-    }
-    // In case backdrop sticks around, remove it:
-    document.querySelectorAll(".modal-backdrop").forEach(bg => bg.remove());
+        const modalEl = document.getElementById("deleteConfirmationModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();                     // hide the modal
+        }
+        // In case backdrop sticks around, remove it:
+        document.querySelectorAll(".modal-backdrop").forEach(bg => bg.remove());
     });
 </script>
 

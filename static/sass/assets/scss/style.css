@@ -18660,7 +18660,7 @@ p.data-attributes svg {
         margin-bottom: 12px;
         line-height: 1.5; } }
 .balance-widget {
-
+  background-image: url(../images/dashboard-2/balance-bg.png);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: right; }
