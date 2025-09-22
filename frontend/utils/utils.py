@@ -2,7 +2,9 @@ from django.db.models import Q
 from django.utils.timezone import now
 from decimal import Decimal
 import random
+from django.db.models import Sum
 from smart.models import *
+
 
 
 def get_discounted_price(product):
@@ -74,6 +76,64 @@ def get_new_arrivals(limit=10):
             publish_status=1
         ).order_by('-created_at')[:limit]
         for product in latest_products:
+            if len(products) >= limit:
+                break
+            if product not in products:
+                products.append(product)
+
+    return products
+
+
+def get_best_sellers(limit=10):
+    products = []
+
+    # Step 1: Get 1 best-seller from each parent category first
+    parent_cats = Category.objects.filter(parent_category__isnull=True, status=1).order_by('position')
+
+    for cat in parent_cats:
+        if len(products) >= limit:
+            break
+        
+        # Aggregate the sales count for products within this category
+        best_seller = Product.objects.filter(
+            category=cat,
+            publish_status=1,
+            order_items__isnull=False  # Corrected: Use 'order_items'
+        ).annotate(
+            total_sold=Sum('order_items__quantity')  # Corrected: Use 'order_items'
+        ).order_by('-total_sold').first()
+
+        if best_seller:
+            products.append(best_seller)
+
+    # Step 2: If still not enough, get from subcategories and sub-subcategories
+    if len(products) < limit:
+        other_cats = Category.objects.filter(parent_category__isnull=False, status=1).order_by('position')
+        for cat in other_cats:
+            if len(products) >= limit:
+                break
+            
+            best_seller = Product.objects.filter(
+                category=cat,
+                publish_status=1,
+                order_items__isnull=False  # Corrected: Use 'order_items'
+            ).annotate(
+                total_sold=Sum('order_items__quantity')  # Corrected: Use 'order_items'
+            ).order_by('-total_sold').first()
+            
+            if best_seller and best_seller not in products:
+                products.append(best_seller)
+
+    # Step 3: If still not enough, fill from top-selling products overall
+    if len(products) < limit:
+        overall_best_sellers = Product.objects.filter(
+            publish_status=1,
+            order_items__isnull=False  # Corrected: Use 'order_items'
+        ).annotate(
+            total_sold=Sum('order_items__quantity')  # Corrected: Use 'order_items'
+        ).order_by('-total_sold')[:limit]
+
+        for product in overall_best_sellers:
             if len(products) >= limit:
                 break
             if product not in products:

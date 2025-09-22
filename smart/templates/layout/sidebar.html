@@ -125,8 +125,9 @@
                             <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-home"></use>
                         </svg><span class="">Category</span></a>
                     <ul class="sidebar-submenu">
-                        <li><a href="{% url 'category'%}">Category</a></li>
                         <li><a class="" href="{% url 'category_type' %}">Category Type</a></li>
+                        <li><a href="{% url 'category'%}">Category</a></li>
+                        
                         {% comment %} <li><a class="" href="{% url 'add_user_account' %}">Add Vendor</a></li> {% endcomment %}
                     </ul>
                 </li>

@@ -278,7 +278,13 @@
                                         <td>{{ slider.paragraph }}</td>
                                         <td>{{ slider.heading_h3 }}</td>
                                         <td>{{ slider.heading_h5 }}</td>
-                                        <td>{{ slider.status }}</td>
+                                        <td>
+                                            {% if slider.status == 1 %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <ul class="action">
                                                 <li class="edit">
@@ -432,7 +438,7 @@
                                                         </svg>
                                                         <h5>Drag & Drop your image here</h5>
                                                         <p class="text-muted">or click to browse files</p>
-                                                        <span class="supported-files">Image Size: 1910px x 520px; Supports: JPG, PNG, WEBP (Max 5MB)</span>
+                                                        <span class="supported-files">Supports: JPG, PNG, WEBP (Max 5MB)</span>
                                                     </div>
                                                     <div class="image-preview" id="image-preview">
                                                         <!-- Preview will appear here -->
@@ -625,7 +631,7 @@
                     </div>
                     <div class="p-4">
                         <h4 class="mb-3 text-center">Are you sure?</h4>
-                        <p class="mb-4 text-center">This action will permanently delete the region.</p>
+                        <p class="mb-4 text-center">This action will permanently delete the Slider.</p>
                         <div class="card-footer text-end">
                             <div class="d-flex justify-content-center gap-2">
                             <button id="confirm-delete" class="btn btn-danger">Yes</button>
@@ -735,11 +741,8 @@
         });
     });
 
-    // EDIT: delegate to document in case rows are dynamic
     $(document).on("click", ".edit-icon", function () {
         const slider = this.dataset;
-
-        console.log("Editing slider:", slider);
 
         $("#edit_slider_id").val(slider.id);
         $("#edit_name").val(slider.name);
@@ -754,16 +757,12 @@
         $("#edit_heading_h5").val(slider.headingH5);
         $("#edit_heading_h5_color").val(slider.headingH5Color);
 
-        // Show background image preview (if exists)
-        if (slider.backgroundImage) {
-            $("#edit-image-preview").html(`
-                <img src="${slider.backgroundImage}" alt="Preview" class="img-fluid rounded">
-            `);
-            $("#edit_existing_image").val(slider.backgroundImage);
-        } else {
-            $("#edit-image-preview").empty();
-            $("#edit_existing_image").val("");
-        }
+        // Initialize edit dropzone
+        setTimeout(() => {
+            if (typeof window.initEditDropzone === 'function') {
+                window.initEditDropzone(slider.backgroundImage || '');
+            }
+        }, 200);
     });
 
     $("#editModal form").on("submit", function (e) {
@@ -803,8 +802,8 @@
 
     // Confirm delete
     $("#confirm-delete").on("click", function() {
-        fetch("/regions/", {
-            method: "POST",
+        fetch("{% url 'sliders' %}", {
+            method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": "{{ csrf_token }}"
@@ -844,92 +843,56 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const dropzoneArea = document.getElementById('dropzone-area');
-        const dropzoneContent = document.getElementById('dropzone-content');
-        const dropzoneInput = document.querySelector('.dropzone-input');
-        const imagePreview = document.getElementById('image-preview');
-        const existingImageInput = document.getElementById('existing_image');
+        // Edit modal elements
+        const editDropzoneArea = document.getElementById('edit-dropzone-area');
+        const editDropzoneInput = document.getElementById('edit_background_image');
+        const editImagePreview = document.getElementById('edit-image-preview');
+        const editExistingImageInput = document.getElementById('edit_existing_image');
+        
+        if (!editDropzoneArea) return;
+        
         const maxFileSize = 5 * 1024 * 1024; // 5MB
         
-        // Check if we're in edit mode and have an existing image
-        if (existingImageInput.value) {
-            showPreview(existingImageInput.value, true);
-        }
-        
-        // Handle drag and drop events
+        // Drag and drop events
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropzoneArea.addEventListener(eventName, preventDefaults, false);
+            editDropzoneArea.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); });
         });
         
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
         ['dragenter', 'dragover'].forEach(eventName => {
-            dropzoneArea.addEventListener(eventName, highlight, false);
+            editDropzoneArea.addEventListener(eventName, () => editDropzoneArea.classList.add('active'));
         });
         
         ['dragleave', 'drop'].forEach(eventName => {
-            dropzoneArea.addEventListener(eventName, unhighlight, false);
+            editDropzoneArea.addEventListener(eventName, () => editDropzoneArea.classList.remove('active'));
         });
         
-        function highlight() {
-            dropzoneArea.classList.add('active');
-        }
+        // Handle drop and click
+        editDropzoneArea.addEventListener('drop', (e) => handleEditFiles(e.dataTransfer.files));
+        editDropzoneArea.addEventListener('click', (e) => {
+            if (!e.target.closest('.preview-actions')) editDropzoneInput.click();
+        });
+        editDropzoneInput.addEventListener('change', function() { handleEditFiles(this.files); });
         
-        function unhighlight() {
-            dropzoneArea.classList.remove('active');
-        }
-        
-        // Handle dropped files
-        dropzoneArea.addEventListener('drop', handleDrop, false);
-        
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            handleFiles(files);
-        }
-        
-        // Handle clicked files
-        dropzoneArea.addEventListener('click', () => {
-            // Only trigger file input if clicking outside the preview actions
-            if (!event.target.closest('.preview-actions')) {
-                dropzoneInput.click();
+        function handleEditFiles(files) {
+            if (files.length === 0) return;
+            const file = files[0];
+            
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file (JPG, PNG, WEBP).');
+                return;
             }
-        });
-        
-        dropzoneInput.addEventListener('change', function() {
-            handleFiles(this.files);
-        });
-        
-        function handleFiles(files) {
-            if (files.length > 0) {
-                const file = files[0];
-                
-                // Validate file type
-                if (!file.type.match('image.*')) {
-                    alert('Please select an image file (JPG, PNG, WEBP).');
-                    return;
-                }
-                
-                // Validate file size
-                if (file.size > maxFileSize) {
-                    alert('File size exceeds 5MB limit.');
-                    return;
-                }
-                
-                // Display preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    showPreview(e.target.result, false);
-                };
-                reader.readAsDataURL(file);
+            if (file.size > maxFileSize) {
+                alert('File size exceeds 5MB limit.');
+                return;
             }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => showEditPreview(e.target.result, false);
+            reader.readAsDataURL(file);
         }
         
-        function showPreview(imageSrc, isExisting) {
-            imagePreview.innerHTML = `
+        function showEditPreview(imageSrc, isExisting) {
+            editImagePreview.innerHTML = `
                 <img src="${imageSrc}" class="preview-image" alt="Preview">
                 <div class="preview-actions">
                     <button type="button" class="change-btn">Change</button>
@@ -937,48 +900,35 @@
                 </div>
             `;
             
-            dropzoneArea.classList.add('has-preview');
+            editDropzoneArea.classList.add('has-preview');
             
-            // Add event listeners to the new buttons
-            imagePreview.querySelector('.change-btn').addEventListener('click', function(e) {
+            editImagePreview.querySelector('.change-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                dropzoneInput.click();
+                editDropzoneInput.click();
             });
             
-            imagePreview.querySelector('.remove-btn').addEventListener('click', function(e) {
+            editImagePreview.querySelector('.remove-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                clearPreview();
+                editDropzoneInput.value = '';
+                editDropzoneArea.classList.remove('has-preview');
+                editImagePreview.innerHTML = '';
+                if (isExisting) editExistingImageInput.value = '';
             });
-            
-            if (isExisting) {
-                // For existing images, we need to clear both the file input and the existing image reference
-                // when removed
-                imagePreview.querySelector('.remove-btn').addEventListener('click', function() {
-                    existingImageInput.value = '';
-                });
+        }
+        
+        // Global function for edit modal
+        window.initEditDropzone = function(imageUrl) {
+            if (imageUrl) {
+                editExistingImageInput.value = imageUrl;
+                showEditPreview(imageUrl, true);
+            } else {
+                editDropzoneInput.value = '';
+                editDropzoneArea.classList.remove('has-preview');
+                editImagePreview.innerHTML = '';
+                editExistingImageInput.value = '';
             }
-        }
-        
-        window.clearPreview = function() {
-            dropzoneInput.value = '';
-            dropzoneArea.classList.remove('has-preview');
-            imagePreview.innerHTML = '';
-            imagePreview.style.display = 'none';
-        }
+        };
     });
-
-    // Function to initialize the dropzone with an existing image (call this when opening edit modal)
-    function initDropzoneWithExistingImage(imageUrl) {
-        const existingImageInput = document.getElementById('existing_image');
-        const imagePreview = document.getElementById('image-preview');
-        
-        if (imageUrl) {
-            existingImageInput.value = imageUrl;
-            showPreview(imageUrl, true);
-        } else {
-            clearPreview();
-        }
-    }
 </script>
 
 {% endblock %}

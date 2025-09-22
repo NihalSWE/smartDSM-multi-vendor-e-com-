@@ -808,8 +808,15 @@
                                         {{ product.category.name }}
                                     </td>
                                     <td class="product-status">
-                                        <span class="badge {% if product.publish_status == 1 %}badge-success{% else %}badge-secondary{% endif %}">
-                                            {% if product.publish_status == 1 %}Published{% else %}Draft{% endif %}
+                                        <span class="badge 
+                                            {% if product.publish_status == 1 %}badge-success
+                                            {% elif product.publish_status == 2 %}badge-warning
+                                            {% elif product.publish_status == 3 %}badge-danger
+                                            {% elif product.publish_status == 4 %}badge-info
+                                            {% else %}badge-secondary
+                                            {% endif %}"
+                                        >
+                                            {{ product.get_publish_status_display }}
                                         </span>
                                     </td>
                                 </tr>

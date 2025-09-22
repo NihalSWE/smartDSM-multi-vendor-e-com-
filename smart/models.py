@@ -5,7 +5,9 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 from .utils.slug_utils import generate_unique_slug
 from uuid import uuid4
+from django.db.models import Sum
 from django.utils import timezone
+from django.utils.timezone import now
 from django.db.models import F, Q
 from django.core.files.storage import default_storage
 from io import BytesIO
@@ -509,6 +511,10 @@ class Product(models.Model):
             img_path = self.thumbnail_image.path
             img = Image.open(img_path)
 
+            # Convert to RGB if the image has an alpha channel (like PNGs)
+            if img.mode == 'RGBA':
+                img = img.convert('RGB')
+
             # generate small (250x250) thumbnail
             min_side = min(img.width, img.height)
             left = (img.width - min_side) / 2
@@ -526,6 +532,38 @@ class Product(models.Model):
 
             buffer.close()
             super().save(update_fields=["thumbnail_small"])
+            
+    
+    def get_discounted_price(self):
+        """
+        Returns the final price of the product after applying any active discounts.
+        This method is for template use.
+        """
+        current_time = now()
+
+        active_discount = (
+            self.discounts
+            .filter(active=True)
+            .filter(
+                Q(start_date__isnull=True) | Q(start_date__lte=current_time),
+                Q(end_date__isnull=True) | Q(end_date__gte=current_time)
+            )
+            .order_by('-start_date')
+            .first()
+        )
+
+        if not active_discount:
+            return self.selling_price
+
+        if active_discount.discount_type == ProductDiscount.FIXED:
+            return self.selling_price - active_discount.discount_price
+
+        elif active_discount.discount_type == ProductDiscount.PERCENT:
+            discount_value = (self.selling_price * active_discount.percentage) / Decimal('100')
+            return self.selling_price - discount_value
+
+        # For BOGO / BULK, return the original price
+        return self.selling_price
 
     def __str__(self):
         return self.title

@@ -20,7 +20,7 @@ from itertools import chain
 import datetime
 import random
 import string
-from .utils.utils import get_discounted_price, get_new_arrivals
+from .utils.utils import get_discounted_price, get_new_arrivals, get_best_sellers
 
 
 
@@ -34,12 +34,17 @@ def home(request):
     brands        = list(ClientBrand.objects.all())
     brand_pairs   = [brands[i:i+2] for i in range(0, len(brands), 2)]
     banners       = CategoryBanner.objects.all()
+    # This queryset is already ordered by the `order` field due to the model's Meta class.
     ad_banners    = AdvertisingBanner.objects.all()
     offer_banners = OfferBanner.objects.all()
     product_list  = Product.objects.all()
 
     # new arrivals
     new_arrivals  = get_new_arrivals(limit=10)
+    
+    # best seller poducts
+    best_seller = get_best_sellers(limit=10)
+    
     # Attach slides to ad banners
     attach_products_to_ad_banners(ad_banners)
     
@@ -56,6 +61,7 @@ def home(request):
         'product': product_list,
         'new_arrivals': new_arrivals,
         'top_categories': top_categories,
+        'best_seller': best_seller,
     })
     
     
@@ -91,10 +97,11 @@ def attach_products_to_ad_banners(ad_banners):
         # Get up to 2 categories from the banner
         categories = list(banner.categories.all())[:2]
         product_chunks = []
+        publish_statuses = [1, 4]
 
         for category in categories:
             products = (Product.objects
-                        .filter(category=category, publish_status=1)
+                        .filter(category=category, publish_status__in=publish_statuses)
                         .order_by('?')[:4])
             product_chunks.append(list(products))  # keep separate per category
 

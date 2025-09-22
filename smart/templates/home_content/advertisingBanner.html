@@ -279,7 +279,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label" for="image">Banner Image(610*200)</label>
+                                            <label class="form-label" for="image">Banner Image(200*610)</label>
                                             <input class="form-control btn-pill" id="image" name="image" type="file" accept="image/*" required>
                                         </div>
                                     </div>
@@ -311,8 +311,9 @@
                 </div>
                 <div class="modal-toggle-wrapper">  
                     <div class="card">
-                        <form class="form theme-form dark-inputs" enctype="multipart/form-data">
+                        <form class="form theme-form dark-inputs" enctype="multipart/form-data" data-edit-url="{% url 'edit_ad_banner' 0 %}">
                             {% csrf_token %}
+                            <input type="hidden" id="editModalId" name="edit_modal_id">
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
@@ -407,7 +408,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label" for="edit-image">Banner Image (610*200)</label>
+                                            <label class="form-label" for="edit-image">Banner Image (200*610)</label>
                                             <input class="form-control btn-pill" id="edit-image" name="edit_image" type="file" accept="image/*">
                                         </div>
                                     </div>
@@ -747,24 +748,43 @@
         });
     });
 
-    // EDIT: populate edit modal
-    $(document).on("click", ".edit-icon", function() {
-        const data = this.dataset;
-        editId = data.id;
-        $("#edit-title").val(data.title);
-        $("#edit-description").val(data.description);
-        $("#edit-button_text").val(data.buttonText);
-        $("#edit-button_link").val(data.buttonLink);
-        $("#edit-order").val(data.order);
-    });
-
+    // EDIT
+    // EDIT: handle form submission
     $("#editModal form").on("submit", function(e) {
         e.preventDefault();
+
+        const form = $(this);
+        const bannerId = $("#editModalId").val();
+        console.log("Submitting edit for banner ID:", bannerId);
+
+        // Check if the bannerId is valid before proceeding
+        if (!bannerId) {
+            console.error("Banner ID is missing. Cannot submit form.");
+            showMessage("error", "An error occurred: Banner ID not found.");
+            return;
+        }
+
+        const baseUrl = form.data('edit-url');
+        if (!baseUrl) {
+            console.error("Base URL is missing from form data attribute.");
+            showMessage("error", "An internal error occurred.");
+            return;
+        }
+        
+        // Construct the URL dynamically
+        const url = baseUrl.replace('0', bannerId);
         
         const formData = new FormData();
-        if ($("#edit-image")[0].files[0]) {
-            formData.append('image', $("#edit-image")[0].files[0]);
+        const newImage = $("#edit-image")[0].files[0];
+        const existingImage = $("#edit_existing_image").val();
+
+        if (newImage) {
+            formData.append('image', newImage);
+        } else if (existingImage === "") { // Using a hidden field to check for image removal
+            formData.append('remove_image', 'true');
         }
+        
+        // Append all other form data
         formData.append('title', $("#edit-title").val());
         formData.append('description', $("#edit-description").val());
         formData.append('button_text', $("#edit-button_text").val());
@@ -778,7 +798,7 @@
         formData.append('sub_sub_category2', $("#edit-sub-sub-category2").val());
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-        fetch(`{% url 'edit_ad_banner' 0 %}`.replace('0', editId), {
+        fetch(url, {
             method: "POST",
             body: formData
         })
@@ -794,6 +814,91 @@
             showMessage("error", "An error occurred while updating the banner");
         });
     });
+
+// EDIT: populate edit modal
+$(document).on("click", ".edit-icon", function() {
+    const data = this.dataset;
+
+    const bannerId = data.id;
+    $("#editModalId").val(bannerId);
+
+    console.log("Editing banner ID:", bannerId);
+    
+    editId = data.id;
+    $("#edit-title").val(data.title);
+    $("#edit-description").val(data.description);
+    $("#edit-button_text").val(data.buttonText);
+    $("#edit-button_link").val(data.buttonLink);
+    $("#edit-order").val(data.order);
+    
+    // Completely reset all category dropdowns
+    $('#edit-category').val('').trigger('change');
+    $('#edit-category2').val('').trigger('change');
+    
+    // Wait a moment then fetch data
+    setTimeout(() => {
+        fetch(`{% url 'edit_ad_banner' 0 %}`.replace('0', editId), {
+            method: "GET",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => r.json())
+        .then(d => {
+            // Show current banner image
+            if (d.image_url) {
+                $('#current-banner-img').attr('src', d.image_url);
+                $('#current-banner-preview').show();
+            }
+            
+            if (d.categories && d.categories.length > 0) {
+                // Find root categories
+                let rootCategories = d.categories.filter(cat => !cat.parent_id);
+                
+                // Set first root category
+                if (rootCategories[0]) {
+                    $('#edit-category').val(rootCategories[0].id).trigger('change');
+                    
+                    setTimeout(() => {
+                        let subCat = d.categories.find(cat => cat.parent_id === rootCategories[0].id);
+                        if (subCat) {
+                            $('#edit-sub-category').val(subCat.id).trigger('change');
+                            
+                            setTimeout(() => {
+                                let subSubCat = d.categories.find(cat => cat.parent_id === subCat.id);
+                                if (subSubCat) {
+                                    $('#edit-sub-sub-category').val(subSubCat.id);
+                                }
+                            }, 400);
+                        }
+                    }, 400);
+                }
+                
+                // Set second root category if exists
+                if (rootCategories[1]) {
+                    setTimeout(() => {
+                        $('#edit-category2').val(rootCategories[1].id).trigger('change');
+                        
+                        setTimeout(() => {
+                            let subCat = d.categories.find(cat => cat.parent_id === rootCategories[1].id);
+                            if (subCat) {
+                                $('#edit-sub-category2').val(subCat.id).trigger('change');
+                                
+                                setTimeout(() => {
+                                    let subSubCat = d.categories.find(cat => cat.parent_id === subCat.id);
+                                    if (subSubCat) {
+                                        $('#edit-sub-sub-category2').val(subSubCat.id);
+                                    }
+                                }, 400);
+                            }
+                        }, 400);
+                    }, 200);
+                }
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }, 200);
+});
 
     // DELETE
     let pendingDeleteId = null;

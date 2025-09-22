@@ -393,6 +393,23 @@ def update_slider(request):
 
 
 
+def delete_slider(request):
+    data = json.loads(request.body)
+    
+    if not data['id']:
+        JsonResponse({"status": "error", "message": "Missing slider ID."})
+        
+    slider_id = int(data['id'])
+    
+    slider = get_object_or_404(Slider, id=slider_id)
+    slider.delete()
+    
+    return JsonResponse({"status": "success", "message": "Slider deleted successfully."})
+    
+    
+
+
+
 def sliders(request):
     if request.method == "POST":
         method_override = request.POST.get("_method", "").upper()
@@ -401,6 +418,9 @@ def sliders(request):
             return update_slider(request)
         elif request.POST.get("name") and request.FILES.get("background_image"):
             return add_slider(request)
+        
+    elif request.method == "DELETE":
+        return delete_slider(request)
 
     else:
         alignment_choices = Slider.ALIGNMENT_CHOICES 
@@ -3800,6 +3820,9 @@ def adBanner(request):
 
 
 def add_ad_banner(request):
+    """
+    Handles creating a new advertising banner.
+    """
     if request.method == "POST":
         image = request.FILES.get('image')
         title = request.POST.get('title')
@@ -3808,16 +3831,6 @@ def add_ad_banner(request):
         button_link = request.POST.get('button_link')
         order = request.POST.get('order')
         
-        # Get all category IDs from both sets
-        category_ids = [
-            request.POST.get('category'),
-            request.POST.get('sub_category'),
-            request.POST.get('sub_sub_category'),
-            request.POST.get('category2'),
-            request.POST.get('sub_category2'),
-            request.POST.get('sub_sub_category2')
-        ]
-
         if not (image and title and description and button_text and button_link and order):
             return JsonResponse({'success': False, 'error': 'All fields are required.'})
 
@@ -3825,6 +3838,33 @@ def add_ad_banner(request):
             order = int(order)
         except ValueError:
             return JsonResponse({'success': False, 'error': 'Order must be a number.'})
+        
+        # Logic to get the last selected category from each set
+        selected_category_ids = []
+        
+        # First category set
+        sub_sub_category_1 = request.POST.get('sub_sub_category')
+        sub_category_1 = request.POST.get('sub_category')
+        category_1 = request.POST.get('category')
+        
+        if sub_sub_category_1:
+            selected_category_ids.append(sub_sub_category_1)
+        elif sub_category_1:
+            selected_category_ids.append(sub_category_1)
+        elif category_1:
+            selected_category_ids.append(category_1)
+            
+        # Second category set
+        sub_sub_category_2 = request.POST.get('sub_sub_category2')
+        sub_category_2 = request.POST.get('sub_category2')
+        category_2 = request.POST.get('category2')
+        
+        if sub_sub_category_2:
+            selected_category_ids.append(sub_sub_category_2)
+        elif sub_category_2:
+            selected_category_ids.append(sub_category_2)
+        elif category_2:
+            selected_category_ids.append(category_2)
 
         try:
             banner = AdvertisingBanner.objects.create(
@@ -3836,14 +3876,13 @@ def add_ad_banner(request):
                 order=order
             )
             
-            # Add all valid categories
-            for category_id in category_ids:
-                if category_id:  # Only process if not empty
-                    try:
-                        category = Category.objects.get(id=category_id)
-                        banner.categories.add(category)
-                    except (Category.DoesNotExist, ValueError):
-                        pass
+            # Add all selected categories (max of two)
+            for category_id in selected_category_ids:
+                try:
+                    category = Category.objects.get(id=category_id)
+                    banner.categories.add(category)
+                except (Category.DoesNotExist, ValueError):
+                    pass
             
             return JsonResponse({'success': True})
             
@@ -3854,7 +3893,13 @@ def add_ad_banner(request):
 
 
 def edit_ad_banner(request, banner_id):
-    banner = get_object_or_404(AdvertisingBanner, pk=banner_id)
+    """
+    Handles fetching and updating an existing advertising banner.
+    """
+    try:
+        banner = get_object_or_404(AdvertisingBanner, pk=banner_id)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=404)
 
     if request.method == "POST":
         title = request.POST.get('title')
@@ -3862,28 +3907,105 @@ def edit_ad_banner(request, banner_id):
         button_text = request.POST.get('button_text')
         button_link = request.POST.get('button_link')
         order = request.POST.get('order')
+        remove_image_flag = request.POST.get('remove_image') == 'true'
 
         if not (title and description and button_text and button_link and order):
-            return JsonResponse({'success': False, 'error': 'All fields are required.'})
+            return JsonResponse({'success': False, 'error': 'All fields are required.'}, status=400)
 
         try:
             order = int(order)
         except ValueError:
-            return JsonResponse({'success': False, 'error': 'Order must be a number.'})
+            return JsonResponse({'success': False, 'error': 'Order must be a number.'}, status=400)
 
-        banner.title = title
-        banner.description = description
-        banner.button_text = button_text
-        banner.button_link = button_link
-        banner.order = order
+        # New Logic: Get the last selected category from each set
+        selected_category_ids = []
+        
+        # First category set
+        sub_sub_category_1 = request.POST.get('sub_sub_category')
+        sub_category_1 = request.POST.get('sub_category')
+        category_1 = request.POST.get('category')
+        
+        if sub_sub_category_1:
+            selected_category_ids.append(sub_sub_category_1)
+        elif sub_category_1:
+            selected_category_ids.append(sub_category_1)
+        elif category_1:
+            selected_category_ids.append(category_1)
+            
+        # Second category set
+        sub_sub_category_2 = request.POST.get('sub_sub_category2')
+        sub_category_2 = request.POST.get('sub_category2')
+        category_2 = request.POST.get('category2')
+        
+        if sub_sub_category_2:
+            selected_category_ids.append(sub_sub_category_2)
+        elif sub_category_2:
+            selected_category_ids.append(sub_category_2)
+        elif category_2:
+            selected_category_ids.append(category_2)
+        
+        try:
+            # Update basic fields
+            banner.title = title
+            banner.description = description
+            banner.button_text = button_text
+            banner.button_link = button_link
+            banner.order = order
 
-        if 'image' in request.FILES:
-            banner.image = request.FILES['image']
+            # Handle image updates
+            if 'image' in request.FILES:
+                if banner.image:
+                    if default_storage.exists(banner.image.path):
+                        default_storage.delete(banner.image.path)
+                banner.image = request.FILES['image']
+            elif remove_image_flag:
+                if banner.image:
+                    if default_storage.exists(banner.image.path):
+                        default_storage.delete(banner.image.path)
+                banner.image = None
 
-        banner.save()
-        return JsonResponse({'success': True})
+            # Clear existing categories and add the new, most specific ones
+            banner.categories.clear()
+            for category_id in selected_category_ids:
+                try:
+                    category = Category.objects.get(id=category_id)
+                    banner.categories.add(category)
+                except (Category.DoesNotExist, ValueError):
+                    pass
 
-    return JsonResponse({'success': False, 'error': 'Only POST allowed.'})
+            banner.save()
+            return JsonResponse({'success': True})
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    # Existing GET logic for populating the modal remains the same
+    if request.method == "GET" and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        categories_data = []
+        for category in banner.categories.all():
+            root_category = category
+            while root_category.parent_category:
+                root_category = root_category.parent_category
+            
+            categories_data.append({
+                'id': category.id,
+                'name': category.name,
+                'parent_id': category.parent_category.id if category.parent_category else None,
+                'root_id': root_category.id
+            })
+        
+        return JsonResponse({
+            'id': banner.id,
+            'title': banner.title,
+            'description': banner.description,
+            'button_text': banner.button_text,
+            'button_link': banner.button_link,
+            'order': banner.order,
+            'image_url': banner.image.url if banner.image else None,
+            'categories': categories_data
+        })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
 
 
 def delete_ad_banner(request, banner_id):
