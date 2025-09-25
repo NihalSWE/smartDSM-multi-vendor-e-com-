@@ -189,68 +189,44 @@
                         <h3 class="title title-center mb-3">Contact
                             Information
                         </h3>
-                        <p class="text-center">Lorem ipsum dolor sit amet,
-                            consectetur
-                            adipiscing elit, sed do eiusmod tempor incididunt ut</p>
+                        
                     </section>
                     <!-- End of Contact Title Section -->
 
                     <section class="contact-information-section mb-10">
-                        <div class=" swiper-container swiper-theme " data-swiper-options="{
-                            'spaceBetween': 20,
-                            'slidesPerView': 1,
-                            'breakpoints': {
-                                '480': {
-                                    'slidesPerView': 2
-                                },
-                                '768': {
-                                    'slidesPerView': 3
-                                },
-                                '992': {
-                                    'slidesPerView': 4
-                                }
+                        <div class="swiper-container swiper-theme" data-swiper-options='{
+                            "spaceBetween": 20,
+                            "slidesPerView": 1,
+                            "breakpoints": {
+                                "480": {"slidesPerView": 2},
+                                "768": {"slidesPerView": 3},
+                                "992": {"slidesPerView": 3}
                             }
-                        }">
+                        }'>
                             <div class="swiper-wrapper row cols-xl-4 cols-md-3 cols-sm-2 cols-1">
-                                <div class="swiper-slide icon-box text-center icon-box-primary">
-                                    <span class="icon-box-icon icon-email">
-                                        <i class="w-icon-envelop-closed"></i>
-                                    </span>
-                                    <div class="icon-box-content">
-                                        <h4 class="icon-box-title">E-mail Address</h4>
-                                        <p><a href="https://portotheme.com/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="167b777f7a56736e777b667a733875797b">[email&#160;protected]</a></p>
+                                {% for contact in contacts %}
+                                    <div class="swiper-slide icon-box text-center icon-box-primary">
+                                        <span class="icon-box-icon">
+                                            {% if contact.icon == "email" %}
+                                                <i class="w-icon-envelop-closed"></i>
+                                            {% elif contact.icon == "phone" %}
+                                                <i class="w-icon-headphone"></i>
+                                            {% elif contact.icon == "address" %}
+                                                <i class="w-icon-map-marker"></i>
+                                            {% else %}
+                                                <i class="w-icon-info"></i>
+                                            {% endif %}
+                                        </span>
+                                        <div class="icon-box-content">
+                                            <h4 class="icon-box-title">{{ contact.title }}</h4>
+                                            <p>{{ contact.value|safe }}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="swiper-slide icon-box text-center icon-box-primary">
-                                    <span class="icon-box-icon icon-headphone">
-                                        <i class="w-icon-headphone"></i>
-                                    </span>
-                                    <div class="icon-box-content">
-                                        <h4 class="icon-box-title">Phone Number</h4>
-                                        <p>(123) 456-7890 / (123) 456-9870</p>
-                                    </div>
-                                </div>
-                                <div class="swiper-slide icon-box text-center icon-box-primary">
-                                    <span class="icon-box-icon icon-map-marker">
-                                        <i class="w-icon-map-marker"></i>
-                                    </span>
-                                    <div class="icon-box-content">
-                                        <h4 class="icon-box-title">Address</h4>
-                                        <p>Lawrence, NY 11345, USA</p>
-                                    </div>
-                                </div>
-                                <div class="swiper-slide icon-box text-center icon-box-primary">
-                                    <span class="icon-box-icon icon-fax">
-                                        <i class="w-icon-fax"></i>
-                                    </span>
-                                    <div class="icon-box-content">
-                                        <h4 class="icon-box-title">Fax</h4>
-                                        <p>1-800-570-7777</p>
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                     </section>
+                    
                     <!-- End of Contact Information section -->
 
                     <hr class="divider mb-10 pb-1">
@@ -309,70 +285,6 @@
                     </section>
                     <!-- End of Contact Section -->
                 </div>
-
-                <hr class="divider mb-10 pb-1">
-                <h2 class="section-title">Branch Locations</h2>
-                <div class="locations-container">
-                    <!-- branch or warehouse locations -->
-                    <div class="locations-grid">
-                        {% for location in locations %}
-                            <div class="location-card wow fadeInUp" data-wow-delay="{{ forloop.counter0|add:'0.3'|floatformat:1 }}s" data-wow-duration="1s">
-                                <div class="card-image" data-tilt>
-                                    <img src="{{ location.image.url }}" alt="{{ location.city }}" class="location-img">
-                                    <div class="image-overlay"></div>
-                                </div>
-                                <div class="card-content">
-                                    <h4 class="location-name">{{ location.city }}</h4>
-                                    <div class="location-address">{{ location.address|linebreaksbr }}</div>
-                                    
-                                    {% if location.email or location.number %}
-                                        <div class="contact-info">
-                                            {% if location.email %}
-                                                <div class="contact-item">
-                                                    <span class="contact-icon">✉</span>
-                                                    <a href="mailto:{{ location.email }}" class="contact-link">{{ location.email }}</a>
-                                                </div>
-                                            {% endif %}
-                                            {% if location.number %}
-                                                <div class="contact-item">
-                                                    <span class="contact-icon">📞</span>
-                                                    <a href="tel:{{ location.number }}" class="contact-link">{{ location.number }}</a>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% empty %}
-                            <p class="no-locations">No locations available at the moment.</p>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-               
-
-
-                <!-- Google Maps - Go to the bottom of the page to change settings and map location. -->
-                <!-- Google Maps -->
-<div class="container mb-10">
-    <div class="card border-0 shadow-sm mx-auto" style="max-width: 1600px;">
-        <div class="card-body p-0">
-            <div style="width: 100%; height: 300px; overflow: hidden;">
-                <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d456.5231874731557!2d90.3784557!3d23.740763599999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b5c0611207%3A0xed7ed8cceed1d7ad!2sIGL%20Web%20Ltd!5e0!3m2!1sen!2sbd!4v1753245370502!5m2!1sen!2sbd" 
-                    width="100%" 
-                    height="300" 
-                    style="border:0;" 
-                    allowfullscreen="" 
-                    loading="lazy" 
-                    referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-            </div>
-        </div>
-    </div>
-</div>
-
-
                 <!-- End Map Section -->
             </div>
             <!-- End of PageContent -->

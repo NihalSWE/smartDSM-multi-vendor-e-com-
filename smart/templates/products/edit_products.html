@@ -593,7 +593,7 @@
                                                 <div class="col-sm-6">
                                                     <label class="form-label" for="initialCost">Initial Price</label>
                                                     <input class="form-control" id="initialCost" type="number" step="0.01" 
-                                                           placeholder="Price" name="initial_price" value="{{ product.initial_price }}" />
+                                                           placeholder="Price" name="initial_price" value="{{ product.buy_price }}" />
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <label class="form-label" for="sellingPrice">Selling Price</label>
@@ -612,9 +612,9 @@
                                                         <li class="nav-item">
                                                             <a class="nav-link" id="percentage-base-tab" data-bs-toggle="pill" href="#percentage-base" role="tab" aria-controls="percentage-base" aria-selected="false"><span>Percentage Based Discount(%)</span></a>
                                                         </li>
-                                                        <li class="nav-item">
+                                                        {% comment %} <li class="nav-item">
                                                             <a class="nav-link" id="bulk-discount-tab" data-bs-toggle="pill" href="#bulk-discount" role="tab" aria-controls="bulk-discount" aria-selected="false"><span>Volume or Bulk Discount</span></a>
-                                                        </li>
+                                                        </li> {% endcomment %}
                                                     </ul>
                                                     <div class="tab-content" id="product-discount-pills-tabContent">
                                                         <div class="tab-pane fade show active" id="fixed-price" role="tabpanel" aria-labelledby="fixed-price-tab">
@@ -623,7 +623,7 @@
                                                                     <div class="col-12">
                                                                         <label class="form-label" for="validationDiscountPrice">Discount Price</label>
                                                                         <input class="form-control" id="validationDiscountPrice" type="number" 
-                                                                               placeholder="Discount" name="fixed_discount" value="{{ product.fixed_discount }}" />
+                                                                               placeholder="Discount" name="fixed_discount" value="{{ fixed_discount.discount_price }}" />
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -633,22 +633,25 @@
                                                                 <div class="row g-3">
                                                                     <div class="col-12">
                                                                         <label class="form-label">Product Name<span class="c-o-light">&nbsp;(Free)</span></label>
-                                                                        <select name="discount_product_name" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true" name="bogo_product">
-                                                                            <option value="1" selected>Women Pink T-shirt</option>
-                                                                            <option value="2">Solid Hooded Sweatshirt</option>
-                                                                            
+                                                                        <select name="bogo_product" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true">
+                                                                            <option value="" disabled {% if not bogo_discount %}selected{% endif %}>Select a product</option>
+                                                                            {% for p in products %}
+                                                                                <option value="{{ p.id }}" {% if bogo_discount and bogo_discount.free_product.id == p.id %}selected{% endif %}>
+                                                                                    {{ p.title }}
+                                                                                </option>
+                                                                            {% endfor %}
                                                                         </select>
                                                                     </div>
-                                                                <div class="col-sm-6">
-                                                                    <label class="form-label" for="validationMinQuantity">Minimum Quantity</label>
-                                                                    <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" 
-                                                                           placeholder="Quantity" name="bogo_min_qty" value="{{ product.bogo_min_qty }}" />
-                                                                </div>
-                                                                <div class="col-sm-6">
-                                                                    <label class="form-label" for="validationMaxQuantity">Maximum Quantity</label>
-                                                                    <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" 
-                                                                           placeholder="Quantity" name="bogo_max_qty" value="{{ product.bogo_max_qty }}" />
-                                                                </div>
+                                                                    <div class="col-sm-6">
+                                                                        <label class="form-label" for="validationMinQuantity">Minimum Quantity</label>
+                                                                        <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" 
+                                                                               placeholder="Quantity" value="{% if bogo_discount %}{{ bogo_discount.min_quantity }}{% endif %}" />
+                                                                    </div>
+                                                                    <div class="col-sm-6">
+                                                                        <label class="form-label" for="validationMaxQuantity">Maximum Quantity</label>
+                                                                        <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" 
+                                                                               placeholder="Quantity" value="{% if bogo_discount %}{{ bogo_discount.max_quantity }}{% endif %}" />
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -658,12 +661,12 @@
                                                                     <div class="col-md-12">
                                                                         <label class="form-label" for="validationDiscount">Discount Percentage</label>
                                                                         <input class="form-control" name="discount_percentage" id="validationDiscount" type="number" 
-                                                                               placeholder="Discount" name="percentage_discount" value="{{ product.percentage_discount }}" />
+                                                                               placeholder="Discount" value="{% if percent_discount %}{{ percent_discount.percentage }}{% endif %}" />
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="tab-pane fade" id="bulk-discount" role="tabpanel" aria-labelledby="bulk-discount-tab">
+                                                        {% comment %} <div class="tab-pane fade" id="bulk-discount" role="tabpanel" aria-labelledby="bulk-discount-tab">
                                                             <div class="meta-body">
                                                                 <div class="row g-3">
                                                                     <div class="col-12">
@@ -689,7 +692,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        </div> {% endcomment %}
                                                     </div>
                                                 </div>
                                                 <div class="col-12 product-buttons">
@@ -720,10 +723,10 @@
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
-                                                    </li>
+                                                    </li> {% endcomment %}
                                                     <li class="nav-item">
                                                         <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
-                                                    </li> {% endcomment %}
+                                                    </li> 
                                                 </ul>
                                                 <div class="tab-content" id="advance-option-tabContent">
                                                     <div class="tab-pane fade show active" id="inventory-option"    role="tabpanel" aria-labelledby="inventory-option-tab">
@@ -892,16 +895,15 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </div> {% endcomment %}
                                                     <div class="tab-pane fade" id="publish-option" role="tabpanel" aria-labelledby="publish-option-tab">
                                                         <div class="meta-body">
                                                             <div class="row g-3 common-form">
                                                                 <div class="col-xxl-6 col-xl-12 col-md-6">
                                                                     <label class="form-label" for="publishStatus">Publish Status</label>
                                                                     <select class="form-select" id="publishStatus" required="" name="publish_status">
-                                                                        <option value="published" {% if product.status == 'published' %}selected{% endif %}>Publish</option>
-                                                                        <option value="draft" {% if product.status == 'draft' %}selected{% endif %}>Drafts</option>
-                                                                        <option value="unpublished" {% if product.status == 'unpublished' %}selected{% endif %}>Unpublish</option>
+                                                                        <option value="1" {% if product.status == 'published' %}selected{% endif %}>Publish</option>
+                                                                        <option value="0" {% if product.status == 'draft' %}selected{% endif %}>Drafts</option>
                                                                     </select>
                                                                 </div>
                                                                 <div class="col-xxl-6 col-xl-12 col-md-6">
@@ -930,7 +932,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div> {% endcomment %}
+                                                    </div> 
                                                 </div>
                                             </div>
                                         </div>
@@ -1348,5 +1350,29 @@
                 configureDropDownLists(variationSelect, document.getElementById('option-value'));
             }
         });
+
+        // Add this to your script section
+document.addEventListener('DOMContentLoaded', function() {
+    // Set active discount tab based on existing data
+    {% if percent_discount %}
+        // Activate percentage tab if percentage discount exists
+        const percentageTab = document.getElementById('percentage-base-tab');
+        if (percentageTab) {
+            new bootstrap.Tab(percentageTab).show();
+        }
+    {% elif bogo_discount %}
+        // Activate BOGO tab if BOGO discount exists
+        const bogoTab = document.getElementById('bogo-offer-tab');
+        if (bogoTab) {
+            new bootstrap.Tab(bogoTab).show();
+        }
+    {% elif fixed_discount %}
+        // Keep fixed tab active if fixed discount exists (default)
+        const fixedTab = document.getElementById('fixed-price-tab');
+        if (fixedTab) {
+            new bootstrap.Tab(fixedTab).show();
+        }
+    {% endif %}
+});
     </script>
 {% endblock %}

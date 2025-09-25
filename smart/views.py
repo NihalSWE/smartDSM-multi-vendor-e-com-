@@ -864,6 +864,183 @@ def update_product_from_request(product, request):
 @login_required(login_url="/admin-dashboard/login_home")
 def edit_product(request, id):
     product = get_object_or_404(Product, id=id)
+    
+    if request.method == "POST":
+        data = request.POST
+        files = request.FILES
+        
+        print('data for product updating: ', data)
+
+        try:
+            errors = {}
+
+            # Required fields validation
+            sku = data.get('sku')
+            title = data.get('title')
+            selling_price = data.get('selling_price')
+            category_id = data.get('category')
+
+            if not sku:
+                errors['sku'] = "SKU is required."
+            if not title:
+                errors['title'] = "Title is required."
+            if not selling_price:
+                errors['selling_price'] = "Selling price is required."
+            if not category_id:
+                errors['category'] = "Category is required."
+
+            if errors:
+                return JsonResponse({'success': False, 'errors': errors})
+
+            # Get form data
+            description = data.get('description', '')
+            model = data.get('model', '')
+            short_description = data.get('short_description', '')
+            buy_price = data.get('initial_price') or data.get('buy_price')  # Support both field names
+            
+            print('********model about to be updated*********: ', model)
+            print('********short_description about to be updated*********: ', short_description)
+            
+            thumbnail = files.get('thumbnail') if 'thumbnail' in files else None
+            gallery_files = files.getlist('gallery[]')
+
+            sub_category_id = data.get('sub_category') or None
+            sub_sub_category_id = data.get('sub_sub_category') or None
+
+            meta_title = data.get('meta_title')
+            meta_keywords = data.get('meta_keywords')
+            meta_description = data.get('meta_description')
+
+            shipping_class_name = data.get('shipping_class')
+            shipping_class = ShippingClass.objects.filter(name=shipping_class_name).first() if shipping_class_name else None
+
+            publish_status = data.get('publish_status') or product.publish_status
+            publish_date = parse_datetime(data.get('publish_date')) if data.get('publish_date') else product.publish_date
+            
+            # Determine main category
+            if sub_sub_category_id:
+                main_category_id = sub_sub_category_id
+            elif sub_category_id:
+                main_category_id = sub_category_id
+            else:
+                main_category_id = category_id
+
+            # Update product fields
+            product.sku = sku
+            product.title = title
+            product.model = model
+            product.short_description = short_description
+            product.description = description
+            product.buy_price = buy_price
+            product.selling_price = selling_price
+            product.category_id = main_category_id
+            product.parent_category_id = category_id
+            product.sub_category_id = sub_category_id
+            product.sub_sub_category_id = sub_sub_category_id
+            product.meta_title = meta_title
+            product.meta_keywords = meta_keywords
+            product.meta_description = meta_description
+            product.shipping_class = shipping_class
+            product.publish_status = publish_status
+            product.publish_date = publish_date
+
+            # Update thumbnail if new one is provided
+            if thumbnail:
+                product.thumbnail_image = thumbnail
+
+            product.save()
+
+            # Handle tags
+            tags_input = data.get('tags', '')
+            if tags_input:
+                # Clear existing tags
+                product.tags.clear()
+                
+                # Parse tags (handle both JSON format and comma-separated)
+                try:
+                    tag_list = json.loads(tags_input)
+                    tag_names = [tag_obj.get('value') for tag_obj in tag_list if tag_obj.get('value')]
+                except json.JSONDecodeError:
+                    # Fallback for comma-separated tags
+                    tag_names = [tag.strip() for tag in tags_input.split(',') if tag.strip()]
+                
+                for tag_name in tag_names:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name)
+                    product.tags.add(tag)
+
+            # Handle gallery images
+            if gallery_files:
+                # Remove existing gallery images if needed, or add new ones
+                # Option 1: Replace all existing images
+                # product.images.all().delete()
+                
+                # Option 2: Add new images without deleting existing ones
+                for i, image in enumerate(gallery_files):
+                    if image:
+                        ProductImage.objects.create(product=product, image=image, position=i)
+
+            # Handle discounts
+            discount_type = data.get('discount_Type') or 'fixed'  # Default to fixed
+            
+            # Deactivate all existing discounts first
+            product.discounts.update(active=False)
+            
+            # Fixed price discount
+            fixed_price = data.get('fixed_discount')
+            if fixed_price:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='fixed',
+                    discount_price=fixed_price,
+                    active=True
+                )
+            
+            # Percentage discount
+            percentage = data.get('discount_percentage')
+            if percentage:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='percentage',
+                    percentage=percentage,
+                    active=True
+                )
+            
+            # BOGO discount
+            bogo_product_id = data.get('bogo_product')
+            bogo_min_qty = data.get('bogo_min_qty')
+            bogo_max_qty = data.get('bogo_max_qty')
+            if bogo_product_id and bogo_min_qty:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='bogo',
+                    bogo_product_id=bogo_product_id,
+                    min_quantity=bogo_min_qty,
+                    max_quantity=bogo_max_qty,
+                    active=True
+                )
+            
+            # Bulk discount
+            bulk_qty = data.get('bulk_qty')
+            bulk_discount_type = data.get('bulk_discount_type')
+            bulk_discount_value = data.get('bulk_discount_value')
+            if bulk_qty and bulk_discount_value:
+                ProductDiscount.objects.create(
+                    product=product,
+                    discount_type='bulk',
+                    min_quantity=bulk_qty,
+                    discount_type_detail=bulk_discount_type,
+                    discount_value=bulk_discount_value,
+                    active=True
+                )
+
+            return JsonResponse({'success': True, 'message': "Product updated successfully!"})
+
+        except Exception as e:
+            print("Exception occurred:", str(e))
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'errors': {'exception': str(e)}}, status=500)
+
+    # GET request - display the form with existing data
     categories = Category.objects.all()
     
     # Clean rejection reason if it contains Quill wrapper HTML
@@ -879,14 +1056,27 @@ def edit_product(request, id):
             product.clean_rejection_reason = rejection_reason
     else:
         product.clean_rejection_reason = rejection_reason
-        
+
+    # Fetch discounts (latest active per type)
+    fixed_discount = product.discounts.filter(discount_type='fixed', active=True).first()
+    percent_discount = product.discounts.filter(discount_type='percentage', active=True).first()
+    bogo_discount = product.discounts.filter(discount_type='bogo', active=True).first()
+    bulk_discount = product.discounts.filter(discount_type='bulk', active=True).first()
+    products = Product.objects.all()    
     context = {
+       
         "product": product,
         "categories": categories,
+        "fixed_discount": fixed_discount,
+        "percent_discount": percent_discount,
+        "bogo_discount": bogo_discount,
+        "bulk_discount": bulk_discount,
+         "products": products,
         "breadcrumb": {"title": "Edit Product", "parent": "Ecommerce", "child": "Edit Product"}
     }
 
     return render(request, 'products/edit_products.html', context)
+
 
 
 @login_required(login_url="/admin-dashboard/login_home")
@@ -935,6 +1125,7 @@ def delete_product(request):
 
 
 def create_product(request):
+
     if request.method != "POST":
         return JsonResponse({'success': False, 'errors': {'request': 'Invalid request method'}})
 
@@ -1043,26 +1234,69 @@ def create_product(request):
             if image:
                 ProductImage.objects.create(product=product, image=image, position=i)
 
-        # Discount
-        discount_type = data.get('discount_Type')
-        if discount_type == 'Fixed Price':
-            fixed_price = data.get('fixed_discount')
-            if fixed_price:
+        # Discount handling - BASED ON ACTIVE TAB
+        active_discount_type = data.get('active_discount_type', 'fixed')
+
+        def clean_decimal_value(value):
+            """Convert empty strings to None for decimal fields"""
+            if value is None or value == '':
+                return None
+            try:
+                return Decimal(value)
+            except (ValueError, InvalidOperation):
+                return None
+
+        def clean_int_value(value):
+            """Convert empty strings to None for integer fields"""
+            if value is None or value == '':
+                return None
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return None
+
+        # Clean the values
+        fixed_price = clean_decimal_value(data.get('fixed_discount'))
+        percentage = clean_decimal_value(data.get('discount_percentage'))
+        bogo_product_id = data.get('bogo_product')
+        bogo_min_qty = clean_int_value(data.get('minimum_quantity'))
+        bogo_max_qty = clean_int_value(data.get('maximum_quantity'))
+
+        print(f"Active discount type: {active_discount_type}")
+
+        # Create discount based on the ACTIVE TAB (not field content)
+        if active_discount_type == 'fixed' and fixed_price is not None:
+            ProductDiscount.objects.create(
+                product=product,
+                discount_type=ProductDiscount.FIXED,
+                discount_price=fixed_price,
+                active=True
+            )
+            print("Fixed price discount created based on active tab")
+            
+        elif active_discount_type == 'percentage' and percentage is not None:
+            ProductDiscount.objects.create(
+                product=product,
+                discount_type=ProductDiscount.PERCENT,
+                percentage=percentage,
+                active=True
+            )
+            print("Percentage discount created based on active tab")
+            
+        elif active_discount_type == 'bogo' and bogo_product_id and bogo_min_qty is not None:
+            try:
+                free_product = Product.objects.get(id=bogo_product_id)
                 ProductDiscount.objects.create(
                     product=product,
-                    discount_type='fixed',
-                    discount_price=fixed_price,
+                    discount_type=ProductDiscount.BOGO,
+                    free_product=free_product,
+                    min_price=Decimal(bogo_min_qty),
+                    max_price=Decimal(bogo_max_qty) if bogo_max_qty else None,
                     active=True
                 )
-        elif discount_type == 'Percentage':
-            percentage = data.get('discount_percentage')
-            if percentage:
-                ProductDiscount.objects.create(
-                    product=product,
-                    discount_type='percentage',
-                    percentage=percentage,
-                    active=True
-                )
+                print(f"BOGO discount created based on active tab with free product: {free_product.title}")
+            except Product.DoesNotExist:
+                print(f"BOGO product with ID {bogo_product_id} not found")
 
         return JsonResponse({'success': True, 'message': "Product created successfully!"})
 
@@ -1203,6 +1437,51 @@ def contactUs_location(request):
 
     # GET request - just render page
     return render(request, 'applications/contacts/contactLocations.html', {"locations": locations})
+
+
+
+
+def contact_info(request):
+    contacts = ContactInformation.objects.all().order_by("order")
+    return render(request, "applications/contacts/add_info.html", {"contacts": contacts})
+
+def add_contact_info(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        value = request.POST.get("value")
+        icon = request.POST.get("icon")
+        order = request.POST.get("order", 0)
+        active = "active" in request.POST
+        ContactInformation.objects.create(
+            title=title, value=value, icon=icon, order=order, active=active
+        )
+        messages.success(request, "Contact added successfully!")
+    return redirect("contact_info")
+
+def edit_contact_info(request, pk):
+    contact = get_object_or_404(ContactInformation, pk=pk)
+    if request.method == "POST":
+        contact.title = request.POST.get("title")
+        contact.value = request.POST.get("value")
+        contact.icon = request.POST.get("icon")
+        contact.order = request.POST.get("order", 0)
+        contact.active = "active" in request.POST
+        contact.save()
+        messages.success(request, "Contact updated successfully!")
+    return redirect("contact_info")
+
+def delete_contact_info(request, pk):
+    contact = get_object_or_404(ContactInformation, pk=pk)
+    if request.method == "POST":
+        contact.delete()
+        messages.success(request, "Contact deleted successfully!")
+    return redirect("contact_info")
+
+
+
+
+
+
 
 
 #-----------------become a vendor
@@ -1372,6 +1651,7 @@ def wishlist_header(request):
 
 @login_required(login_url="/admin-dashboard/login_home")
 def add_products(request):
+    products = Product.objects.all()
     if request.method == 'POST':
         try:
             # Validate required fields
@@ -1482,6 +1762,7 @@ def add_products(request):
     categories = Category.objects.filter(parent_category__isnull=True)
     context = {
         'categories': categories,
+        'products': products,
         "breadcrumb": {
             "title": "Add Product",
             "parent": "ECommerce", 

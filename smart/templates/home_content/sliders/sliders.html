@@ -717,29 +717,193 @@
         }
     }
 
-    // ADD
-    $("#addModal form").on("submit", function(e) {
-        e.preventDefault();
-
-        const form = this;
-        const formData = new FormData(form); // includes image + all fields
-
-        fetch("{% url 'sliders' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": "{{ csrf_token }}" // do NOT set Content-Type manually
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            showMessage(data.status, data.message);
-        })
-        .catch(error => {
-            console.error("Upload failed", error);
-            showMessage("error", "Something went wrong.");
+    // ADD MODAL DROPZONE FUNCTIONALITY - START
+document.addEventListener('DOMContentLoaded', function() {
+    // Add modal elements
+    const addDropzoneArea = document.getElementById('dropzone-area');
+    const addDropzoneInput = document.getElementById('background_image');
+    const addImagePreview = document.getElementById('image-preview');
+    
+    if (addDropzoneArea && addDropzoneInput && addImagePreview) {
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        
+        // Drag and drop events for add modal
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            addDropzoneArea.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); });
         });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            addDropzoneArea.addEventListener(eventName, () => addDropzoneArea.classList.add('active'));
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            addDropzoneArea.addEventListener(eventName, () => addDropzoneArea.classList.remove('active'));
+        });
+        
+        // Handle drop and click for add modal
+        addDropzoneArea.addEventListener('drop', (e) => handleAddFiles(e.dataTransfer.files));
+        addDropzoneArea.addEventListener('click', (e) => {
+            if (!e.target.closest('.preview-actions')) addDropzoneInput.click();
+        });
+        addDropzoneInput.addEventListener('change', function() { handleAddFiles(this.files); });
+        
+        function handleAddFiles(files) {
+            if (files.length === 0) return;
+            const file = files[0];
+            
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file (JPG, PNG, WEBP).');
+                return;
+            }
+            if (file.size > maxFileSize) {
+                alert('File size exceeds 5MB limit.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => showAddPreview(e.target.result);
+            reader.readAsDataURL(file);
+        }
+        
+        function showAddPreview(imageSrc) {
+            addImagePreview.innerHTML = `
+                <img src="${imageSrc}" class="preview-image" alt="Preview">
+                <div class="preview-actions">
+                    <button type="button" class="change-btn">Change</button>
+                    <button type="button" class="remove-btn">Remove</button>
+                </div>
+            `;
+            
+            addDropzoneArea.classList.add('has-preview');
+            
+            addImagePreview.querySelector('.change-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addDropzoneInput.click();
+            });
+            
+            addImagePreview.querySelector('.remove-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addDropzoneInput.value = '';
+                addDropzoneArea.classList.remove('has-preview');
+                addImagePreview.innerHTML = '';
+            });
+        }
+        
+        // Clear add modal when it's closed
+        $('#addModal').on('hidden.bs.modal', function () {
+            addDropzoneInput.value = '';
+            addDropzoneArea.classList.remove('has-preview');
+            addImagePreview.innerHTML = '';
+            document.getElementById('slider-add-form').reset();
+        });
+    }
+});
+// ADD MODAL DROPZONE FUNCTIONALITY - END
+
+// ADD - With Progress Indicator
+$("#addModal form").on("submit", function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const formData = new FormData(form);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+
+    // Create progress elements if they don't exist
+    let progressContainer = document.getElementById('upload-progress');
+    if (!progressContainer) {
+        progressContainer = document.createElement('div');
+        progressContainer.id = 'upload-progress';
+        progressContainer.innerHTML = `
+            <div class="progress-wrapper" style="margin: 15px 0; display: none;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="progress-text">Uploading...</span>
+                    <span class="progress-percentage">0%</span>
+                </div>
+                <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #7366ff; border-radius: 10px; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+        `;
+        // Insert before the error-success-div
+        const errorDiv = $("#addModal .error-success-div");
+        errorDiv.before(progressContainer);
+    }
+
+    const progressWrapper = progressContainer.querySelector('.progress-wrapper');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const progressText = progressContainer.querySelector('.progress-text');
+    const progressPercentage = progressContainer.querySelector('.progress-percentage');
+
+    // Show progress and disable button
+    progressWrapper.style.display = 'block';
+    submitBtn.textContent = 'Uploading...';
+    submitBtn.disabled = true;
+
+    // Create XMLHttpRequest for progress tracking
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percentComplete + '%';
+            progressPercentage.textContent = percentComplete + '%';
+            
+            if (percentComplete < 100) {
+                progressText.textContent = 'Uploading...';
+            } else {
+                progressText.textContent = 'Processing...';
+            }
+        }
     });
+
+    // Handle response
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                if (data.status === "success") {
+                    progressText.textContent = 'Upload Complete!';
+                    progressBar.style.backgroundColor = '#28a745';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    progressWrapper.style.display = 'none';
+                    showMessage(data.status, data.message);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (e) {
+                progressWrapper.style.display = 'none';
+                showMessage("error", "Something went wrong.");
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        } else {
+            progressWrapper.style.display = 'none';
+            showMessage("error", "Upload failed. Please try again.");
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Handle errors
+    xhr.addEventListener('error', function() {
+        progressWrapper.style.display = 'none';
+        showMessage("error", "Network error. Please check your connection.");
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    });
+
+    // Send request
+    xhr.open('POST', "{% url 'sliders' %}");
+    xhr.setRequestHeader('X-CSRFToken', "{{ csrf_token }}");
+    xhr.send(formData);
+});
+
+
 
     $(document).on("click", ".edit-icon", function () {
         const slider = this.dataset;

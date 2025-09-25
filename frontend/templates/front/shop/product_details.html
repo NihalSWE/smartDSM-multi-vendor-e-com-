@@ -124,18 +124,7 @@
                                             {% if discount %}
                                                 <!-- Show discounted price -->
                                                 <del class="old-price" style="color:red">TK.{{ product.selling_price }}</del>
-                                                <ins class="new-price">TK.{{ final_price }}</ins>
-                                                
-                                                {% comment %} <!-- Show discount amount -->
-                                                <span class="price-badge">
-                                                    -TK.
-                                                    {% if discount.discount_type == 'fixed' %}
-                                                        {{ discount.discount_price }}
-                                                    {% elif discount.discount_type == 'percentage' %}
-                                                        {{ discount.percentage|floatformat:0 }}
-                                                    {% endif %}
-                                                    OFF
-                                                </span> {% endcomment %}
+                                                <ins class="new-price">TK.{{ product.get_discounted_price }}</ins> 
                                             {% else %}
                                                 <!-- Show regular price if no discount -->
                                                 <ins class="new-price">TK.{{ product.selling_price }}</ins>
@@ -651,9 +640,13 @@
                                                 <div class="swiper-slide product">
                                                     <figure class="product-media">
                                                         <a href="{% url 'product_details' product.slug %}">
-                                                            <img src="{{ product.thumbnail_image.url }}" alt="Product"
-                                                                width="300" height="338" />
+                                                            {% if product.thumbnail_image %}
+                                                                <img src="{{ product.thumbnail_image.url }}" alt="{{ product.name }}" width="300" height="338" />
+                                                            {% else %}
+                                                                <img src="{% static 'images/no-image.jpg' %}" alt="No Image" width="300" height="338" />
+                                                            {% endif %}
                                                         </a>
+                                                        
                                                         <div class="product-action-vertical">
                                                             <a href="#" class="btn-product-icon btn-cart w-icon-cart"
                                                                 title="Add to cart" data-product-id="{{ product.id }}"></a>
@@ -714,9 +707,13 @@
                                                 <div class="swiper-slide product">
                                                     <figure class="product-media">
                                                         <a href="{% url 'product_details' product.slug %}">
-                                                            <img src="{{ product.thumbnail_image.url }}" alt="Product"
-                                                                width="300" height="338" />
+                                                            {% if product.thumbnail_image %}
+                                                                <img src="{{ product.thumbnail_image.url }}" alt="{{ product.name }}" width="300" height="338" />
+                                                            {% else %}
+                                                                <img src="{% static 'images/no-image.jpg' %}" alt="No Image" width="300" height="338" />
+                                                            {% endif %}
                                                         </a>
+                                                        
                                                         <div class="product-action-vertical">
                                                             <a href="#" class="btn-product-icon btn-cart w-icon-cart"
                                                                 title="Add to cart" data-product-id="{{ product.id }}"></a>
@@ -792,13 +789,13 @@
                                                             </div>
                                                         </div> {% endcomment %}
                                                         <div class="product-price">
-                                                            {% if product.has_discount %}
-                                                                ৳{{ product.get_discounted_price|floatformat:2 }}
-                                                                {% if product.selling_price > product.get_discounted_price %}
-                                                                    <del>৳{{ product.selling_price|floatformat:2 }}</del>
-                                                                {% endif %}
+                                                            {% if product.get_discounted_price < product.selling_price %}
+                                                                <!-- Show discounted price with original crossed -->
+                                                                <del class="old-price" style="color:red">৳{{ product.selling_price }}</del>
+                                                                <ins class="new-price">৳{{ product.get_discounted_price }}</ins>
                                                             {% else %}
-                                                                ৳{{ product.selling_price|floatformat:2 }}
+                                                                <!-- Show regular price if no discount -->
+                                                                <ins class="new-price">৳{{ product.selling_price }}</ins>
                                                             {% endif %}
                                                         </div>
                                                     </div>

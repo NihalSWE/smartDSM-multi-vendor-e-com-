@@ -612,9 +612,9 @@
                                                         <li class="nav-item">
                                                             <a class="nav-link active" id="fixed-price-tab" data-bs-toggle="pill" href="#fixed-price" role="tab" aria-controls="fixed-price" aria-selected="false"><span>Fixed Price Discount</span></a>
                                                         </li>
-                                                        <!--<li class="nav-item">-->
-                                                        <!--    <a class="nav-link" id="bogo-offer-tab" data-bs-toggle="pill" href="#bogo-offer" role="tab" aria-controls="bogo-offer" aria-selected="false"><span>BOGO (Buy One, Get One)</span></a>-->
-                                                        <!--</li>-->
+                                                        <li class="nav-item">
+                                                           <a class="nav-link" id="bogo-offer-tab" data-bs-toggle="pill" href="#bogo-offer" role="tab" aria-controls="bogo-offer" aria-selected="false"><span>BOGO (Buy One, Get One)</span></a>
+                                                       </li>
                                                         <li class="nav-item">
                                                             <a class="nav-link" id="percentage-base-tab" data-bs-toggle="pill" href="#percentage-base" role="tab" aria-controls="percentage-base" aria-selected="false"><span>Percentage Based Discount(%)</span></a>
                                                         </li>
@@ -638,19 +638,21 @@
                                                                 <div class="row g-3">
                                                                     <div class="col-12">
                                                                         <label class="form-label">Product Name<span class="c-o-light">&nbsp;(Free)</span></label>
-                                                                        <select name="discount_product_name" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true" name="bogo_product">
-                                                                            <option value="1" selected>Women Pink T-shirt</option>
-                                                                            <option value="2">Solid Hooded Sweatshirt</option>
-                                                                            
+                                                                        <select name="bogo_product" class="selectpicker search-picker" aria-label="Product Name" data-live-search="true">
+                                                                            <option value="" disabled selected>Select a product</option>
+                                                                            {% for p in products %}
+                                                                                <option value="{{ p.id }}">{{ p.title }}</option>
+                                                                            {% endfor %}
                                                                         </select>
+                                                                        
                                                                     </div>
                                                                 <div class="col-sm-6">
                                                                     <label class="form-label" for="validationMinQuantity">Minimum Quantity</label>
-                                                                    <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" placeholder="Quantity" name="bogo_min_qty" />
+                                                                    <input class="form-control" name="minimum_quantity" id="validationMinQuantity" type="number" placeholder="Quantity"  />
                                                                 </div>
                                                                 <div class="col-sm-6">
                                                                     <label class="form-label" for="validationMaxQuantity">Maximum Quantity</label>
-                                                                    <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" placeholder="Quantity" name="bogo_max_qty" />
+                                                                    <input class="form-control" name="maximum_quantity" id="validationMaxQuantity" type="number" placeholder="Quantity"  />
                                                                 </div>
                                                                 </div>
                                                             </div>
@@ -720,10 +722,10 @@
                                                     </li>
                                                     <li class="nav-item">
                                                         <a class="nav-link" id="variation-option-tab" data-bs-toggle="tab" href="#variation-option" role="tab" aria-controls="variation-option" aria-selected="false">Variations</a>
-                                                    </li>
+                                                    </li> {% endcomment %}
                                                     <li class="nav-item">
                                                         <a class="nav-link" id="publish-option-tab" data-bs-toggle="tab" href="#publish-option" role="tab" aria-controls="publish-option" aria-selected="false">Publish</a>
-                                                    </li> {% endcomment %}
+                                                    </li>
                                                 </ul>
                                                 <div class="tab-content" id="advance-option-tabContent">
                                                     {% comment %} <div class="tab-pane fade show active" id="manifest-option" role="tabpanel" aria-labelledby="manifest-option-tab">
@@ -939,7 +941,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </div> {% endcomment %}
                                                     <div class="tab-pane fade" id="publish-option" role="tabpanel" aria-labelledby="publish-option-tab">
                                                         <div class="meta-body">
                                                             <div class="row g-3 common-form">
@@ -976,7 +978,7 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div> {% endcomment %}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1534,6 +1536,57 @@
         }
     });
 </script>
-
+<script>
+    // Discount type tracking based on active tab
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create a hidden input to store the active discount type
+        const discountTypeInput = document.createElement('input');
+        discountTypeInput.type = 'hidden';
+        discountTypeInput.name = 'active_discount_type';
+        discountTypeInput.value = 'fixed'; // Default to fixed price
+        
+        // Add it to the form
+        document.getElementById('product-form').appendChild(discountTypeInput);
+        
+        // Function to update the active discount type
+        function updateActiveDiscountType() {
+            const activeTab = document.querySelector('#product-discount-pills-tab .nav-link.active');
+            if (activeTab) {
+                const tabId = activeTab.getAttribute('href');
+                switch(tabId) {
+                    case '#fixed-price':
+                        discountTypeInput.value = 'fixed';
+                        break;
+                    case '#percentage-base':
+                        discountTypeInput.value = 'percentage';
+                        break;
+                    case '#bogo-offer':
+                        discountTypeInput.value = 'bogo';
+                        break;
+                    case '#bulk-discount':
+                        discountTypeInput.value = 'bulk';
+                        break;
+                }
+                console.log('Active discount type set to:', discountTypeInput.value);
+            }
+        }
+        
+        // Update when tabs are clicked
+        document.querySelectorAll('#product-discount-pills-tab .nav-link').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Use setTimeout to ensure the tab is active before checking
+                setTimeout(updateActiveDiscountType, 50);
+            });
+        });
+        
+        // Also update before form submission
+        document.getElementById('product-form').addEventListener('submit', function() {
+            updateActiveDiscountType();
+        });
+        
+        // Initial update
+        updateActiveDiscountType();
+    });
+    </script>
 
 {% endblock %}

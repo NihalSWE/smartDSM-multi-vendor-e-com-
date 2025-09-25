@@ -128,6 +128,7 @@ def aboutUs(request):
 
 
 def contactUs(request):
+    contacts = ContactInformation.objects.filter(active=True).order_by("order")
     faqs = contactFAQ.objects.filter(is_active=True).order_by('order')
     header = contactPageHeader.objects.filter(is_active=True).first()
     locations = ContactLocation.objects.all()
@@ -150,6 +151,7 @@ def contactUs(request):
 
         return redirect('contactUs')
     context = {
+        "contacts": contacts,
         "header": header,
         'locations': locations,
         'faqs': faqs
@@ -446,7 +448,7 @@ def product_details(request, slug):
             final_price = product.selling_price - discount.discount_price
         elif discount.discount_type == 'percentage':
             # Convert percentage value (like 500 = 5%, 1000 = 10%)
-            discount_percent = discount.percentage / 1000
+            discount_percent = discount.percentage / 100
             final_price = product.selling_price - (product.selling_price * discount_percent)
             
     # Get related products (same category, exclude current)

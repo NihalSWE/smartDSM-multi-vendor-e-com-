@@ -50,3 +50,17 @@ class ProductReviewForm(forms.ModelForm):
                 'class': 'form-control'
             }),
         }
+        
+
+
+class ContactInformationForm(forms.ModelForm):
+    class Meta:
+        model = ContactInformation
+        fields = ["title", "value", "icon", "order", "active"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter title"}),
+            "value": forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter value"}),
+            "icon": forms.Select(attrs={"class": "form-control"}),
+            "order": forms.NumberInput(attrs={"class": "form-control"}),
+            "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }       

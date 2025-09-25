@@ -258,7 +258,7 @@ class VariantOptionSelectionInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = (
+    list_display = ('id',
         'title', 'sku','model', 'seller', 'short_description','category', 'selling_price', 'stock_quantity',
         'publish_status', 'is_digital_product', 'created_at'
     )
@@ -329,7 +329,7 @@ class ProductLabelRequestAdmin(admin.ModelAdmin):
 
 @admin.register(ProductDiscount)
 class ProductDiscountAdmin(admin.ModelAdmin):
-    list_display = ('product', 'discount_type', 'active', 'start_date', 'end_date', 'percentage', 'discount_price')
+    list_display = ('product', 'discount_type', 'active', 'start_date', 'end_date', 'percentage', 'discount_price','free_product')
     list_filter = ('discount_type', 'active', 'start_date', 'end_date')
     search_fields = ('product__title',)
     raw_id_fields = ('product', 'free_product')
@@ -543,3 +543,11 @@ class DeliveryChargeAdmin(VendorOwnedAdminMixin, admin.ModelAdmin):
         if not request.user.is_superuser:
             obj.vendor = request.user
         super().save_model(request, obj, form, change)
+        
+        
+        
+@admin.register(ContactInformation)
+class ContactInformationAdmin(admin.ModelAdmin):
+    list_display = ("title", "value", "icon", "order", "active")
+    list_editable = ("order", "active")
+    ordering = ("order",)

@@ -92,6 +92,10 @@ urlpatterns = [
     path('update_contact_header',views.update_contact_header,name='update_contact_header'),
     path('contact_messages/', views.contact_messages, name='contact_messages'),
     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
+    path("contacts/", views.contact_info, name="contact_info"),
+    path("contacts/add/", views.add_contact_info, name="add_contact_info"),
+    path("contacts/edit/<int:pk>/", views.edit_contact_info, name="edit_contact_info"),
+    path("contacts/delete/<int:pk>/", views.delete_contact_info, name="delete_contact_info"),
     
     # blogs
     path('blogList_header',views.blogList_header,name="blogList_header"),

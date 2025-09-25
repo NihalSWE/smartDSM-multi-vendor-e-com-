@@ -351,7 +351,7 @@
 <script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
 
 <script>
-$(document).ready(function() {
+  $(document).ready(function() {
     // CSRF Token setup for AJAX
     function getCookie(name) {
         let cookieValue = null;
@@ -377,6 +377,158 @@ $(document).ready(function() {
                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
             }
         }
+    });
+
+    // Function to validate file size (3MB limit)
+    function validateFileSize(fileInput) {
+        const maxSize = 3 * 1024 * 1024; // 3MB in bytes
+        const files = fileInput.files;
+        const invalidFiles = [];
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > maxSize) {
+                invalidFiles.push({
+                    name: file.name,
+                    size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+                });
+            }
+        }
+        
+        return invalidFiles;
+    }
+
+    // Function to validate all image files in form
+    function validateAllImageFiles(form) {
+        const imageInputs = form.find('input[type="file"][accept*="image"]');
+        const allInvalidFiles = [];
+        
+        imageInputs.each(function() {
+            const invalidFiles = validateFileSize(this);
+            if (invalidFiles.length > 0) {
+                const fieldLabel = $(this).closest('.col-md-6, .col-md-12').find('label').text().replace('*', '').trim();
+                invalidFiles.forEach(file => {
+                    allInvalidFiles.push({
+                        field: fieldLabel,
+                        ...file
+                    });
+                });
+            }
+        });
+        
+        return allInvalidFiles;
+    }
+
+    // Function to show upload progress
+    function showUploadProgress(title = 'Uploading...', text = 'Please wait while images are being uploaded') {
+        Swal.fire({
+            title: title,
+            text: text,
+            html: `
+                <div class="progress" style="height: 25px; margin: 20px 0;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0%; background-color: #28a745;"
+                         id="upload-progress-bar">
+                        <span id="progress-text">0%</span>
+                    </div>
+                </div>
+                <div id="upload-status" style="font-size: 14px; color: #666; margin-top: 10px;">
+                    Preparing upload...
+                </div>
+            `,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                // Optional: Add some initial animation
+                setTimeout(() => {
+                    updateProgress(10, 'Processing files...');
+                }, 200);
+            }
+        });
+    }
+
+    // Function to update progress
+    function updateProgress(percentage, status = '') {
+        const progressBar = document.getElementById('upload-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const statusDiv = document.getElementById('upload-status');
+        
+        if (progressBar && progressText) {
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = Math.round(percentage) + '%';
+        }
+        
+        if (statusDiv && status) {
+            statusDiv.textContent = status;
+        }
+    }
+
+    // Enhanced Add Category Form Submit
+    $('.common-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate file sizes first
+        const invalidFiles = validateAllImageFiles($(this));
+        if (invalidFiles.length > 0) {
+            let errorMessage = 'The following images exceed the 3MB size limit:\n\n';
+            invalidFiles.forEach(file => {
+                errorMessage += `• ${file.field}: ${file.name} (${file.size})\n`;
+            });
+            errorMessage += '\nPlease choose smaller images and try again.';
+            
+            Swal.fire({
+                title: 'File Size Error!',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        const formData = new FormData(this);
+        const hasFiles = formData.get('banner') || formData.get('thumbnail_small') || formData.get('icon');
+        
+        // Show progress only if files are being uploaded
+        if (hasFiles) {
+            showUploadProgress('Creating Category...', 'Uploading images and saving category data');
+        }
+        
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 80; // Reserve 20% for server processing
+                updateProgress(percentComplete, 'Uploading files...');
+            }
+        });
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                updateProgress(90, 'Processing data...');
+                
+                setTimeout(() => {
+                    updateProgress(100, 'Complete!');
+                    
+                    setTimeout(() => {
+                        Swal.fire('Success!', 'Category created successfully!', 'success').then(() => {
+                            location.reload();
+                        });
+                    }, 500);
+                }, 500);
+            } else {
+                Swal.fire('Error!', 'Failed to create category. Please try again.', 'error');
+            }
+        };
+        
+        xhr.onerror = function() {
+            Swal.fire('Error!', 'Upload failed. Please check your connection and try again.', 'error');
+        };
+        
+        xhr.open('POST', window.location.pathname);
+        xhr.send(formData);
     });
 
     // Edit Category Button Click
@@ -452,54 +604,110 @@ $(document).ready(function() {
         });
     });
 
-    // Edit Category Form Submit
+    // Enhanced Edit Category Form Submit
     $('#editCategoryForm').on('submit', function(e) {
         e.preventDefault();
+        
+        // Validate file sizes first
+        const invalidFiles = validateAllImageFiles($(this));
+        if (invalidFiles.length > 0) {
+            let errorMessage = 'The following images exceed the 3MB size limit:\n\n';
+            invalidFiles.forEach(file => {
+                errorMessage += `• ${file.field}: ${file.name} (${file.size})\n`;
+            });
+            errorMessage += '\nPlease choose smaller images and try again.';
+            
+            Swal.fire({
+                title: 'File Size Error!',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
         
         const categorySlug = $('#edit_category_slug').val();
         const formData = new FormData(this);
         formData.append('action', 'update_category');
         formData.append('original_slug', categorySlug);
         
-        $.ajax({
-            url: window.location.pathname,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response && response.success) {
-                    // Update the table row
-                    const oldSlug = categorySlug;
-                    const newSlug = response.category.slug;
-                    const row = $(`#category-row-${oldSlug}`);
-                    
-                    // Update row content
-                    row.find('.category-name').text(response.category.name);
-                    row.find('.category-description').text(response.category.description);
-                    row.find('.category-type').text(response.category.category_type);
-                    
-                    // Update row attributes if slug changed
-                    if (oldSlug !== newSlug) {
-                        row.attr('id', `category-row-${newSlug}`);
-                        row.find('.edit-category-btn').attr('data-category-slug', newSlug);
-                        row.find('.delete-category-btn').attr('data-category-slug', newSlug);
-                    }
-                    
-                    // Close modal
-                    $('#editCategoryModal').modal('hide');
-                    
-                    // Show success message
-                    Swal.fire('Success!', response.message, 'success');
-                } else {
-                    Swal.fire('Error!', response.error || 'Failed to update category', 'error');
-                }
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                console.error('Update Error:', textStatus, errorThrown);
-                Swal.fire('Error!', 'Failed to update category', 'error');
+        // Check if any files are being uploaded
+        const hasFiles = formData.get('banner') || formData.get('thumbnail_small') || formData.get('icon');
+        
+        // Show progress only if files are being uploaded
+        if (hasFiles) {
+            showUploadProgress('Updating Category...', 'Uploading new images and updating category data');
+        }
+        
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable && hasFiles) {
+                const percentComplete = (e.loaded / e.total) * 80; // Reserve 20% for server processing
+                updateProgress(percentComplete, 'Uploading files...');
             }
         });
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                if (hasFiles) {
+                    updateProgress(90, 'Processing data...');
+                }
+                
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    
+                    const finalAction = () => {
+                        if (response && response.success) {
+                            // Update the table row
+                            const oldSlug = categorySlug;
+                            const newSlug = response.category.slug;
+                            const row = $(`#category-row-${oldSlug}`);
+                            
+                            // Update row content
+                            row.find('.category-name').text(response.category.name);
+                            row.find('.category-description').text(response.category.description);
+                            row.find('.category-type').text(response.category.category_type);
+                            
+                            // Update row attributes if slug changed
+                            if (oldSlug !== newSlug) {
+                                row.attr('id', `category-row-${newSlug}`);
+                                row.find('.edit-category-btn').attr('data-category-slug', newSlug);
+                                row.find('.delete-category-btn').attr('data-category-slug', newSlug);
+                            }
+                            
+                            // Close modal
+                            $('#editCategoryModal').modal('hide');
+                            
+                            // Show success message
+                            Swal.fire('Success!', response.message, 'success');
+                        } else {
+                            Swal.fire('Error!', response.error || 'Failed to update category', 'error');
+                        }
+                    };
+                    
+                    if (hasFiles) {
+                        updateProgress(100, 'Complete!');
+                        setTimeout(finalAction, 500);
+                    } else {
+                        finalAction();
+                    }
+                    
+                } catch (e) {
+                    Swal.fire('Error!', 'Invalid response from server', 'error');
+                }
+            } else {
+                Swal.fire('Error!', 'Failed to update category. Please try again.', 'error');
+            }
+        };
+        
+        xhr.onerror = function() {
+            Swal.fire('Error!', 'Upload failed. Please check your connection and try again.', 'error');
+        };
+        
+        xhr.open('POST', window.location.pathname);
+        xhr.send(formData);
     });
 
     // Delete Category Button Click
@@ -560,13 +768,6 @@ $(document).ready(function() {
     $('#filter-categories').on('click', function() {
         filterCategories();
     });
-
-    // Alternative: Server-side filtering (uncomment if you prefer server-side filtering)
-    /*
-    $('#filter-categories').on('click', function() {
-        filterCategoriesAjax();
-    });
-    */
 
     // Server-side filtering function
     function filterCategoriesAjax() {
@@ -717,6 +918,24 @@ $(document).ready(function() {
     // Auto-filter on dropdown change
     $('#filter-parent-category, #filter-category-type, #filter-status').on('change', function() {
         filterCategories();
+    });
+
+    // Real-time file size validation on file input change
+    $(document).on('change', 'input[type="file"][accept*="image"]', function() {
+        const invalidFiles = validateFileSize(this);
+        const $input = $(this);
+        const $feedback = $input.siblings('.file-size-feedback');
+        
+        // Remove existing feedback
+        $feedback.remove();
+        
+        if (invalidFiles.length > 0) {
+            const errorHtml = `<div class="file-size-feedback text-danger mt-1">
+                <small><i class="fa fa-exclamation-triangle"></i> File too large: ${invalidFiles[0].name} (${invalidFiles[0].size}). Maximum allowed: 3MB</small>
+            </div>`;
+            $input.after(errorHtml);
+            $input.val(''); // Clear the invalid file
+        }
     });
 });
 </script>

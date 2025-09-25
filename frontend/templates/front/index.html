@@ -882,8 +882,16 @@
                                                 <a href="{% url 'product_details' product.slug %}">{{ product.title }}</a>
                                             </h4>
                                             <div class="product-price">
-                                                <ins class="new-price">৳{{ product.get_discounted_price }}</ins>
+                                                {% if product.get_discounted_price < product.selling_price %}
+                                                    <!-- Show discounted price with original crossed -->
+                                                    <del class="old-price" style="color:red">৳{{ product.selling_price }}</del>
+                                                    <ins class="new-price">৳{{ product.get_discounted_price }}</ins>
+                                                {% else %}
+                                                    <!-- Show regular price if no discount -->
+                                                    <ins class="new-price">৳{{ product.selling_price }}</ins>
+                                                {% endif %}
                                             </div>
+                                            
                                         </div>
                                     </div>
                                 </div>

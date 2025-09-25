@@ -570,15 +570,38 @@ class Product(models.Model):
         
         
     def get_discounted_price(self):
-        # If there’s an active discount with a discount_price, subtract it
-        discount = self.discounts.filter(active=True, discount_price__isnull=False).first()
-        
-        if discount:
-            final_price = self.selling_price - discount.discount_price
-        else:
-            final_price = self.selling_price
+        """
+        Returns the final price of the product after applying any active discounts.
+        This method is for template use.
+        """
+        current_time = now()
 
-        return round(final_price, 2)    
+        active_discount = (
+            self.discounts
+            .filter(active=True)
+            .filter(
+                Q(start_date__isnull=True) | Q(start_date__lte=current_time),
+                Q(end_date__isnull=True) | Q(end_date__gte=current_time)
+            )
+            .order_by('-start_date')
+            .first()
+        )
+
+        if not active_discount:
+            return self.selling_price
+
+        if active_discount.discount_type == ProductDiscount.FIXED:
+            # Fixed price discount: selling_price - discount_amount
+            return self.selling_price - active_discount.discount_price
+
+        elif active_discount.discount_type == ProductDiscount.PERCENT:
+            # Percentage discount: selling_price - (selling_price * percentage / 100)
+            discount_value = (self.selling_price * active_discount.percentage) / Decimal('100')
+            final_price = self.selling_price - discount_value
+            return round(final_price, 2)
+
+        # For BOGO / BULK, return the original price (no price reduction)
+        return self.selling_price   
 
 
 class ProductImage(models.Model):
@@ -1442,7 +1465,22 @@ class DeliveryCharge(models.Model):
         
         
         
-        
+class ContactInformation(models.Model):
+    ICON_CHOICES = [
+        ("email", "Email"),
+        ("phone", "Phone"),
+        ("address", "Address"),
+        ("custom", "Custom"),
+    ]
+
+    title = models.CharField(max_length=100)   # e.g. "E-mail Address"
+    value = models.CharField(max_length=255)   # e.g. "support@yourdomain.com"
+    icon = models.CharField(max_length=20, choices=ICON_CHOICES, default="custom")
+    order = models.PositiveIntegerField(default=0)  # to control display order
+    active = models.BooleanField(default=True)      # toggle visibility
+
+    def __str__(self):
+        return self.title    
         
         
         
