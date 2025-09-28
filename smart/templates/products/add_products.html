@@ -157,7 +157,7 @@
 
     /* drag and drop area */
     .product-upload {
-        margin-bottom: 30px;
+        margin-bottom: 60px;
         background: #f9fbfd;
         border-radius: 12px;
         padding: 20px;
@@ -320,6 +320,34 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+
+
+
+    /* Add this to your existing CSS */
+    .youtube-preview {
+        width: 120px;
+        height: 120px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 5px;
+    }
+    
+    .youtube-preview i {
+        font-size: 40px;
+        color: #ff0000;
+    }
+    
+    .video-url-preview {
+        font-size: 12px;
+        text-align: center;
+        word-break: break-all;
+        margin-top: 5px;
+    }
+
 </style>
 {% endblock custom_css %}
 
@@ -579,6 +607,28 @@
                                                     </div>
                                                     <p class="instruction">Upload up to 3 images for your product gallery</p>
                                                     <p class="instruction">Image Ratio: 1:1. Image will be resized to 800px x 800px</p>
+                                                </div>
+                                                 <!-- Add this new YouTube Video section -->
+                                                <div class="product-upload">
+                                                    <p>
+                                                        Product Video
+                                                        <span class="c-o-light">(YouTube URL)</span>
+                                                    </p>
+                                                    <div class="dropzone dropzone-secondary" id="videoDropzone" style="cursor: auto;">
+                                                        <div class="dz-message needsclick">
+                                                            <i class="fa-brands fa-youtube fa-fade" style="color: #ff0000;"></i>
+                                                            <h6>Add YouTube Video URL</h6>
+                                                            <span class="note needsclick">Paste your YouTube video link here</span>
+                                                        </div>
+                                                        <div class="mt-3">
+                                                            <input class="form-control" type="url" 
+                                                                placeholder="https://www.youtube.com/watch?v=..." 
+                                                                name="youtube_video_url" 
+                                                                id="youtubeVideoInput" />
+                                                        </div>
+                                                        <div class="preview-container mt-3" id="videoPreviewContainer"></div>
+                                                    </div>
+                                                    <p class="instruction">Add a YouTube video URL for product demonstration</p>
                                                 </div>
                                                 
                                                 <div class="product-buttons">
@@ -1588,5 +1638,45 @@
         updateActiveDiscountType();
     });
     </script>
-
+<script>
+     // Add the YouTube URL validation code here
+     document.addEventListener('DOMContentLoaded', function() {
+        const youtubeInput = document.getElementById('youtubeVideoInput');
+        if (youtubeInput) {
+            youtubeInput.addEventListener('blur', function() {
+                const url = this.value.trim();
+                if (url && !isValidYouTubeUrl(url)) {
+                    alert('Please enter a valid YouTube URL (youtube.com or youtu.be)');
+                    this.focus();
+                }
+            });
+            
+            // Live preview
+            youtubeInput.addEventListener('input', function() {
+                const url = this.value.trim();
+                const previewContainer = document.getElementById('videoPreviewContainer');
+                
+                if (url && isValidYouTubeUrl(url)) {
+                    previewContainer.innerHTML = `
+                        <div class="preview-item">
+                            <div class="youtube-preview">
+                                <i class="fa-brands fa-youtube"></i>
+                            </div>
+                            <div class="video-url-preview">${url}</div>
+                        </div>
+                    `;
+                } else if (!url) {
+                    previewContainer.innerHTML = '';
+                }
+            });
+        }
+        
+        function isValidYouTubeUrl(url) {
+            return url.startsWith('https://www.youtube.com/') || 
+                   url.startsWith('https://youtu.be/') ||
+                   url.startsWith('http://www.youtube.com/') ||
+                   url.startsWith('http://youtu.be/');
+        }
+    });
+</script>
 {% endblock %}

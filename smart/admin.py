@@ -260,7 +260,7 @@ class VariantOptionSelectionInline(admin.TabularInline):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('id',
         'title', 'sku','model', 'seller', 'short_description','category', 'selling_price', 'stock_quantity',
-        'publish_status', 'is_digital_product', 'created_at'
+        'publish_status', 'is_digital_product', 'youtube_video_url','created_at'
     )
     list_filter = (
         'publish_status', 'stock_availability', 'is_digital_product',

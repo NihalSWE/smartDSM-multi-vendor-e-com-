@@ -917,6 +917,18 @@ def edit_product(request, id):
             publish_status = data.get('publish_status') or product.publish_status
             publish_date = parse_datetime(data.get('publish_date')) if data.get('publish_date') else product.publish_date
             
+            youtube_video_url = data.get('youtube_video_url', '').strip()
+            
+            # Validate YouTube URL if provided
+            if youtube_video_url:
+                if not youtube_video_url.startswith(('https://www.youtube.com/', 'https://youtu.be/')):
+                    errors['youtube_video_url'] = "Please enter a valid YouTube URL"
+            
+            if errors:
+                return JsonResponse({'success': False, 'errors': errors})
+            
+            
+            
             # Determine main category
             if sub_sub_category_id:
                 main_category_id = sub_sub_category_id
@@ -943,6 +955,7 @@ def edit_product(request, id):
             product.shipping_class = shipping_class
             product.publish_status = publish_status
             product.publish_date = publish_date
+            product.youtube_video_url = youtube_video_url if youtube_video_url else ''  # Add this line
 
             # Update thumbnail if new one is provided
             if thumbnail:
@@ -1179,6 +1192,15 @@ def create_product(request):
 
         publish_status = data.get('publish_status') or 1
         publish_date = parse_datetime(data.get('publish_date')) if data.get('publish_date') else None
+        youtube_video_url = data.get('youtube_video_url', '').strip()
+        
+        # Validate YouTube URL if provided
+        if youtube_video_url:
+            if not youtube_video_url.startswith(('https://www.youtube.com/', 'https://youtu.be/')):
+                errors['youtube_video_url'] = "Please enter a valid YouTube URL"
+        
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors})
         
         if 'thumbnail' in files:
             thumbnail = files['thumbnail']
@@ -1218,7 +1240,8 @@ def create_product(request):
             meta_description=meta_description,
             shipping_class=shipping_class,
             publish_date=publish_date,
-            seller=request.user  # replace or mock this as needed
+            seller=request.user , # replace or mock this as needed
+            youtube_video_url=youtube_video_url if youtube_video_url else None  # Add this line
         )
 
         # Tags (JSON list of objects)

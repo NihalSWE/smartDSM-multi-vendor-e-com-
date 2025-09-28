@@ -450,7 +450,16 @@ def product_details(request, slug):
             # Convert percentage value (like 500 = 5%, 1000 = 10%)
             discount_percent = discount.percentage / 100
             final_price = product.selling_price - (product.selling_price * discount_percent)
-            
+    
+    
+    # === ADD THIS SECTION FOR BOGO PRODUCT ===
+    # Get BOGO product if exists (adjust field name based on your model)
+    bogo_product = None
+    if discount and discount.discount_type == 'bogo' and discount.free_product:
+        bogo_product = discount.free_product
+    # === END BOGO SECTION ===
+    
+           
     # Get related products (same category, exclude current)
     related_products = Product.objects.filter(
         category=product.category  # Same category as current product
@@ -498,12 +507,23 @@ def product_details(request, slug):
             return redirect('product_details', slug=product.slug)
     else:
         review_form = ProductReviewForm()
+        
+        
+    # Extract YouTube video ID for embedding
+    youtube_video_id = None
+    if product.youtube_video_url:
+        video_url = product.youtube_video_url
+        if "youtube.com/watch?v=" in video_url:
+            youtube_video_id = video_url.split('v=')[1].split('&')[0]
+        elif "youtu.be/" in video_url:
+            youtube_video_id = video_url.split('youtu.be/')[1].split('?')[0]
     
     context = {
         'product': product,
         'images': images,
         'discount': discount,
         'final_price': final_price,
+        'bogo_product': bogo_product,  # === ADD THIS LINE ===
         'related_products': related_chunks,
         'related_products_of_same_category': related_products,
         'vendor_products': vendor_products,
@@ -514,6 +534,7 @@ def product_details(request, slug):
         'recommended_count': recommended_count,
         'recommended_percentage': round(recommended_percentage, 1),
         'review_form': review_form,
+        'youtube_video_id': youtube_video_id,  # Add this line
     }
     return render(request, 'front/shop/product_details.html', context)
 

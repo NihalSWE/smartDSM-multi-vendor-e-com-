@@ -476,7 +476,7 @@ class Product(models.Model):
     updated_at          = models.DateTimeField(auto_now=True)
     
     objects = ProductQuerySet.as_manager()
-
+    youtube_video_url = models.URLField(max_length=500, blank=True, null=True, default='',help_text="YouTube video URL for product demonstration")
     class Meta:
         ordering = ['-created_at']
 
