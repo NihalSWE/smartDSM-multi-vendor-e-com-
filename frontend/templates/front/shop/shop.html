@@ -4,6 +4,115 @@
 {% block custom_css %}
 <link rel="stylesheet" type="text/css" href="{% static 'front/assets/css/style.min.css' %}">
 
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<style>
+    #price-slider { margin: 15px 0; }
+    .ui-slider-horizontal { height: 0.6em; }
+    .ui-slider-handle {
+        width: 1.2em;
+        height: 1.2em;
+        top: -0.4em;
+        border-radius: 50%;
+        background: green;
+        border: 2px solid #fff;
+    }
+    .ui-slider-range { background: green; }
+
+
+
+
+
+
+
+
+    /* Modern Discount Tags */
+.discount-tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.discount-tag-fixed {
+    background: linear-gradient(135deg, #ff4444, #ff6b6b);
+    color: white;
+}
+
+.discount-tag-percent {
+    background: linear-gradient(135deg, #ff4444, #ff6b6b);
+    color: white;
+}
+
+.discount-tag-bogo {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: white;
+    gap: 2px;
+    padding: 8px 10px;
+}
+
+.discount-amount {
+    font-size: 13px;
+    font-weight: 400;
+    margin-right: 4px;
+}
+
+.discount-text {
+    font-size: 10px;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.discount-icon {
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.free-product {
+    font-size: 9px;
+    opacity: 0.9;
+    font-weight: 600;
+    text-align: center;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Hover effects */
+.discount-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .discount-tag {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .discount-amount {
+        font-size: 11px;
+    }
+    
+    .free-product {
+        font-size: 8px;
+        max-width: 100px;
+    }
+}
+</style>
 
 {% endblock custom_css %}
 
@@ -229,25 +338,35 @@
                                     <div class="widget widget-collapsible">
                                         <h3 class="widget-title"><span>Price(৳)</span></h3>
                                         <div class="widget-body">
-                                            <ul class="filter-items search-ul">
-                                                <li><a href="?min_price=0&max_price=100">0.00 - 100.00</a></li>
-                                                <li><a href="?min_price=100&max_price=200">100.00 - 200.00</a></li>
-                                                <li><a href="?min_price=200&max_price=300">200.00 - 300.00</a></li>
-                                                <li><a href="?min_price=300&max_price=500">300.00 - 500.00</a></li>
-                                                <li><a href="?min_price=500">500.00+</a></li>
-                                            </ul>
-                                    
+                                            <div id="price-slider"></div>
                                             <form method="get" class="price-range">
-                                                <input type="number" name="min_price" class="min_price text-center"
-                                                    placeholder="৳{{ price_range.min_price|default:0 }}"
-                                                    value="{{ request.GET.min_price }}">
+                                                <!-- preserve category if selected -->
+                                                {% if request.GET.category %}
+                                                    <input type="hidden" name="category" value="{{ request.GET.category }}">
+                                                {% endif %}
+                                            
+                                                <!-- preserve orderby if selected -->
+                                                {% if request.GET.orderby %}
+                                                    <input type="hidden" name="orderby" value="{{ request.GET.orderby }}">
+                                                {% endif %}
+                                            
+                                                <!-- preserve count if selected -->
+                                                {% if request.GET.count %}
+                                                    <input type="hidden" name="count" value="{{ request.GET.count }}">
+                                                {% endif %}
+                                            
+                                                <input type="number" name="min_price" id="min_price"
+                                                    class="min_price text-center"
+                                                    value="{{ request.GET.min_price|default:0 }}">
                                                 <span class="delimiter">-</span>
-                                                <input type="number" name="max_price" class="max_price text-center"
-                                                    placeholder="৳{{ price_range.max_price|default:0 }}"
-                                                    value="{{ request.GET.max_price }}">
+                                                <input type="number" name="max_price" id="max_price"
+                                                    class="max_price text-center"
+                                                    value="{{ request.GET.max_price|default:10000 }}">
                                                 <button type="submit" class="btn btn-primary btn-rounded">Go</button>
                                             </form>
+                                            
                                         </div>
+                                        
                                     </div>
                                     
                                     <!-- End of Collapsible Widget -->
@@ -365,6 +484,29 @@
                                                     <img src="{{ product.thumbnail_image.url }}" alt="{{ product.title }}" width="300" height="338" />
                                                 {% endif %}
                                             </a>
+<!-- DISCOUNT TAG - Modern Professional Design -->
+{% for discount in product.discounts.all %}
+    {% if discount.active %}
+        {% if discount.discount_type == "fixed" and product.get_discounted_price < product.selling_price %}
+            <div class="discount-tag discount-tag-fixed">
+                <span class="discount-amount">৳{{ discount.discount_price }}</span>
+                <span class="discount-text">OFF</span>
+            </div>
+        {% elif discount.discount_type == "percentage" and product.get_discounted_price < product.selling_price %}
+            <div class="discount-tag discount-tag-percent">
+                <span class="discount-amount">{{ discount.percentage }}%</span>
+                <span class="discount-text">OFF</span>
+            </div>
+        {% elif discount.discount_type == "bogo" %}
+            <div class="discount-tag discount-tag-bogo">
+                <span class="discount-icon">🎁</span>
+                <span class="discount-text">BOGO</span>
+                <span class="free-product">{{ discount.free_product.title|truncatechars:15 }}</span>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endfor %}
+<!-- END DISCOUNT TAG -->
                                             <div class="product-action-horizontal">
                                                 <a href="#" class="btn-product-icon btn-cart w-icon-cart" data-product-id="{{ product.id }}"
                                                    title="Add to cart"></a>
@@ -477,5 +619,32 @@
             {% endblock content %}
 
             {% block custom_js %}
-            
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script>
+$(function() {
+    var minPrice = parseInt("{{ request.GET.min_price|default:'0' }}") || 0;
+    var maxPrice = parseInt("{{ request.GET.max_price|default:'10000' }}") || 10000;
+
+    $("#price-slider").slider({
+        range: true,
+        min: 0,
+        max: 10000,
+        step: 50,
+        values: [minPrice, maxPrice],
+        slide: function(event, ui) {
+            $("#min_price").val(ui.values[0]);
+            $("#max_price").val(ui.values[1]);
+        },
+        stop: function(event, ui) {
+            $(".price-range").submit();
+        }
+    });
+
+    $("#min_price").val($("#price-slider").slider("values", 0));
+    $("#max_price").val($("#price-slider").slider("values", 1));
+});
+
+</script>
+
             {% endblock custom_js %}

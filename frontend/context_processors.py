@@ -249,3 +249,21 @@ def categories_context(request):
     except Exception as e:
         print("Error in categories_context:", e)
         return {'navigation_categories': []}
+    
+    
+    
+    
+# Add this function to your existing context_processors.py file
+# This will make categories available globally for the search form
+
+def search_categories_context(request):
+    """
+    Provide all active categories for search dropdown
+    """
+    try:
+        # Get all active categories ordered by name
+        search_categories = Category.objects.filter(status=1).order_by('name')
+        return {'search_categories': search_categories}
+    except Exception as e:
+        print("Error in search_categories_context:", e)
+        return {'search_categories': []}

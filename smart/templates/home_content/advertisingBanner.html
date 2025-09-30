@@ -205,7 +205,7 @@
                                     <div class="col">
                                         <div class="mb-3">
                                             <label class="form-label" for="description">Description</label>
-                                            <textarea class="form-control btn-pill" id="description" name="description" rows="3" placeholder="Enter banner description" maxlength="500" required></textarea>
+                                            <textarea class="form-control btn-pill" id="description" name="description" rows="3" placeholder="Enter banner description" maxlength="500"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -334,7 +334,7 @@
                                     <div class="col">
                                         <div class="mb-3">
                                             <label class="form-label" for="edit-description">Description</label>
-                                            <textarea class="form-control btn-pill" id="edit-description" name="edit_description" rows="3" placeholder="Enter banner description" maxlength="500" required></textarea>
+                                            <textarea class="form-control btn-pill" id="edit-description" name="edit_description" rows="3" placeholder="Enter banner description" maxlength="500" ></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -831,74 +831,111 @@ $(document).on("click", ".edit-icon", function() {
     $("#edit-button_link").val(data.buttonLink);
     $("#edit-order").val(data.order);
     
-    // Completely reset all category dropdowns
+    // Reset all category dropdowns first
     $('#edit-category').val('').trigger('change');
+    $('#edit-sub-category').val('').prop('disabled', true);
+    $('#edit-sub-sub-category').val('').prop('disabled', true);
     $('#edit-category2').val('').trigger('change');
+    $('#edit-sub-category2').val('').prop('disabled', true);
+    $('#edit-sub-sub-category2').val('').prop('disabled', true);
+
+    // Fetch banner data including categories
+    fetch(`{% url 'edit_ad_banner' 0 %}`.replace('0', editId), {
+        method: "GET",
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(d => {
+        // Show current banner image
+        if (d.image_url) {
+            $('#current-banner-img').attr('src', d.image_url);
+            $('#current-banner-preview').show();
+        }
+        
+        if (d.categories && d.categories.length > 0) {
+            // Process each category and populate the dropdowns
+            d.categories.forEach((category, index) => {
+                const setNumber = index + 1;
+                populateCategoryHierarchy(category, setNumber);
+            });
+        }
+    })
+    .catch(err => console.error('Error:', err));
+});
+
+// Helper function to populate category hierarchy for a specific set
+function populateCategoryHierarchy(category, setNumber) {
+    const categoryId = category.id;
+    const parentId = category.parent_id;
+    const rootId = category.root_id;
     
-    // Wait a moment then fetch data
-    setTimeout(() => {
-        fetch(`{% url 'edit_ad_banner' 0 %}`.replace('0', editId), {
-            method: "GET",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(r => r.json())
-        .then(d => {
-            // Show current banner image
-            if (d.image_url) {
-                $('#current-banner-img').attr('src', d.image_url);
-                $('#current-banner-preview').show();
-            }
+    const categorySelect = $(`#edit-category${setNumber === 1 ? '' : '2'}`);
+    const subCategorySelect = $(`#edit-sub-category${setNumber === 1 ? '' : '2'}`);
+    const subSubCategorySelect = $(`#edit-sub-sub-category${setNumber === 1 ? '' : '2'}`);
+    
+    if (!parentId) {
+        // This is a root category
+        categorySelect.val(categoryId).trigger('change');
+        
+        // Enable and reset sub-category dropdown
+        subCategorySelect.prop('disabled', false).empty().append('<option value="">Select Sub Category</option>');
+        subSubCategorySelect.prop('disabled', true).empty().append('<option value="">Select Sub Sub Category</option>');
+    } else {
+        // This is a sub or sub-sub category, need to load parent hierarchy
+        if (rootId) {
+            // Set root category first
+            categorySelect.val(rootId).trigger('change');
             
-            if (d.categories && d.categories.length > 0) {
-                // Find root categories
-                let rootCategories = d.categories.filter(cat => !cat.parent_id);
-                
-                // Set first root category
-                if (rootCategories[0]) {
-                    $('#edit-category').val(rootCategories[0].id).trigger('change');
+            // Wait for subcategories to load, then set the appropriate level
+            setTimeout(() => {
+                fetch(`{% url 'get_subcategories' 0 %}`.replace('0', rootId), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(subCategories => {
+                    // Populate sub-category dropdown
+                    subCategorySelect.empty().append('<option value="">Select Sub Category</option>');
+                    subCategories.forEach(subCat => {
+                        subCategorySelect.append(`<option value="${subCat.id}">${subCat.name}</option>`);
+                    });
+                    subCategorySelect.prop('disabled', false);
                     
-                    setTimeout(() => {
-                        let subCat = d.categories.find(cat => cat.parent_id === rootCategories[0].id);
-                        if (subCat) {
-                            $('#edit-sub-category').val(subCat.id).trigger('change');
-                            
-                            setTimeout(() => {
-                                let subSubCat = d.categories.find(cat => cat.parent_id === subCat.id);
-                                if (subSubCat) {
-                                    $('#edit-sub-sub-category').val(subSubCat.id);
-                                }
-                            }, 400);
-                        }
-                    }, 400);
-                }
-                
-                // Set second root category if exists
-                if (rootCategories[1]) {
-                    setTimeout(() => {
-                        $('#edit-category2').val(rootCategories[1].id).trigger('change');
+                    if (parentId === rootId) {
+                        // This is a direct sub-category
+                        subCategorySelect.val(categoryId).trigger('change');
+                        subSubCategorySelect.prop('disabled', true).empty().append('<option value="">Select Sub Sub Category</option>');
+                    } else {
+                        // This is a sub-sub-category, need to load sub-sub categories
+                        subCategorySelect.val(parentId).trigger('change');
                         
                         setTimeout(() => {
-                            let subCat = d.categories.find(cat => cat.parent_id === rootCategories[1].id);
-                            if (subCat) {
-                                $('#edit-sub-category2').val(subCat.id).trigger('change');
-                                
-                                setTimeout(() => {
-                                    let subSubCat = d.categories.find(cat => cat.parent_id === subCat.id);
-                                    if (subSubCat) {
-                                        $('#edit-sub-sub-category2').val(subSubCat.id);
-                                    }
-                                }, 400);
-                            }
+                            fetch(`{% url 'get_subcategories' 0 %}`.replace('0', parentId), {
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(subSubCategories => {
+                                subSubCategorySelect.empty().append('<option value="">Select Sub Sub Category</option>');
+                                subSubCategories.forEach(subSubCat => {
+                                    subSubCategorySelect.append(`<option value="${subSubCat.id}">${subSubCat.name}</option>`);
+                                });
+                                subSubCategorySelect.prop('disabled', false);
+                                subSubCategorySelect.val(categoryId);
+                            })
+                            .catch(err => console.error('Error loading sub-sub-categories:', err));
                         }, 400);
-                    }, 200);
-                }
-            }
-        })
-        .catch(err => console.error('Error:', err));
-    }, 200);
-});
+                    }
+                })
+                .catch(err => console.error('Error loading subcategories:', err));
+            }, 400);
+        }
+    }
+}
 
     // DELETE
     let pendingDeleteId = null;

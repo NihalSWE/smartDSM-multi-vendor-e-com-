@@ -65,6 +65,137 @@ def home(request):
     })
     
     
+def product_search(request):
+    """
+    Handle product search with optional category filtering
+    """
+    search_query = request.GET.get('search', '').strip()
+    category_id = request.GET.get('category', '').strip()
+    
+    # Start with published products only
+    products = Product.objects.filter(publish_status=1, stock_availability=True)
+    
+    # Apply search filter if search query exists
+    if search_query:
+        products = products.filter(
+            Q(title__icontains=search_query) | 
+            Q(model__icontains=search_query)
+        )
+    
+    # Apply category filter if category is selected
+    if category_id and category_id.isdigit():
+        category = Category.objects.filter(id=int(category_id), status=1).first()
+        if category:
+            # Search in selected category and its subcategories
+            category_ids = [category.id]
+            
+            # Get all subcategories recursively
+            def get_subcategory_ids(cat):
+                subcats = cat.subcategories.filter(status=1)
+                ids = list(subcats.values_list('id', flat=True))
+                for subcat in subcats:
+                    ids.extend(get_subcategory_ids(subcat))
+                return ids
+            
+            category_ids.extend(get_subcategory_ids(category))
+            
+            # Filter products by category hierarchy
+            products = products.filter(
+                Q(category_id__in=category_ids) |
+                Q(parent_category_id__in=category_ids) |
+                Q(sub_category_id__in=category_ids) |
+                Q(sub_sub_category_id__in=category_ids)
+            )
+    
+    # Order by relevance (newest first)
+    products = products.distinct().order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(products, 20)  # 20 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'products': page_obj,
+        'search_query': search_query,
+        'selected_category': category_id,
+        'total_results': products.count(),
+    }
+    
+    return render(request, 'front/search/search.html', context)    
+
+
+
+def search_suggestions(request):
+    """
+    Return product suggestions as JSON for autocomplete
+    """
+    query = request.GET.get('q', '').strip()
+    category_id = request.GET.get('category', '').strip()
+    
+    suggestions = []
+    
+    if query and len(query) >= 1:  # Start suggesting from first character
+        # Start with published products only
+        products = Product.objects.filter(publish_status=1)
+        
+        # Search by title and model - use icontains for case-insensitive search
+        products = products.filter(
+            Q(title__icontains=query) | 
+            Q(model__icontains=query)
+        )
+        
+        # Apply category filter if selected
+        if category_id and category_id.isdigit():
+            from smart.models import Category
+            category = Category.objects.filter(id=int(category_id), status=1).first()
+            if category:
+                category_ids = [category.id]
+                
+                # Get subcategories recursively
+                def get_subcategory_ids(cat):
+                    subcats = cat.subcategories.filter(status=1)
+                    ids = list(subcats.values_list('id', flat=True))
+                    for subcat in subcats:
+                        ids.extend(get_subcategory_ids(subcat))
+                    return ids
+                
+                category_ids.extend(get_subcategory_ids(category))
+                
+                products = products.filter(
+                    Q(category_id__in=category_ids) |
+                    Q(parent_category_id__in=category_ids) |
+                    Q(sub_category_id__in=category_ids) |
+                    Q(sub_sub_category_id__in=category_ids)
+                )
+        
+        # Limit to 10 suggestions and order by title
+        products = products.distinct().order_by('title')[:10]
+        
+        for product in products:
+            suggestions.append({
+                'id': product.id,
+                'title': product.title,
+                'model': product.model if product.model else '',
+                'slug': product.slug,
+                'price': str(product.selling_price),
+                'image': product.thumbnail_small.url if product.thumbnail_small else (
+                    product.thumbnail_image.url if product.thumbnail_image else ''
+                ),
+            })
+        
+        print(f"Suggestions returned: {len(suggestions)}")
+    
+    return JsonResponse({
+        'suggestions': suggestions,
+        'query': query
+    })
+
+
+
+   
+    
+    
 def get_six_categories():
     categories = []
 

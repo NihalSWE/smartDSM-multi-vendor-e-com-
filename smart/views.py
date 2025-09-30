@@ -4135,7 +4135,7 @@ def add_ad_banner(request):
         button_link = request.POST.get('button_link')
         order = request.POST.get('order')
         
-        if not (image and title and description and button_text and button_link and order):
+        if not (image and title and button_text and button_link and order):
             return JsonResponse({'success': False, 'error': 'All fields are required.'})
 
         try:
@@ -4213,7 +4213,7 @@ def edit_ad_banner(request, banner_id):
         order = request.POST.get('order')
         remove_image_flag = request.POST.get('remove_image') == 'true'
 
-        if not (title and description and button_text and button_link and order):
+        if not (title and  button_text and button_link and order):
             return JsonResponse({'success': False, 'error': 'All fields are required.'}, status=400)
 
         try:

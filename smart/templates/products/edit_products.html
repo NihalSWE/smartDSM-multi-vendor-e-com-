@@ -462,10 +462,13 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label">Category</label>
                                                         <select id="category" class="selectpicker" aria-label="Default select example" data-live-search="true" name="category">
+                                                            <option value="">Select Category</option>
                                                             {% for category in categories %}
-                                                                <option value="{{ category.id }}" {% if product.category.id == category.id %}selected{% endif %}>
-                                                                    {{ category.name }}
-                                                                </option>
+                                                                {% if not category.parent_category %}  {# Only show parent categories #}
+                                                                    <option value="{{ category.id }}" {% if product.parent_category.id == category.id %}selected{% endif %}>
+                                                                        {{ category.name }}
+                                                                    </option>
+                                                                {% endif %}
                                                             {% endfor %}
                                                         </select>
                                                     </div>
@@ -1143,6 +1146,49 @@
                 select.selectpicker('refresh');
             }
 
+            // Function to load category hierarchy based on current product data
+function loadCategoryHierarchy() {
+    const parentCategoryId = $('#category').val();
+    const subCategoryId = '{{ product.sub_category.id|default:"" }}';
+    const subSubCategoryId = '{{ product.sub_sub_category.id|default:"" }}';
+    
+    if (parentCategoryId) {
+        // Load subcategories for the parent category
+        fetch(`/admin-dashboard/get-subcategories/${parentCategoryId}/`)
+            .then(response => response.json())
+            .then(data => {
+                populateSelect(subCategorySelect, data);
+                
+                // If there's a subcategory selected, set it and load sub-sub categories
+                if (subCategoryId) {
+                    setTimeout(() => {
+                        subCategorySelect.val(subCategoryId).selectpicker('refresh');
+                        
+                        if (subCategoryId) {
+                            fetch(`/admin-dashboard/get-subcategories/${subCategoryId}/`)
+                                .then(response => response.json())
+                                .then(subSubData => {
+                                    populateSelect(subSubCategorySelect, subSubData);
+                                    
+                                    // If there's a sub-sub category selected, set it
+                                    if (subSubCategoryId) {
+                                        setTimeout(() => {
+                                            subSubCategorySelect.val(subSubCategoryId).selectpicker('refresh');
+                                        }, 100);
+                                    }
+                                })
+                                .catch(err => console.error('Error loading sub-sub-categories:', err));
+                        }
+                    }, 100);
+                }
+            })
+            .catch(err => console.error('Error loading subcategories:', err));
+    }
+}
+
+
+
+
             // When a category is selected, fetch its subcategories
             $('#category').on('change', function () {
                 const categoryId = $(this).val();
@@ -1181,7 +1227,8 @@
                 resetSelect(subCategorySelect);
                 resetSelect(subSubCategorySelect);
             }
-
+            // Initialize category hierarchy when page loads
+            loadCategoryHierarchy();
             function showMessage(type, message) {
                 const div = $(".error-success-div");
 

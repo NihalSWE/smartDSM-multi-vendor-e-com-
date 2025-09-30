@@ -73,7 +73,11 @@ urlpatterns = [
     
     
     # products
-    path('create-product/', views.create_customer_product, name='create_customer_product')
+    path('create-product/', views.create_customer_product, name='create_customer_product'),
+    
+    #search
+    path('product_search/', views.product_search, name='product_search'),
+    path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
     
 ]
 

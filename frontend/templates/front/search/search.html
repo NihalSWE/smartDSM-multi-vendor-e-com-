@@ -1,0 +1,147 @@
+{% extends "front/base.html" %}
+{% load static %}
+
+{% block title %}Search Results - {{ search_query }}{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <div class="container">
+        <!-- Search Summary -->
+        <div class="search-summary mb-5">
+            <h1 class="page-title mb-2">Search Results</h1>
+            
+            {% if search_query %}
+                <p class="text-dark">
+                    Found <strong>{{ total_results }}</strong> result(s) for 
+                    <strong>"{{ search_query }}"</strong>
+                    {% if selected_category %}
+                        in selected category
+                    {% endif %}
+                </p>
+            {% else %}
+                <p class="text-dark">Showing all products</p>
+            {% endif %}
+        </div>
+
+        <!-- Products Grid -->
+        {% if products %}
+            <div class="row cols-xl-5 cols-lg-4 cols-md-3 cols-sm-2 cols-1">
+                {% for product in products %}
+                    <div class="product-wrap mb-4">
+                        <div class="product text-center">
+                            <figure class="product-media">
+                                <a href="{% url 'product_details' product.slug %}">
+                                    {% if product.thumbnail_small %}
+                                        <img src="{{ product.thumbnail_small.url }}" 
+                                             alt="{{ product.title }}" 
+                                             width="250" 
+                                             height="250">
+                                    {% elif product.thumbnail_image %}
+                                        <img src="{{ product.thumbnail_image.url }}" 
+                                             alt="{{ product.title }}" 
+                                             width="250" 
+                                             height="250">
+                                    {% else %}
+                                        <img src="{% static 'images/placeholder.jpg' %}" 
+                                             alt="{{ product.title }}" 
+                                             width="250" 
+                                             height="250">
+                                    {% endif %}
+                                </a>
+
+                                <!-- Product Actions -->
+                                <div class="product-action-vertical">
+                                    <a href="#" class="btn-product-icon btn-wishlist" 
+                                       title="Add to wishlist">
+                                        <i class="w-icon-heart"></i>
+                                    </a>
+                                </div>
+                            </figure>
+
+                            <div class="product-details">
+                                <h3 class="product-name">
+                                    <a href="{% url 'product_details' product.slug %}">
+                                        {{ product.title }}
+                                    </a>
+                                </h3>
+
+                                {% if product.model %}
+                                    <p class="product-model text-muted">
+                                        Model: {{ product.model }}
+                                    </p>
+                                {% endif %}
+
+                                <div class="product-pa-wrapper">
+                                    <div class="product-price">
+                                        {% with discounted=product.get_discounted_price %}
+                                            {% if discounted < product.selling_price %}
+                                                <ins class="new-price">৳{{ discounted }}</ins>
+                                                <del class="old-price">৳{{ product.selling_price }}</del>
+                                            {% else %}
+                                                <ins class="new-price">৳{{ product.selling_price }}</ins>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if products.has_other_pages %}
+                <div class="pagination-wrapper mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if products.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?search={{ search_query }}&category={{ selected_category }}&page={{ products.previous_page_number }}">
+                                    <i class="w-icon-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in products.paginator.page_range %}
+                            {% if products.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?search={{ search_query }}&category={{ selected_category }}&page={{ num }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if products.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?search={{ search_query }}&category={{ selected_category }}&page={{ products.next_page_number }}">
+                                    <i class="w-icon-angle-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        {% else %}
+            <!-- No Results -->
+            <div class="no-results text-center py-5">
+                <i class="w-icon-exclamation-triangle" style="font-size: 72px; color: #ccc;"></i>
+                <h3 class="mt-4">No products found</h3>
+                <p class="text-muted">
+                    Try different keywords or browse our categories
+                </p>
+                <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+                    Back to Home
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
