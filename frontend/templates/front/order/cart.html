@@ -91,6 +91,11 @@
                                 </td>
                                 <td class="product-name">
                                     <a href="{% url 'product_details' item.slug %}">{{ item.name }}</a>
+                                    {% if item.bogo_title %}
+                                                        <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                                                           <span style="font-size: 13px"> {{ item.bogo_title }}</span>
+                                                        </div>
+                                                    {% endif %}
                                 </td>
                                 <td class="product-price text-right"><span class="amount">{{ item.price }}</span></td>
                                 <td class="product-price text-right">

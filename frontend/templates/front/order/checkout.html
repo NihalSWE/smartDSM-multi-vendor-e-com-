@@ -159,6 +159,11 @@
                     <td class="product-name">
                       {{ item.name }} <i class="fas fa-times"></i>
                       <span class="product-quantity">{{ item.quantity }}</span>
+                      {% if item.bogo_title %}
+                      <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                         <span style="font-size: 13px"> {{ item.bogo_title }}</span>
+                      </div>
+                  {% endif %}
                     </td>
                     <td class="product-total">
                       ৳ {{ item.subtotal|floatformat:2 }}

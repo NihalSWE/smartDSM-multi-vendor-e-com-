@@ -271,9 +271,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                         {% for item in cart_items %}
                                             <div class="product product-cart" data-cart-id="{{ item.id }}">
                                                 <div class="product-detail">
-                                                    <a href="{% url 'product_details' item.slug %}" class="product-name">
+                                                    <a href="{% url 'product_details' item.slug %}" class="product-name" style="margin-bottom: 0px;">
                                                         {{ item.name }}
                                                     </a>
+                                                    {% if item.bogo_title %}
+                                                        <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                                                           <span style="font-size: 13px"> {{ item.bogo_title }}</span>
+                                                        </div>
+                                                    {% endif %}
                                                     <div class="price-box">
                                                         <span class="product-quantity">{{ item.quantity }}</span>
                                                         <span class="product-price">৳{{ item.price }}</span>

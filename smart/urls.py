@@ -168,6 +168,8 @@ urlpatterns = [
     
     path('products/create/', views.create_product, name='create_product'),
     
+    path('own_orders',views.own_orders,name='own_orders'),
+    
     path('order_history', views.order_history, name="order_history"),
     path('orders/<int:order_id>/details/', views.order_details, name='order_details'),
     # path('api/order-count/', views.get_order_count, name='get_order_count'),

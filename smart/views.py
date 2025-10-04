@@ -2369,7 +2369,8 @@ def order_history(request):
 @login_required(login_url="/admin-dashboard/login_home")
 def order_details(request, order_id):
     order = get_object_or_404(Order, id=order_id)
-    # ADD ONLY THIS BLOCK:
+    
+    # Mark order as viewed
     try:
         notification = OrderNotification.objects.get(order=order)
         if not notification.is_viewed:
@@ -2384,11 +2385,37 @@ def order_details(request, order_id):
             viewed_by=request.user,
             viewed_at=timezone.now()
         )
+    
+    # Build order items with free/BOGO tags
     order_items = []
     for vendor_order in order.vendor_orders.all():
         for item in vendor_order.items.all():
             item.total_price = item.final_price * item.quantity
             item.vendor = vendor_order.vendor
+            
+            # Check if product is free or has BOGO/Free tag
+            item.is_free = False
+            item.is_bogo = False
+            item.free_reason = ""
+            
+            # Check if it's a free product (final_price = 0 or base_price = 0)
+            if item.final_price == 0 or item.base_price == 0:
+                item.is_free = True
+                item.free_reason = "Free Product"
+            
+            # Check if item is marked as free in order's free_product field
+            elif hasattr(order, 'free_product') and order.free_product:
+                if str(item.product.id) in str(order.free_product) or str(item.product.title) in str(order.free_product):
+                    item.is_free = True
+                    item.free_reason = "Free Gift"
+            
+            # Check if product has BOGO tag (but customer PAYS for BOGO product)
+            if hasattr(item, 'discount_applied') and item.discount_applied:
+                if 'BOGO' in str(item.discount_applied).upper() or 'BUY' in str(item.discount_applied).upper():
+                    item.is_bogo = True
+                    if not item.is_free:
+                        item.free_reason = "BOGO Offer"
+            
             order_items.append(item)
 
     context = {
@@ -2397,6 +2424,72 @@ def order_details(request, order_id):
         "order_items": order_items,
     }
     return render(request, "orders/order-details.html", context)
+
+
+@login_required(login_url="/admin-dashboard/login_home")
+def own_orders(request):
+    """
+    Display only the products where admin is the seller/vendor from all orders.
+    Shows products in a list format with their order information.
+    """
+    # Get all order items where the product's seller is the current admin
+    admin_products = []
+    
+    # Query all vendor orders where vendor is current admin
+    vendor_orders = OrderVendor.objects.filter(vendor=request.user).select_related('order', 'order__customer')
+    
+    for vendor_order in vendor_orders:
+        for item in vendor_order.items.all():
+            # Check if product is free or has BOGO/Free tag
+            is_free = False
+            is_bogo = False
+            free_reason = ""
+            
+            # Check if it's a free product (final_price = 0 or marked as free)
+            if item.final_price == 0 or item.base_price == 0:
+                is_free = True
+                free_reason = "Free Product"
+            
+            # Check if item is marked as free in order's free_product field
+            elif hasattr(vendor_order.order, 'free_product') and vendor_order.order.free_product:
+                if str(item.product.id) in str(vendor_order.order.free_product) or str(item.product.title) in str(vendor_order.order.free_product):
+                    is_free = True
+                    free_reason = "Free Gift"
+            
+            # Check if product has BOGO tag (but customer PAYS for BOGO product)
+            if hasattr(item, 'discount_applied') and item.discount_applied:
+                if 'BOGO' in str(item.discount_applied).upper() or 'BUY' in str(item.discount_applied).upper():
+                    is_bogo = True
+                    free_reason = "BOGO Offer" if not is_free else free_reason
+            
+            admin_products.append({
+                'item': item,
+                'order': vendor_order.order,
+                'order_number': vendor_order.order.order_number,
+                'customer': vendor_order.order.customer,
+                'order_date': vendor_order.order.created_at,
+                'order_status': vendor_order.order.get_status_display(),
+                'payment_status': vendor_order.order.payment_status,
+                'total_price': item.final_price * item.quantity,
+                'is_free': is_free,
+                'is_bogo': is_bogo,
+                'free_reason': free_reason,
+            })
+    
+    # Sort by order date (newest first)
+    admin_products.sort(key=lambda x: x['order_date'], reverse=True)
+    
+    context = {
+        "breadcrumb": {
+            "title": "My Products in Orders", 
+            "parent": "Ecommerce", 
+            "child": "My Products"
+        },
+        "admin_products": admin_products,
+        "total_products": len(admin_products),
+    }
+    return render(request, 'orders/own_orders.html', context)
+
 
 
 
@@ -2729,12 +2822,6 @@ def deliveryCharge(request):
         'delivery_types': delivery_types
     }
     return render(request, 'delivery/delivery.html', context)
-
-
-
-
-
-
 
 
 

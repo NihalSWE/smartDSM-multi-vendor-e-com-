@@ -154,6 +154,14 @@ def cart_context(request):
             "quantity": quantity,
             "subtotal": line_subtotal,
         })
+        
+        # === NEW: ADD BOGO PRODUCT TITLE ONLY ===
+        if discounts.exists():
+            discount = discounts.first()
+            if discount.discount_type == 'bogo' and hasattr(discount, 'free_product') and discount.free_product:
+                # Add bogo_title to the current cart item
+                cart_items[-1]['bogo_title'] = f"FREE: {discount.free_product.title}"
+        # === END BOGO ===
 
     # shipping_cost = Decimal("100.00")
     grand_total = (total_price_without_discount - total_discount)

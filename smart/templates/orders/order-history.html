@@ -117,6 +117,7 @@
                           <th> <span class="f-light f-w-600">Customer Name</span></th>
                           <th> <span class="f-light f-w-600">Customer Number</span></th>
                           <th> <span class="f-light f-w-600">Total Amount</span></th>
+                          <th> <span class="f-light f-w-600">Free Products</span></th>
                           <th> <span class="f-light f-w-600">Status</span></th>
                           <th> <span class="f-light f-w-600">Payment Status</span></th>
                           <th> <span class="f-light f-w-600">Payment Method</span></th>
@@ -149,6 +150,9 @@
                           
                           <td> 
                             <p class="c-o-light">${{ order.grand_total }}</p>
+                          </td>
+                          <td> 
+                            <p class="c-o-light">{{ order.free_product }}</p>
                           </td>
                           <td> 
                             <p class="c-o-light">{{ order.get_status_display }}</p>

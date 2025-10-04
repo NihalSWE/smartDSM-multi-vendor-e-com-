@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<style>
+  .my-product-row {
+    background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+  }
+  .my-product-row:hover {
+    background: linear-gradient(90deg, #e3f2fd 0%, #f8f9fa 100%);
+    transition: all 0.3s ease;
+  }
+  .free-badge {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    z-index: 10;
+    animation: freePulse 2s infinite;
+  }
+  @keyframes freePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .product-image-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1">My Products in Orders</h5>
+              <p class="text-muted mb-0">All your products that have been ordered</p>
+            </div>
+            <div class="text-end">
+              <h3 class="text-primary mb-0">{{ total_products }}</h3>
+              <small class="text-muted">Total Products</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body pt-0 px-0">
+          <div class="row">
+            <div class="col-12">
+              <div class="order-history-wrapper">
+                <div class="recent-table table-responsive custom-scrollbar">
+                  <table class="table" id="my-products-table">
+                    <thead>
+                      <tr>
+                        <th><span class="f-light f-w-600">Image</span></th>
+                        <th><span class="f-light f-w-600">Product Name</span></th>
+                        <th><span class="f-light f-w-600">Order Number</span></th>
+                        <th><span class="f-light f-w-600">Order Date</span></th>
+                        <th><span class="f-light f-w-600">Customer</span></th>
+                        <th><span class="f-light f-w-600">Customer Number</span></th>
+                        <th><span class="f-light f-w-600">Quantity</span></th>
+                        <th><span class="f-light f-w-600">Unit Price</span></th>
+                        <th><span class="f-light f-w-600">Total</span></th>
+                        <th><span class="f-light f-w-600">Action</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for product_data in admin_products %}
+                      <tr class="my-product-row">
+                        <td>
+                          <div class="product-image-wrapper">
+                            {% comment %} {% if product_data.is_free %}
+                              <span class="free-badge">🎁 {{ product_data.free_reason }}</span>
+                            {% elif product_data.is_bogo %}
+                              <span class="free-badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">BOGO Offer</span>
+                            {% endif %} {% endcomment %}
+                            <img src="{{ product_data.item.product.thumbnail_image.url }}" 
+                                 alt="{{ product_data.item.product.title }}"
+                                 class="img-fluid"
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                          </div>
+                        </td>
+                        <td>
+                          <p class="c-o-light mb-0">
+                            <strong>{{ product_data.item.product.title }}</strong>
+                            {% if product_data.is_free %}
+                              <span class="badge bg-gradient bg-success ms-2">{{ product_data.free_reason }}</span>
+                            {% elif product_data.is_bogo %}
+                              <span class="badge bg-gradient bg-danger ms-2">BOGO Offer</span>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">SKU: {{ product_data.item.product.sku|default:"N/A" }}</small>
+                          </p>
+                        </td>
+                        <td>
+                          <a href="{% url 'order_details' product_data.order.id %}" class="text-primary">
+                            #{{ product_data.order_number }}
+                          </a>
+                        </td>
+                        <td>
+                          <p class="c-o-light">{{ product_data.order_date|date:"d M Y h:i A" }}</p>
+                        </td>
+                        <td>
+                          <p class="c-o-light">
+                            {% if product_data.customer %}
+                              {{ product_data.customer.get_full_name|default:product_data.customer.email }}
+                            {% else %}
+                              Guest User
+                            {% endif %}
+                          </p>
+                        </td>
+                        <td>
+                          <a href="tel:{{ product_data.customer.phone_number }}">
+                            {{ product_data.customer.phone_number }}
+                          </a>
+                        </td>
+                        <td>
+                          <span class="badge bg-secondary">{{ product_data.item.quantity }}</span>
+                        </td>
+                        <td>
+                          <p class="c-o-light">
+                            {% if product_data.is_free %}
+                              <span class="text-success"><strong>FREE</strong></span>
+                            {% else %}
+                              ৳{{ product_data.item.base_price|floatformat:2 }}
+                            {% endif %}
+                          </p>
+                        </td>
+                        <td>
+                          <p class="c-o-light">
+                            <strong>
+                              {% if product_data.is_free %}
+                                <span class="text-success">৳0.00</span>
+                              {% else %}
+                                ৳{{ product_data.total_price|floatformat:2 }}
+                              {% endif %}
+                            </strong>
+                          </p>
+                        </td>
+                        
+                        <td>
+                          <div class="common-align gap-2 justify-content-start">
+                            <a class="square-white" 
+                               href="{% url 'order_details' product_data.order.id %}" 
+                               data-bs-toggle="tooltip" 
+                               data-bs-placement="top" 
+                               data-bs-title="View Order">
+                              <svg>
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-view"></use>
+                              </svg>
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                        <td colspan="10" class="text-center py-5">
+                          <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                          <h5 class="text-muted">No products found</h5>
+                          <p class="text-muted">You don't have any products in orders yet.</p>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scriptcontent %} 
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/tooltip-init.js' %}"></script>
+
+<script>
+  $(document).ready(function() {
+    $('#my-products-table').DataTable({
+      order: [[3, 'desc']], // Sort by order date (newest first)
+      pageLength: 25,
+      columnDefs: [
+        { targets: [0, 9], orderable: false } // Image and Action columns
+      ]
+    });
+  });
+</script>
+{% endblock %}

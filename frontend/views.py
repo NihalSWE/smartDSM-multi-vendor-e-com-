@@ -1032,29 +1032,47 @@ def place_order(request):
         )
 
         # Process cart items
+        # Process cart items - MATCHING cart_context LOGIC EXACTLY
         for product_id, item in cart.items():
             product = Product.objects.get(pk=product_id)
             quantity = item.get('quantity', 1)
 
             price = product.selling_price
-            discount = (
-                product.discounts.filter(active=True)
-                .filter(start_date__lte=timezone.now(), end_date__gte=timezone.now())
-                .first()
+            now = timezone.now()
+
+            # EXACT SAME LOGIC AS cart_context
+            discounts = product.discounts.filter(active=True).filter(
+                (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
+                (Q(end_date__gte=now) | Q(end_date__isnull=True))
             )
 
-            if discount:
+            if discounts.exists():
+                discount = discounts.first()
+
                 if discount.discount_type == ProductDiscount.FIXED and discount.discount_price:
-                    discounted_price = discount.discount_price
+                    discount_amount = discount.discount_price
                 elif discount.discount_type == ProductDiscount.PERCENT and discount.percentage:
-                    discounted_price = price * (Decimal("1") - discount.percentage / Decimal("100"))
+                    discount_amount = price * (discount.percentage / Decimal("100"))
+                elif discount.discount_type == ProductDiscount.BULK:
+                    if discount.bulk_quantity and quantity >= discount.bulk_quantity:
+                        if discount.bulk_discount_type == ProductDiscount.FIXED and discount.bulk_discount_value:
+                            discount_amount = discount.bulk_discount_value
+                        elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
+                            discount_amount = price * (discount.bulk_discount_value / Decimal("100"))
+                        else:
+                            discount_amount = Decimal("0.00")
+                    else:
+                        discount_amount = Decimal("0.00")
                 else:
-                    discounted_price = price
+                    discount_amount = Decimal("0.00")
             else:
-                discounted_price = price
+                discount_amount = Decimal("0.00")
+
+            discounted_price = price - discount_amount
+            if discounted_price < 0:
+                discounted_price = Decimal("0.00")
 
             base_price = price
-            discount_amount = base_price - discounted_price
             final_price = discounted_price
 
             vendor = product.seller
@@ -1088,6 +1106,47 @@ def place_order(request):
 
             subtotal += base_price * quantity
             discount_total += discount_amount * quantity
+            
+             # === ADD BOGO FREE PRODUCT HANDLING ===
+            if discounts.exists():
+                discount = discounts.first()
+                # Check if this is a BOGO discount and has a free product
+                if (discount.discount_type == 'bogo' and 
+                    hasattr(discount, 'free_product') and 
+                    discount.free_product):
+                    
+                    free_product = discount.free_product
+                    free_product_price = free_product.selling_price
+                    
+                    # Create free product order item with 100% discount
+                    OrderItem.objects.create(
+                        vendor_order=vendor_order,
+                        product=free_product,
+                        quantity=1,
+                        base_price=free_product_price,
+                        discount_amount=free_product_price,
+                        final_price=Decimal('0.00'),
+                        discount_applied=discount,
+                        is_free_product=True,
+                    )
+                    
+                    # Update vendor order totals for the free product
+                    vendor_order.vendor_subtotal += free_product_price * 1
+                    vendor_order.vendor_discount += free_product_price * 1
+                    vendor_order.save()
+                    
+                    # Update order totals for the free product
+                    subtotal += free_product_price * 1
+                    discount_total += free_product_price * 1
+                    
+                    # Store free product info in Order model
+                    if order.free_product:
+                        order.free_product += f", {free_product.title}"
+                    else:
+                        order.free_product = free_product.title
+                    
+                    print(f"Added free BOGO product: {free_product.title}")
+            # === END BOGO HANDLING ===
 
         grand_total = subtotal - discount_total + shipping_total
 

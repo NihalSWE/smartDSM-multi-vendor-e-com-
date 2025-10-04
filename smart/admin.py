@@ -424,7 +424,7 @@ class OrderVendorInline(admin.TabularInline):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ('product', 'variation_option', 'quantity', 'final_price')
+    readonly_fields = ('product', 'variation_option', 'quantity', 'final_price','is_free_product')
     show_change_link = True
 
 
@@ -433,7 +433,7 @@ class OrderItemInline(admin.TabularInline):
 # ------------------------
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_number', 'customer', 'status', 'payment_status', 'grand_total', 'created_at')
+    list_display = ('order_number', 'customer', 'status', 'payment_status', 'grand_total', 'free_product','created_at')
     list_filter = ('status', 'payment_status', 'payment_method', 'created_at')
     search_fields = ('order_number', 'customer__username', 'customer__email')
     inlines = [OrderVendorInline]

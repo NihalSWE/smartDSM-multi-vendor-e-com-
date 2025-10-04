@@ -1185,6 +1185,8 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    free_product=models.CharField(max_length=200, blank=True, null=True)
+    
     def save(self, *args, **kwargs):
         if not self.order_number:
             self.order_number = "ORD-" + str(uuid4())[:8].upper()
@@ -1272,6 +1274,8 @@ class OrderItem(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     final_price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_applied = models.ForeignKey('ProductDiscount', on_delete=models.SET_NULL, blank=True, null=True)
+    # Add this field to your OrderItem model (optional)
+    is_free_product = models.BooleanField(default=False)
 
     def get_total_price(self):
         return self.final_price * Decimal(self.quantity)
