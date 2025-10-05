@@ -1020,15 +1020,14 @@ def edit_product(request, id):
             
             # BOGO discount
             bogo_product_id = data.get('bogo_product')
-            bogo_min_qty = data.get('bogo_min_qty')
-            bogo_max_qty = data.get('bogo_max_qty')
+            bogo_min_qty = data.get('minimum_quantity')
             if bogo_product_id and bogo_min_qty:
                 ProductDiscount.objects.create(
                     product=product,
                     discount_type='bogo',
-                    bogo_product_id=bogo_product_id,
+                    free_product_id=bogo_product_id,
                     min_quantity=bogo_min_qty,
-                    max_quantity=bogo_max_qty,
+                    max_quantity=1,  # Set maximum quantity to 1 by default
                     active=True
                 )
             
@@ -1075,7 +1074,8 @@ def edit_product(request, id):
     percent_discount = product.discounts.filter(discount_type='percentage', active=True).first()
     bogo_discount = product.discounts.filter(discount_type='bogo', active=True).first()
     bulk_discount = product.discounts.filter(discount_type='bulk', active=True).first()
-    products = Product.objects.all()    
+# Filter products to show only the current user's products
+    products = Product.objects.filter(seller=request.user)
     context = {
        
         "product": product,
@@ -1502,7 +1502,57 @@ def delete_contact_info(request, pk):
 
 
 
+#-----------------site logo------
 
+def site_logo_list(request):
+    logos = SiteLogo.objects.all().order_by("-id")
+    return render(request, "aboutus/sitelogo.html", {"logos": logos})
+
+
+def add_site_logo(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        logo = request.FILES.get("logo")
+        active = "active" in request.POST
+
+        # if setting active, deactivate others
+        if active:
+            SiteLogo.objects.filter(active=True).update(active=False)
+
+        SiteLogo.objects.create(name=name, logo=logo, active=active)
+        messages.success(request, "Logo added successfully!")
+        return redirect("site_logo_list")
+
+    return redirect("site_logo_list")
+
+
+def edit_site_logo(request, pk):
+    logo_obj = get_object_or_404(SiteLogo, pk=pk)
+
+    if request.method == "POST":
+        logo_obj.name = request.POST.get("name")
+
+        if request.FILES.get("logo"):
+            logo_obj.logo = request.FILES.get("logo")
+
+        logo_obj.active = "active" in request.POST
+
+        if logo_obj.active:
+            SiteLogo.objects.exclude(pk=logo_obj.pk).update(active=False)
+
+        logo_obj.save()
+        messages.success(request, "Logo updated successfully!")
+        return redirect("site_logo_list")
+
+    return redirect("site_logo_list")
+
+
+def delete_site_logo(request, pk):
+    logo_obj = get_object_or_404(SiteLogo, pk=pk)
+    if request.method == "POST":
+        logo_obj.delete()
+        messages.success(request, "Logo deleted successfully!")
+    return redirect("site_logo_list")
 
 
 
@@ -1674,7 +1724,8 @@ def wishlist_header(request):
 
 @login_required(login_url="/admin-dashboard/login_home")
 def add_products(request):
-    products = Product.objects.all()
+    # Filter products to show only the current user's products
+    products = Product.objects.filter(seller=request.user)
     if request.method == 'POST':
         try:
             # Validate required fields

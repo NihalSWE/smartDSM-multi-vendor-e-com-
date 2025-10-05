@@ -36,13 +36,18 @@
                 <div class="row">
                     <div class="col-lg-4 col-sm-6">
                         <div class="widget widget-about">
-                            <a href="demo1.html" class="logo-footer">
-                                <img src="{% static 'front/assets/images/logo.png'%}" alt="logo-footer" width="130"
-                                    height="35" />
+                            <a href="{% url 'home' %}" class="logo-footer">
+                                {% if footer_logo %}
+                                    <img src="{{ footer_logo }}" alt="logo-footer" width="130" height="35" />
+                                {% endif %}
                             </a>
+                            
                             <div class="widget-body">
                                 <p class="widget-about-title">Got Question? Call us 24/7</p>
-                                <a href="tel:18005707777" class="widget-about-call">+01958-666999</a>
+                                {% if footer_phone_number %}
+                                <a href="tel:{{ footer_phone_number }}" class="widget-about-call">{{ footer_phone_number }}</a>
+                                {% endif %}
+
                         
 
                                 <div class="social-icons social-icons-colored">

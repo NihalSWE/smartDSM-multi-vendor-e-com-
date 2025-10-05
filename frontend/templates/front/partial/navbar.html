@@ -8,8 +8,11 @@
                         <a href="#" class="mobile-menu-toggle  w-icon-hamburger" aria-label="menu-toggle">
                         </a>
                         <a href="{% url 'home' %}" class="logo ml-lg-0">
-                            <img src="{% static 'front/assets/images/logo.png'%}" alt="logo" width="90" height="45" />
+                            {% if site_logo %}
+                                <img src="{{ site_logo }}" alt="Site Logo" width="90" height="45" />
+                            {% endif %}
                         </a>
+                        
                         <!-- Replace your existing search form with this -->
 <!-- Replace your existing search form with this -->
 <form method="get" action="{% url 'product_search' %}"

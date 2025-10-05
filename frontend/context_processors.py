@@ -275,3 +275,48 @@ def search_categories_context(request):
     except Exception as e:
         print("Error in search_categories_context:", e)
         return {'search_categories': []}
+    
+    
+    
+def footer_contact_context(request):
+    """
+    Provide dynamic phone number for footer (Call us 24/7) and dynamic footer logo
+    """
+    try:
+        # Footer phone number
+        contact_phone = (
+            ContactInformation.objects
+            .filter(active=True, icon="phone")
+            .order_by("order")
+            .first()
+        )
+        footer_phone_number = contact_phone.value if contact_phone else None
+
+        # Footer logo (active site logo)
+        logo_obj = SiteLogo.objects.filter(active=True).last()
+        footer_logo = logo_obj.logo.url if logo_obj and logo_obj.logo else None
+
+        return {
+            "footer_phone_number": footer_phone_number,
+            "footer_logo": footer_logo,
+        }
+
+    except Exception as e:
+        print("Error in footer_contact_context:", e)
+        return {
+            "footer_phone_number": None,
+            "footer_logo": None,
+        }
+
+
+
+def site_logo_context(request):
+    """
+    Provide dynamic site logo for navbar (from SiteLogo model)
+    """
+    try:
+        site_logo = SiteLogo.objects.filter(active=True).last()
+        return {"site_logo": site_logo.logo.url if site_logo and site_logo.logo else None}
+    except Exception as e:
+        print("Error in site_logo_context:", e)
+        return {"site_logo": None}

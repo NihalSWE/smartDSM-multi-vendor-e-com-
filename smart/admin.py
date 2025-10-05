@@ -551,3 +551,8 @@ class ContactInformationAdmin(admin.ModelAdmin):
     list_display = ("title", "value", "icon", "order", "active")
     list_editable = ("order", "active")
     ordering = ("order",)
+    
+    
+@admin.register(SiteLogo)
+class SiteLogoAdmin(admin.ModelAdmin):
+    list_display = ("name", "logo", "active")

@@ -60,6 +60,11 @@ urlpatterns = [
     path('aboutUs_header/', views.aboutUs_header, name='aboutUs_header'),
     path('aboutus_content',views.aboutus_content,name='aboutus_content'),
     path('delete/<int:pk>/', views.delete_about_page_content, name='delete_about_page_content'),
+    
+    path("site-logo/", views.site_logo_list, name="site_logo_list"),
+    path("site-logo/add/", views.add_site_logo, name="add_site_logo"),
+    path("site-logo/edit/<int:pk>/",views.edit_site_logo, name="edit_site_logo"),
+    path("site-logo/delete/<int:pk>/", views.delete_site_logo, name="delete_site_logo"),
     #About Us
     
     

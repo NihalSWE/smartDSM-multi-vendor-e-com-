@@ -731,8 +731,8 @@ class ProductDiscount(models.Model):
 
     # for BOGO
     free_product      = models.ForeignKey(Product, blank=True, null=True, related_name='bogo_free_for', on_delete=models.SET_NULL)
-    min_price         = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    max_price         = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    min_quantity      = models.PositiveIntegerField(default=1, blank=True, null=True)
+    max_quantity      = models.PositiveIntegerField(default=1, blank=True, null=True)
 
     # for BULK
     bulk_quantity     = models.PositiveIntegerField(blank=True, null=True)
@@ -1490,7 +1490,16 @@ class ContactInformation(models.Model):
         
         
         
-        
+class SiteLogo(models.Model):
+    """
+    Stores the site logo displayed in the navbar and footer.
+    """
+    name = models.CharField(max_length=255, default="Main Logo")
+    logo = models.ImageField(upload_to="logos/", null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name        
         
         
         
