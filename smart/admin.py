@@ -556,3 +556,8 @@ class ContactInformationAdmin(admin.ModelAdmin):
 @admin.register(SiteLogo)
 class SiteLogoAdmin(admin.ModelAdmin):
     list_display = ("name", "logo", "active")
+    
+
+@admin.register(contactFAQ)
+class contactFAQAdmin(admin.ModelAdmin):
+    list_display = ("question", "answer", "is_active","order")

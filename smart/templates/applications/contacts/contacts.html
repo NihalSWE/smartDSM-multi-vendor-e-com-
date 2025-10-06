@@ -2,17 +2,286 @@
 {% load static %}
 
 {% block css %}
-<link rel="stylesheet" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
-<link rel="stylesheet" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}">
-{% endblock %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/dataTables.bootstrap5.css' %}">
+{% endblock css %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
+<style>
+    .custom-large-btn:hover { background-color: #4a3dd9 !important; }
+    .custom-delete-btn:hover { background-color: #ff0000 !important; }
+    .modal-body { padding-top: 34px !important; }
+    .success-message { background-color: #10cf1057; color: #096009; }
+    .error-message { background-color: #ff0d0d78 !important; color: #890000; }
+    .edit, .delete { cursor: pointer; }
+    .edit-icon, .delete-icon { cursor: pointer; font-size: 22px !important; transition: 0.3s ease-in-out; }
+    .edit-icon:hover, .delete-icon:hover { transform: scale(1.15); }
+    .error-success-div { max-height: 0; opacity: 0; padding: 10px 20px; border-radius: 20px; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; }
+    .error-success-div.show { max-height: 200px; opacity: 1; }
+    .required-fields-mark { color: red; }
+    .status-indicator { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+    .status-indicator.active { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+    .status-indicator.inactive { background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }
+    .faq-answer-preview { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+{% endblock custom_css %}
 
 {% block content %}
-{% include 'applications/contacts/components/contacts.html' %}
+<div class="container-fluid datatable-init">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header pb-0 card-no-border">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6"><h1>Manage FAQs</h1></div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-pill btn-primary btn-lg custom-large-btn" data-bs-toggle="modal" data-bs-target="#addFaqModal">
+                                    <i class="fa-solid fa-plus"></i> Add New FAQ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive custom-scrollbar">
+                        <table class="display table-striped border" id="basic-1">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Question</th>
+                                    <th>Answer</th>
+                                    <th>Order</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for faq in faqs %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ faq.question }}</td>
+                                    <td><div class="faq-answer-preview" title="{{ faq.answer }}">{{ faq.answer }}</div></td>
+                                    <td>{{ faq.order }}</td>
+                                    <td>
+                                        <span class="status-indicator {% if faq.is_active %}active{% else %}inactive{% endif %}"></span>
+                                        {{ faq.is_active|yesno:"Active,Inactive" }}
+                                    </td>
+                                    <td>
+                                        <ul class="action">
+                                            <li class="edit"><i class="fa-regular fa-pen-to-square edit-icon" data-id="{{ faq.id }}" data-question="{{ faq.question|escapejs }}" data-answer="{{ faq.answer|escapejs }}" data-order="{{ faq.order }}" data-active="{{ faq.is_active|yesno:'true,false' }}"></i></li>
+                                            <li class="delete"><i class="fa-solid fa-trash-can delete-icon" data-id="{{ faq.id }}"></i></li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade bd-example-modal-xl" id="addFaqModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h1 class="text-center">Add New FAQ</h1>
+                <div class="card">
+                    <form id="addFaqForm">
+                        {% csrf_token %}
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Question <span class="required-fields-mark">*</span></label>
+                                    <input class="form-control" name="question" type="text" required>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Answer <span class="required-fields-mark">*</span></label>
+                                    <textarea class="form-control" name="answer" rows="5" required></textarea>
+                                </div>
+                                <div class="col-md-6 col-12 mb-3">
+                                    <label class="form-label">Display Order</label>
+                                    <input class="form-control" name="order" type="number" value="0">
+                                </div>
+                                <div class="col-md-6 col-12 mb-3">
+                                    <label class="form-label d-block">Status</label>
+                                    <div class="form-check form-switch" style="padding-top: 8px;">
+                                        <input class="form-check-input" type="checkbox" name="is_active" checked>
+                                        <label class="form-check-label">Active</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 0 20px 10px;"><div class="error-success-div"></div></div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary custom-large-btn me-3" type="submit">Add FAQ</button>
+                            <button class="btn btn-danger custom-delete-btn" type="button" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade bd-example-modal-xl" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h1 class="text-center">Update FAQ</h1>
+                <div class="card">
+                    <form id="editFaqForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="editFaqId">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Question <span class="required-fields-mark">*</span></label>
+                                    <input class="form-control" id="editQuestion" name="question" type="text" required>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Answer <span class="required-fields-mark">*</span></label>
+                                    <textarea class="form-control" id="editAnswer" name="answer" rows="5" required></textarea>
+                                </div>
+                                <div class="col-md-6 col-12 mb-3">
+                                    <label class="form-label">Display Order</label>
+                                    <input class="form-control" id="editOrder" name="order" type="number" value="0">
+                                </div>
+                                <div class="col-md-6 col-12 mb-3">
+                                    <label class="form-label d-block">Status</label>
+                                    <div class="form-check form-switch" style="padding-top: 8px;">
+                                        <input class="form-check-input" type="checkbox" id="editActive" name="is_active">
+                                        <label class="form-check-label">Active</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="padding: 0 20px 10px;"><div class="error-success-div"></div></div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary custom-large-btn me-3" type="submit">Update FAQ</button>
+                            <button class="btn btn-danger custom-delete-btn" type="button" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
+                        <path fill="#ce2222" d="M10 5h4a2 2 0 1 0-4 0M8.5 5a3.5 3.5 0 1 1 7 0h5.75a.75.75 0 0 1 0 1.5h-1.32l-1.17 12.111A3.75 3.75 0 0 1 15.026 22H8.974a3.75 3.75 0 0 1-3.733-3.389L4.07 6.5H2.75a.75.75 0 0 1 0-1.5zm2 4.75a.75.75 0 0 0-1.5 0v7.5a.75.75 0 0 0 1.5 0zM14.25 9a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5a.75.75 0 0 0-.75-.75"/>
+                    </svg>
+                </div>
+                <h4 class="text-center my-3">Are you sure?</h4>
+                <p class="text-center mb-4">This will permanently delete the FAQ.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button id="confirmDelete" class="btn btn-danger">Yes, Delete</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 text-center p-4">
+            <img src="{% static 'assets/images/tick_anim.gif' %}" style="width: 150px; height: 150px;"/>
+            <h5 id="successText" class="mt-3">Success!</h5>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scriptcontent %}
-<script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
-<script src="{% static 'assets/js/form-validation-custom.js' %}"></script>
-<script src="{% static 'assets/js/bookmark/jquery.validate.min.js' %}"></script>
-<script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.bootstrap5.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    $('#basic-1').DataTable();
+    
+    function showMessage(modal, type, msg) {
+        const div = $(modal + ' .error-success-div');
+        div.removeClass('show error-message success-message').addClass(type + '-message').text(msg);
+        setTimeout(() => div.addClass('show'), 10);
+    }
+    
+    // Add FAQ
+    $('#addFaqForm').submit(function(e) {
+        e.preventDefault();
+        $.post('/admin-dashboard/contactfaq/add/', $(this).serialize())
+            .done(function(data) {
+                if (data.success) {
+                    showMessage('#addFaqModal', 'success', data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showMessage('#addFaqModal', 'error', data.message);
+                }
+            })
+            .fail(function() {
+                showMessage('#addFaqModal', 'error', 'Connection error');
+            });
+    });
+    
+    // Edit FAQ
+    let editId;
+    $(document).on('click', '.edit-icon', function() {
+        editId = $(this).data('id');
+        $('#editQuestion').val($(this).data('question'));
+        $('#editAnswer').val($(this).data('answer'));
+        $('#editOrder').val($(this).data('order'));
+        $('#editActive').prop('checked', $(this).data('active') === 'true');
+        $('#editModal').modal('show');
+    });
+    
+    $('#editFaqForm').submit(function(e) {
+        e.preventDefault();
+        $.post('/admin-dashboard/contactfaq/update/' + editId + '/', $(this).serialize())
+            .done(function(data) {
+                if (data.success) {
+                    showMessage('#editModal', 'success', data.message);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showMessage('#editModal', 'error', data.message);
+                }
+            })
+            .fail(function() {
+                showMessage('#editModal', 'error', 'Connection error');
+            });
+    });
+    
+    // Delete FAQ
+    let deleteId;
+    $(document).on('click', '.delete-icon', function() {
+        deleteId = $(this).data('id');
+        $('#deleteModal').modal('show');
+    });
+    
+    $('#confirmDelete').click(function() {
+        $.post('/admin-dashboard/contactfaq/delete/' + deleteId + '/', {csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()})
+            .done(function(data) {
+                $('#deleteModal').modal('hide');
+                if (data.success) {
+                    $('#successText').text(data.message);
+                    $('#successModal').modal('show');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+    });
+});
+</script>
 {% endblock %}

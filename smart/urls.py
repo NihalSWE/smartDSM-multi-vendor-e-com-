@@ -95,12 +95,19 @@ urlpatterns = [
     
     # contact
     path('update_contact_header',views.update_contact_header,name='update_contact_header'),
+    
+    path('contactfaq/', views.contactfaq, name='contactfaq'),
+    path('contactfaq/add/', views.add_faq, name='add_faq'),
+    path('contactfaq/update/<int:pk>/', views.update_faq, name='update_faq'),
+    path('contactfaq/delete/<int:pk>/', views.delete_faq, name='delete_faq'),
+
+    
     path('contact_messages/', views.contact_messages, name='contact_messages'),
     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
-    path("contacts/", views.contact_info, name="contact_info"),
-    path("contacts/add/", views.add_contact_info, name="add_contact_info"),
-    path("contacts/edit/<int:pk>/", views.edit_contact_info, name="edit_contact_info"),
-    path("contacts/delete/<int:pk>/", views.delete_contact_info, name="delete_contact_info"),
+    path("contact_info/", views.contact_info, name="contact_info"),
+    path("add_contact_info", views.add_contact_info, name="add_contact_info"),
+    path("edit_contact_info<int:pk>/", views.edit_contact_info, name="edit_contact_info"),
+    path("delete_contact_info/<int:pk>/", views.delete_contact_info, name="delete_contact_info"),
     
     # blogs
     path('blogList_header',views.blogList_header,name="blogList_header"),
@@ -268,7 +275,7 @@ urlpatterns = [
     
     
     # #------------------------contacts
-    path('contacts', views.contacts, name="contacts"),
+    
 
     # #------------------------task
     path('task', views.task, name="task"),

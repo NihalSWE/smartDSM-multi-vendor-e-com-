@@ -1354,46 +1354,89 @@ def update_contact_header(request):
     return render(request, 'applications/contacts/page-header.html', {'header': header})
 
 
-
 @login_required(login_url="/admin-dashboard/login_home")
-def contacts(request):
-    
+def contactfaq(request):
+    """Display FAQ list"""
     faqs = contactFAQ.objects.all().order_by('order')
-
-    if request.method == 'POST':
-        form = contactFAQorm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('contacts')  # ensure this name matches your urls.py
-    else:
-        form = contactFAQorm()
-
+    
     context = {
         "breadcrumb": {
             "title": "Contacts",
             "parent": "Apps",
             "child": "Contacts"
         },
-        
         "faqs": faqs,
-        "form": form
     }
     return render(request, "applications/contacts/contacts.html", context)
 
-@login_required(login_url="/admin-dashboard/login_home")
-def update_contactfaq(request, pk):
-    faq = get_object_or_404(contactFAQ, pk=pk)
-    if request.method == 'POST':
-        form = contactFAQorm(request.POST, instance=faq)
-        if form.is_valid():
-            form.save()
-    return redirect('contacts')
 
 @login_required(login_url="/admin-dashboard/login_home")
-def delete_contactfaq(request, pk):
-    faq = get_object_or_404(contactFAQ, pk=pk)
-    faq.delete()
-    return redirect('contacts')
+def add_faq(request):
+    """Add new FAQ via AJAX"""
+    if request.method == 'POST':
+        try:
+            question = request.POST.get('question', '').strip()
+            answer = request.POST.get('answer', '').strip()
+            order = request.POST.get('order', 0)
+            is_active = request.POST.get('is_active') == 'on'
+            
+            if not question or not answer:
+                return JsonResponse({'success': False, 'message': 'Question and Answer are required.'})
+            
+            contactFAQ.objects.create(
+                question=question,
+                answer=answer,
+                order=int(order) if order else 0,
+                is_active=is_active
+            )
+            
+            return JsonResponse({'success': True, 'message': 'FAQ added successfully!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url="/admin-dashboard/login_home")
+def update_faq(request, pk):
+    """Update FAQ via AJAX"""
+    if request.method == 'POST':
+        try:
+            faq = get_object_or_404(contactFAQ, pk=pk)
+            
+            question = request.POST.get('question', '').strip()
+            answer = request.POST.get('answer', '').strip()
+            order = request.POST.get('order', 0)
+            is_active = request.POST.get('is_active') == 'on'
+            
+            if not question or not answer:
+                return JsonResponse({'success': False, 'message': 'Question and Answer are required.'})
+            
+            faq.question = question
+            faq.answer = answer
+            faq.order = int(order) if order else 0
+            faq.is_active = is_active
+            faq.save()
+            
+            return JsonResponse({'success': True, 'message': 'FAQ updated successfully!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url="/admin-dashboard/login_home")
+def delete_faq(request, pk):
+    """Delete FAQ via AJAX"""
+    if request.method == 'POST':
+        try:
+            faq = get_object_or_404(contactFAQ, pk=pk)
+            faq.delete()
+            return JsonResponse({'success': True, 'message': 'FAQ deleted successfully!'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
 #---contact us form msg

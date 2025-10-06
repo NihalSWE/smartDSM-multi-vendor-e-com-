@@ -5,7 +5,7 @@ from .models import *
 
 
 #contact page faqs
-class contactFAQorm(forms.ModelForm):
+class contactFAQForm(forms.ModelForm):
     class Meta:
         model = contactFAQ
         fields = ['question', 'answer', 'is_active', 'order']
