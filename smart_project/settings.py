@@ -163,3 +163,60 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert-warning',
     messages.ERROR: 'alert-danger',
 } 
+
+
+
+
+# settings.py
+
+# # The email address the admin wants to send from (used by our reply view)
+# ADMIN_REPLY_EMAIL = "support@yourdomain.com"
+
+# # Default from email (fallback)
+# DEFAULT_FROM_EMAIL = "no-reply@yourdomain.com"
+
+# # Typical SMTP config (example, replace with real credentials)
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.yourprovider.com"
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = "smtp_user@yourprovider.com"
+# EMAIL_HOST_PASSWORD = "your_smtp_password"
+
+
+
+# settings.py
+
+# ADMIN_REPLY_EMAIL = "mrnihal588@gmail.com"
+# DEFAULT_FROM_EMAIL = "mrnihal588@gmail.com"
+
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.gmail.com"
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = "mrnihal588@gmail.com"
+# EMAIL_HOST_PASSWORD = "boxf qieq fgck xqsi"  # your Gmail App Password
+
+
+# ==============================
+# 📧 Email Configuration (via django-environ)
+# ==============================
+
+import environ
+import os
+
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# Admin email settings
+ADMIN_REPLY_EMAIL = env("ADMIN_REPLY_EMAIL")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
+
+# SMTP configuration
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_PORT = env.int("EMAIL_PORT")
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")

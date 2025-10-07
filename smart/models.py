@@ -919,12 +919,19 @@ class contactFAQ(models.Model):
         return self.question
     
 class ContactMessage(models.Model):
+    STATUS_CHOICES = (
+        ('new', 'New'),
+        ('viewed', 'Viewed'),
+        ('replied', 'Replied'),
+    )
+    
     name = models.CharField(max_length=255)
     email = models.EmailField()
     phone = models.CharField(max_length=20, blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='new')
+    
     def __str__(self):
         return f"Message from {self.name} ({self.email})"
 

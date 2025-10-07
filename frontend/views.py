@@ -290,6 +290,19 @@ def contactUs(request):
     return render(request, 'front/pages/contact-us.html',context)
 
 
+
+
+#----------FAQ-----
+def faq(request):
+    header=FaqsPageHeader.objects.filter(is_active=True).first()
+    faqs = contactFAQ.objects.filter(is_active=True).order_by('order')
+    context={
+        "header":header,
+        'faqs': faqs
+        }
+    return render(request, 'front/pages/faq.html',context)
+
+
 #login--
 
 def login_user(request):
@@ -1041,13 +1054,18 @@ def place_order(request):
             now = timezone.now()
 
             # EXACT SAME LOGIC AS cart_context
+            # --- find discount amount ---
             discounts = product.discounts.filter(active=True).filter(
                 (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
                 (Q(end_date__gte=now) | Q(end_date__isnull=True))
             )
 
+            discount_amount = Decimal("0.00")
+            discount_applied = None  # Initialize as None
+
             if discounts.exists():
                 discount = discounts.first()
+                discount_applied = discount  # Store the discount object regardless of type
 
                 if discount.discount_type == ProductDiscount.FIXED and discount.discount_price:
                     discount_amount = discount.discount_price
@@ -1059,14 +1077,7 @@ def place_order(request):
                             discount_amount = discount.bulk_discount_value
                         elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
                             discount_amount = price * (discount.bulk_discount_value / Decimal("100"))
-                        else:
-                            discount_amount = Decimal("0.00")
-                    else:
-                        discount_amount = Decimal("0.00")
-                else:
-                    discount_amount = Decimal("0.00")
-            else:
-                discount_amount = Decimal("0.00")
+                # Note: No else needed here - discount_amount remains 0.00 if conditions not met
 
             discounted_price = price - discount_amount
             if discounted_price < 0:
@@ -1090,14 +1101,14 @@ def place_order(request):
             print('saving order -----------------------------------')
 
             OrderItem.objects.create(
-                vendor_order=vendor_order,
-                product=product,
-                quantity=quantity,
-                base_price=base_price,
-                discount_amount=discount_amount,
-                final_price=final_price,
-                discount_applied=discount,
-            )
+            vendor_order=vendor_order,
+            product=product,
+            quantity=quantity,
+            base_price=base_price,
+            discount_amount=discount_amount,
+            final_price=final_price,
+            discount_applied=discount_applied,  # Use discount_applied instead of discount
+        )
 
             vendor_order.vendor_subtotal += base_price * quantity
             vendor_order.vendor_discount += discount_amount * quantity
@@ -1107,15 +1118,12 @@ def place_order(request):
             subtotal += base_price * quantity
             discount_total += discount_amount * quantity
             
-             # === ADD BOGO FREE PRODUCT HANDLING ===
-            if discounts.exists():
-                discount = discounts.first()
-                # Check if this is a BOGO discount and has a free product
-                if (discount.discount_type == 'bogo' and 
-                    hasattr(discount, 'free_product') and 
-                    discount.free_product):
+                        # === ADD BOGO FREE PRODUCT HANDLING ===
+            if discount_applied and discount_applied.discount_type == 'bogo':  # Use discount_applied
+                if (hasattr(discount_applied, 'free_product') and 
+                    discount_applied.free_product):
                     
-                    free_product = discount.free_product
+                    free_product = discount_applied.free_product
                     free_product_price = free_product.selling_price
                     
                     # Create free product order item with 100% discount
@@ -1126,7 +1134,7 @@ def place_order(request):
                         base_price=free_product_price,
                         discount_amount=free_product_price,
                         final_price=Decimal('0.00'),
-                        discount_applied=discount,
+                        discount_applied=discount_applied,  # Use discount_applied
                         is_free_product=True,
                     )
                     
@@ -1699,12 +1707,7 @@ def post_single(request):
 def error404(request):
     return render(request, 'front/pages/error-404.html')
 
-def faq(request):
-    header=FaqsPageHeader.objects.filter(is_active=True).first()
-    context={
-        "header":header,
-        }
-    return render(request, 'front/pages/faq.html',context)
+
 
 @login_required
 def myAccount(request):

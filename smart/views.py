@@ -1466,6 +1466,104 @@ def delete_contact_message(request, pk):
         messages.success(request, "Message deleted successfully.")
     return redirect('contact_messages')
 
+
+# Add this new view for marking as viewed
+@login_required(login_url="/admin-dashboard/login_home")
+def mark_message_viewed(request, pk):
+    if request.method == "POST":
+        message = get_object_or_404(ContactMessage, pk=pk)
+        if message.status == 'new':
+            message.status = 'viewed'
+            message.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+
+from django.core.mail import EmailMultiAlternatives
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.utils.html import strip_tags
+
+@login_required(login_url="/admin-dashboard/login_home")
+def reply_contact_message(request):
+    """
+    Handle admin reply to a contact message (with HTML editor & attachments)
+    """
+    if request.method != "POST":
+        messages.error(request, "Invalid request method.")
+        return redirect("contact_messages")
+
+    message_id = request.POST.get("message_id")
+    subject = (request.POST.get("subject") or "").strip()
+    html_body = (request.POST.get("body") or "").strip()
+    file = request.FILES.get("attachment")
+
+    if not message_id:
+        messages.error(request, "Message ID is required.")
+        return redirect("contact_messages")
+
+    contact_msg = get_object_or_404(ContactMessage, pk=message_id)
+    recipient_email = contact_msg.email
+
+    if not recipient_email:
+        messages.error(request, "Recipient email is missing.")
+        return redirect("contact_messages")
+
+    if not subject or not html_body:
+        messages.error(request, "Please provide both subject and message body.")
+        return redirect("contact_messages")
+
+    # Sender email
+    from_email = getattr(settings, "ADMIN_REPLY_EMAIL", None) or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    if not from_email:
+        messages.error(request, "Sender email not configured in settings.")
+        return redirect("contact_messages")
+
+    # Plain text fallback (for mail clients that block HTML)
+    text_body = strip_tags(html_body)
+
+    # Include footer for professionalism
+    footer_html = f"""
+        <br><br>
+        <hr>
+        <p style="font-size:13px;color:#555;">
+            This reply was sent in response to your message on <strong>{contact_msg.created_at.strftime('%Y-%m-%d %H:%M')}</strong>.<br>
+            Best regards,<br>
+            <strong>{from_email}</strong>
+        </p>
+    """
+    full_html_body = html_body + footer_html
+
+    try:
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=from_email,
+            to=[recipient_email],
+        )
+        email.attach_alternative(full_html_body, "text/html")
+
+        # If there's an attachment, add it
+        if file:
+            email.attach(file.name, file.read(), file.content_type)
+
+        email.send(fail_silently=False)
+         # 🆕 NEW: Update status to replied
+        contact_msg.status = 'replied'  # 🆕 NEW status update
+        contact_msg.save()  # 🆕 NEW save
+        messages.success(request, f"Reply successfully sent to {recipient_email}.")
+
+    except Exception as e:
+        messages.error(request, f"Failed to send email: {e}")
+
+    return redirect("contact_messages")
+
+
+
+
+
 @login_required
 def contactUs_location(request):
     locations = ContactLocation.objects.all()
@@ -2480,37 +2578,49 @@ def order_details(request, order_id):
             viewed_at=timezone.now()
         )
     
-    # Build order items with free/BOGO tags
+    # Build order items with free/BOGO tags and calculate correct subtotal
     order_items = []
+    calculated_subtotal = 0  # Initialize calculated subtotal
+    
     for vendor_order in order.vendor_orders.all():
         for item in vendor_order.items.all():
             item.total_price = item.final_price * item.quantity
             item.vendor = vendor_order.vendor
             
-            # Check if product is free or has BOGO/Free tag
+            # Initialize flags
             item.is_free = False
             item.is_bogo = False
             item.free_reason = ""
             
-            # Check if it's a free product (final_price = 0 or base_price = 0)
-            if item.final_price == 0 or item.base_price == 0:
+            # CRITICAL: A product is only FREE if the customer pays ৳0.00 for it
+            # Check if final_price (what customer actually pays per unit) is 0
+            if item.final_price == 0:
+                # This is truly free - customer pays nothing
                 item.is_free = True
-                item.free_reason = "Free Product"
-            
-            # Check if item is marked as free in order's free_product field
-            elif hasattr(order, 'free_product') and order.free_product:
-                if str(item.product.id) in str(order.free_product) or str(item.product.title) in str(order.free_product):
-                    item.is_free = True
-                    item.free_reason = "Free Gift"
-            
-            # Check if product has BOGO tag (but customer PAYS for BOGO product)
-            if hasattr(item, 'discount_applied') and item.discount_applied:
-                if 'BOGO' in str(item.discount_applied).upper() or 'BUY' in str(item.discount_applied).upper():
-                    item.is_bogo = True
-                    if not item.is_free:
-                        item.free_reason = "BOGO Offer"
+                
+                # Check if it's from order's free_product field
+                if hasattr(order, 'free_product') and order.free_product:
+                    if str(item.product.id) in str(order.free_product) or str(item.product.title) in str(order.free_product):
+                        item.free_reason = "Free Gift"
+                    else:
+                        item.free_reason = "Free Product"
+                else:
+                    item.free_reason = "Free Product"
+            else:
+                # Customer is paying for this item (even if discounted)
+                # Check if it's part of a BOGO offer
+                if hasattr(item, 'discount_applied') and item.discount_applied:
+                    discount_str = str(item.discount_applied).upper()
+                    if 'BOGO' in discount_str or 'BUY' in discount_str or 'GET ONE' in discount_str:
+                        item.is_bogo = True
+                
+                # Only add to subtotal if it's NOT free
+                calculated_subtotal += item.total_price
             
             order_items.append(item)
+
+    # Override the order subtotal with our calculated subtotal (excluding free products)
+    order.subtotal = calculated_subtotal
 
     context = {
         "breadcrumb": {"title": "Order Details", "parent": "Ecommerce", "child": "Order Details"},
@@ -2923,10 +3033,19 @@ def deliveryCharge(request):
 def invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
-    # Fetch related order items (through vendor_orders → items)
+    # Fetch related order items and calculate correct subtotal
     order_items = []
+    calculated_subtotal = 0
+    
     for vendor_order in order.vendor_orders.prefetch_related("items__product"):
-        order_items.extend(vendor_order.items.all())
+        for item in vendor_order.items.all():
+            # Only add to subtotal if it's NOT free (final_price > 0)
+            if item.final_price > 0:
+                calculated_subtotal += item.get_total_price()
+            order_items.append(item)
+
+    # Override the subtotal for the invoice
+    order.subtotal = calculated_subtotal
 
     context = {
         "order": order,

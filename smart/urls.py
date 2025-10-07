@@ -103,6 +103,11 @@ urlpatterns = [
 
     
     path('contact_messages/', views.contact_messages, name='contact_messages'),
+    path('contact-messages/<int:pk>/mark-viewed/', views.mark_message_viewed, name='mark_message_viewed'),
+    path('contact_messages/delete/<int:pk>/', views.delete_contact_message, name='delete_contact_message'),
+    path('contact-messages/reply/', views.reply_contact_message, name='reply_contact_message'),
+    
+    
     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
     path("contact_info/", views.contact_info, name="contact_info"),
     path("add_contact_info", views.add_contact_info, name="add_contact_info"),
