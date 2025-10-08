@@ -1216,7 +1216,7 @@ def order_success(request):
 
  
 def product_quickview(request, product_id):
-    product = get_object_or_404(Product, pk=product_id, publish_status=1)
+    product = get_object_or_404(Product, pk=product_id)
 
     # Prepare images (thumbnail first, then gallery images)
     images = []
