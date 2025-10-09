@@ -181,6 +181,12 @@ urlpatterns = [
     path('invoice/<int:order_id>/', views.invoice, name='invoice'),
 
     #invoice
+    #social link
+    path('social_icons_list', views.social_icons_list, name='social_icons_list'),
+    path('add/', views.add_social_icon, name='add_social_icon'),
+    path('update/<int:icon_id>/', views.update_social_icon, name='update_social_icon'),
+    path('delete/<int:icon_id>/', views.delete_social_icon, name='delete_social_icon'),
+    #social link
     
     
     path('products/create/', views.create_product, name='create_product'),

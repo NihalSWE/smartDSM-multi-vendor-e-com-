@@ -320,3 +320,28 @@ def site_logo_context(request):
     except Exception as e:
         print("Error in site_logo_context:", e)
         return {"site_logo": None}
+
+
+
+def social_icons_context(request):
+    """
+    Provide all active social icons for header/footer dynamically.
+    """
+    try:
+        # Get all social icons (optionally, you can add an 'active' flag in model)
+        social_icons = SocialIcon.objects.all()
+
+        # Transform into a simple structure for templates
+        icons = []
+        for icon in social_icons:
+            icons.append({
+                "title": icon.title,
+                "link": icon.link,
+                "icon_class": icon.icon,  # e.g., 'fab fa-facebook-f' or 'w-icon-facebook'
+            })
+
+        return {"social_icons": icons}
+
+    except Exception as e:
+        print("Error in social_icons_context:", e)
+        return {"social_icons": []}

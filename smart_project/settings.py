@@ -80,6 +80,7 @@ TEMPLATES = [
                 'frontend.context_processors.search_categories_context',
                 'frontend.context_processors.footer_contact_context',
                 'frontend.context_processors.site_logo_context',
+                'frontend.context_processors.social_icons_context',
                 'smart.context_processors.global_context',
             ],
         },

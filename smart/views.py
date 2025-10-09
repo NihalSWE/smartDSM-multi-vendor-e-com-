@@ -2860,9 +2860,112 @@ def mark_vendor_order_viewed(request):
     return JsonResponse({"status": "ok"})
 
 
+@login_required
+def social_icons_list(request):
+    """
+    View to display all social icons in the admin interface
+    """
+    social_icons = SocialIcon.objects.all().order_by('title')
+    
+    # Get ICON_CHOICES from the model
+    icon_choices = SocialIcon.ICON_CHOICES
+    
+    context = {
+        'social_icons': social_icons,
+        'icon_choices': icon_choices,
+        'page_title': 'Social Icons Management',
+    }
+    
+    return render(request, 'aboutus/sociallink.html', context)
 
+@login_required
+def add_social_icon(request):
+    """
+    View to add a new social icon
+    """
+    if request.method == 'POST':
+        try:
+            title = request.POST.get('title')
+            icon = request.POST.get('icon')
+            link = request.POST.get('link')
+            
+            # Validate required fields
+            if not all([title, icon, link]):
+                messages.error(request, 'All fields are required.')
+                return redirect('social_icons_list')
+            
+            # Create new social icon
+            social_icon = SocialIcon.objects.create(
+                title=title,
+                icon=icon,
+                link=link
+            )
+            
+            messages.success(request, f'Social icon "{title}" added successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error adding social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
 
+@login_required
+def update_social_icon(request, icon_id):
+    """
+    View to update an existing social icon
+    """
+    if request.method == 'POST':
+        try:
+            social_icon = get_object_or_404(SocialIcon, id=icon_id)
+            
+            title = request.POST.get('title')
+            icon = request.POST.get('icon')
+            link = request.POST.get('link')
+            
+            # Validate required fields
+            if not all([title, icon, link]):
+                messages.error(request, 'All fields are required.')
+                return redirect('social_icons_list')
+            
+            # Update social icon
+            social_icon.title = title
+            social_icon.icon = icon
+            social_icon.link = link
+            social_icon.save()
+            
+            messages.success(request, f'Social icon "{title}" updated successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
 
+@login_required
+def delete_social_icon(request, icon_id):
+    """
+    View to delete a social icon
+    """
+    if request.method == 'POST':
+        try:
+            social_icon = get_object_or_404(SocialIcon, id=icon_id)
+            icon_title = social_icon.title
+            
+            social_icon.delete()
+            
+            messages.success(request, f'Social icon "{icon_title}" deleted successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error deleting social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
 
 
 

@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load sass_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/dataTables.bootstrap5.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}">
+
+<style>
+    .custom-large-btn:hover{
+        background-color: #4a3dd9 !important;
+    }
+
+    .custom-delete-btn:hover{
+        background-color: #ff0000 !important;
+    }
+
+    .modal-body{
+        padding-top: 34px !important;
+    }
+
+    .success-message{
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message{
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .edit{
+        cursor: pointer;
+    }
+
+    .delete{
+        cursor: pointer;
+    }
+
+    .edit-icon{
+        cursor: pointer;
+        font-size: 18px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .edit-icon:hover{
+        transform: scale(1.15);
+        color: #0d6efd;
+    }
+
+    .delete-icon{
+        cursor: pointer;
+        font-size: 18px !important;
+        transition: 0.3s ease-in-out;
+    }
+
+    .delete-icon:hover{
+        transform: scale(1.15);
+        color: #dc3545;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        max-height: 200px;
+        opacity: 1;
+    }
+
+    /* Modal Styles */
+    #social-icons-admin .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border: none;
+        overflow: hidden;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #social-icons-admin .modal-header {
+        background: linear-gradient(135deg, #4a90e2, #357ABD);
+        color: white;
+        border-bottom: none;
+        padding: 1rem 1.5rem;
+        justify-content: space-between;
+    }
+
+    #social-icons-admin .modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    #social-icons-admin .close {
+        color: black;
+        background-color: transparent;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-shadow: none;
+        border: none;
+    }
+
+    #social-icons-admin .modal-body {
+        padding: 1.5rem 2rem;
+        font-size: 1rem;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    #social-icons-admin hr {
+        border-color: #ddd;
+        margin: 1rem 0;
+    }
+
+    #social-icons-admin .btn-close-modal {
+        background: #357ABD;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+
+    #social-icons-admin .btn-close-modal:hover {
+        background: #2a5d94;
+        color: #fff;
+    }
+
+    /* Action icons container */
+    .action {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .social-icon-preview {
+        font-size: 24px;
+        color: #4a90e2;
+        margin-right: 10px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4a90e2, #357ABD);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #357ABD, #2a5d94);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+
+<div id="social-icons-admin" class="container-fluid datatable-init">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <!-- CARD HEADER WITH ADD BUTTON -->
+                <div class="card-header pb-0 card-no-border">
+                    <div class="row justify-content-between align-items-center">
+                        <div class="col-md-6">
+                            <h4>Social Icons Management</h4>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                                <i class="fa fa-plus me-2"></i> Add Social Icon
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Display Messages -->
+                    {% if messages %}
+                    <div class="messages mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="table-responsive custom-scrollbar">
+                        <table class="display table-striped border" id="social-icons-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Title</th>
+                                    <th>Icon</th>
+                                    <th>Link</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for icon in social_icons %}
+                                    <tr data-id="{{ icon.id }}">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ icon.title }}</td>
+                                        <td>
+                                            <i class="{{ icon.icon }} social-icon-preview"></i>
+                                            {{ icon.get_icon_display }}
+                                        </td>
+                                        <td>
+                                            <a href="{{ icon.link }}" target="_blank" class="text-decoration-none">
+                                                {{ icon.link|truncatechars:50 }}
+                                            </a>
+                                        </td>
+                                        <td> 
+                                            <ul class="action"> 
+                                                <li class="edit">
+                                                    <span class="edit-icon-span">
+                                                        <i class="fa-regular fa-edit edit-icon"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editModal{{ icon.id }}"
+                                                        data-icon-id="{{ icon.id }}"></i>
+                                                    </span>
+                                                </li>
+                                                <li class="delete">
+                                                    <span class="delete-icon-span">
+                                                        <i class="fa-solid fa-trash-can delete-icon" 
+                                                        data-id="{{ icon.id }}"></i>
+                                                    </span>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fa fa-info-circle fa-2x mb-3"></i>
+                                                <p>No social icons found. Click "Add Social Icon" to create one.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modals -->
+{% for icon in social_icons %}
+<div class="modal fade" id="editModal{{ icon.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ icon.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel{{ icon.id }}">Edit {{ icon.title }}</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'update_social_icon' icon.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title{{ icon.id }}" class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" id="title{{ icon.id }}" value="{{ icon.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="icon{{ icon.id }}" class="form-label">Icon</label>
+                        <select name="icon" class="form-control" id="icon{{ icon.id }}" required>
+                            {% for icon_value, icon_display in icon.ICON_CHOICES %}
+                                <option value="{{ icon_value }}" {% if icon.icon == icon_value %}selected{% endif %}>
+                                    {{ icon_display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="link{{ icon.id }}" class="form-label">Link</label>
+                        <input type="url" name="link" class="form-control" id="link{{ icon.id }}" value="{{ icon.link }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel">Add Social Icon</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'add_social_icon' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" id="title" placeholder="Enter social platform name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="icon" class="form-label">Icon</label>
+                        <select name="icon" class="form-control" id="icon" required>
+                            <option value="">Select an icon</option>
+                            {% for icon_value, icon_display in icon_choices %}
+                                <option value="{{ icon_value }}">{{ icon_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="link" class="form-label">Link</label>
+                        <input type="url" name="link" class="form-control" id="link" placeholder="https://example.com" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Social Icon</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modals -->
+{% for icon in social_icons %}
+<div class="modal fade" id="editModal{{ icon.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ icon.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel{{ icon.id }}">Edit {{ icon.title }}</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'update_social_icon' icon.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title{{ icon.id }}" class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control" id="title{{ icon.id }}" value="{{ icon.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="icon{{ icon.id }}" class="form-label">Icon</label>
+                        <select name="icon" class="form-control" id="icon{{ icon.id }}" required>
+                            {% for icon_value, icon_display in icon_choices %}
+                                <option value="{{ icon_value }}" {% if icon.icon == icon_value %}selected{% endif %}>
+                                    {{ icon_display }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="link{{ icon.id }}" class="form-label">Link</label>
+                        <input type="url" name="link" class="form-control" id="link{{ icon.id }}" value="{{ icon.link }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-toggle-wrapper text-start dark-sign-up">
+                <div class="modal-body">
+                    <div class="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
+                            <path fill="#ce2222" d="M10 5h4a2 2 0 1 0-4 0M8.5 5a3.5 3.5 0 1 1 7 0h5.75a.75.75 0 0 1 0 1.5h-1.32l-1.17 12.111A3.75 3.75 0 0 1 15.026 22H8.974a3.75 3.75 0 0 1-3.733-3.389L4.07 6.5H2.75a.75.75 0 0 1 0-1.5zm2 4.75a.75.75 0 0 0-1.5 0v7.5a.75.75 0 0 0 1.5 0zM14.25 9a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 1.5 0v-7.5a.75.75 0 0 0-.75-.75" stroke-width="0.8" stroke="#ce2222" />
+                        </svg>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="mb-3 text-center">Are you sure?</h4>
+                        <p class="mb-4 text-center">This action will permanently delete this social icon.</p>
+                        <div class="card-footer text-end">
+                            <div class="d-flex justify-content-center gap-2">
+                            <button id="confirm-delete" class="btn btn-danger">Yes</button>
+                            <button class="btn btn-secondary close-btn" type="button" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %} 
+<script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables1.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/dataTables.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/datatable/datatables/datatable.custom2.js' %}"></script>
+<script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
+<script src="{% static 'assets/js/form-validation-custom.js' %}"></script>
+<script src="{% static 'assets/js/bookmark/jquery.validate.min.js' %}"></script>
+<script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+
+<script>
+    // Initialize DataTable with proper configuration
+    $(document).ready(function() {
+        // Check if DataTable is already initialized and destroy it first
+        if ($.fn.DataTable.isDataTable('#social-icons-table')) {
+            $('#social-icons-table').DataTable().destroy();
+        }
+        
+        // Initialize DataTable
+        var table = $('#social-icons-table').DataTable({
+            "pageLength": 10,
+            "language": {
+                "paginate": {
+                    "previous": "<i class='fa fa-chevron-left'></i>",
+                    "next": "<i class='fa fa-chevron-right'></i>"
+                },
+                "emptyTable": "No social icons available"
+            },
+            "columnDefs": [
+                {
+                    "targets": [0], // # column
+                    "orderable": false,
+                    "searchable": false
+                },
+                {
+                    "targets": [4], // Action column
+                    "orderable": false,
+                    "searchable": false
+                }
+            ],
+            "order": [[1, "asc"]] // Order by Title column ascending
+        });
+    });
+
+    // Delete functionality
+    let pendingDeleteId = null;
+
+    // Open delete modal
+    $(document).on("click", ".delete-icon", function() {
+        pendingDeleteId = this.dataset.id;
+        new bootstrap.Modal($("#deleteConfirmationModal")[0]).show();
+    });
+
+    // Confirm delete
+    $("#confirm-delete").on("click", function() {
+        if (!pendingDeleteId) return;
+        
+        // Create form and submit via POST
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = "{% url 'delete_social_icon' 0 %}".replace('0', pendingDeleteId);
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        
+        document.body.appendChild(form);
+        form.submit();
+    });
+
+    // Close modal on Cancel
+    $(document).on("click", ".close-btn", function() {
+        const modalEl = document.getElementById("deleteConfirmationModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+        document.querySelectorAll(".modal-backdrop").forEach(bg => bg.remove());
+    });
+
+    // Auto-close alerts after 5 seconds
+    $(document).ready(function() {
+        setTimeout(function() {
+            $('.alert').alert('close');
+        }, 5000);
+    });
+</script>
+{% endblock %}

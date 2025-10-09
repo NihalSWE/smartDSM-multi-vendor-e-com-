@@ -1511,7 +1511,78 @@ class SiteLogo(models.Model):
         
         
         
-        
+class SocialIcon(models.Model):
+    # Font Awesome icon constants
+    FACEBOOK = "fab fa-facebook-f"
+    TWITTER = "fab fa-x-twitter"
+    INSTAGRAM = "fab fa-instagram"
+    LINKEDIN = "fab fa-linkedin-in"
+    YOUTUBE = "fab fa-youtube"
+    WHATSAPP = "fab fa-whatsapp"
+    TIKTOK = "fab fa-tiktok"
+    PINTEREST = "fab fa-pinterest"
+    SNAPCHAT = "fab fa-snapchat-ghost"
+    TELEGRAM = "fab fa-telegram-plane"
+    REDDIT = "fab fa-reddit-alien"
+    GITHUB = "fab fa-github"
+    DRIBBBLE = "fab fa-dribbble"
+    BEHANCE = "fab fa-behance"
+    DISCORD = "fab fa-discord"
+    MEDIUM = "fab fa-medium-m"
+    STACKOVERFLOW = "fab fa-stack-overflow"
+    VIMEO = "fab fa-vimeo-v"
+    SLACK = "fab fa-slack"
+    FLICKR = "fab fa-flickr"
+    TUMBLR = "fab fa-tumblr"
+    YELP = "fab fa-yelp"
+    SOUND_CLOUD = "fab fa-soundcloud"
+    DEV_TO = "fab fa-dev"
+    CODEPEN = "fab fa-codepen"
+
+    ICON_CHOICES = [
+        (FACEBOOK, "Facebook"),
+        (TWITTER, "Twitter"),
+        (INSTAGRAM, "Instagram"),
+        (LINKEDIN, "LinkedIn"),
+        (YOUTUBE, "YouTube"),
+        (WHATSAPP, "WhatsApp"),
+        (TIKTOK, "TikTok"),
+        (PINTEREST, "Pinterest"),
+        (SNAPCHAT, "Snapchat"),
+        (TELEGRAM, "Telegram"),
+        (REDDIT, "Reddit"),
+        (GITHUB, "GitHub"),
+        (DRIBBBLE, "Dribbble"),
+        (BEHANCE, "Behance"),
+        (DISCORD, "Discord"),
+        (MEDIUM, "Medium"),
+        (STACKOVERFLOW, "Stack Overflow"),
+        (VIMEO, "Vimeo"),
+        (SLACK, "Slack"),
+        (FLICKR, "Flickr"),
+        (TUMBLR, "Tumblr"),
+        (YELP, "Yelp"),
+        (SOUND_CLOUD, "SoundCloud"),
+        (DEV_TO, "Dev.to"),
+        (CODEPEN, "CodePen"),
+    ]
+
+    title = models.CharField(max_length=100)
+    icon = models.CharField(
+        max_length=50,
+        choices=ICON_CHOICES,
+        default=FACEBOOK,
+        help_text="Select the icon for the social platform"
+    )
+    link = models.URLField(max_length=255)
+
+    class Meta:
+        verbose_name = "Social Icon"
+        verbose_name_plural = "Social Icons"
+
+    def __str__(self):
+        return self.title
+  
         
         
         

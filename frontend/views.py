@@ -1225,8 +1225,27 @@ def product_quickview(request, product_id):
     gallery_images = [request.build_absolute_uri(img.image.url) for img in product.images.all()]
     images.extend(gallery_images)
 
-    # Calculate price and discount
-    final_price, discount_value, discount_type = get_discounted_price(product)
+     # ==== DISCOUNT LOGIC (same as product_details) ====
+    discount = product.discounts.first()
+
+    final_price = product.selling_price
+    discount_value = None
+    discount_type = None
+
+    if discount:
+        discount_type = discount.discount_type
+        if discount_type == 'fixed':
+            final_price = product.selling_price - discount.discount_price
+            discount_value = discount.discount_price
+        elif discount_type == 'percentage':
+            discount_percent = discount.percentage / 100
+            discount_value = product.selling_price * discount_percent
+            final_price = product.selling_price - discount_value
+        elif discount_type == 'bogo':
+            # BOGO doesn’t affect price directly
+            discount_value = None
+
+    # ==== END DISCOUNT LOGIC ====
 
     data = {
         'id': product.id,

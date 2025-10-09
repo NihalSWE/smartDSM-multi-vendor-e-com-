@@ -51,11 +51,67 @@
                         
 
                                 <div class="social-icons social-icons-colored">
-                                    <a href="#" class="social-icon social-facebook w-icon-facebook"></a>
-                                    <a href="#" class="social-icon social-instagram w-icon-instagram"></a>
-                                    <a href="#" class="social-icon social-youtube w-icon-youtube"></a>
-                                    
+                                    {% for icon in social_icons %}
+                                        <a {% if icon.title == 'Youtube' %}style="background:red;"{% endif %} href="{{ icon.link }}" class="social-icon" title="{{ icon.title }}" target="_blank">
+                                            <i class="{{ icon.icon_class }}"></i>
+                                        </a>
+                                    {% endfor %}
                                 </div>
+                                <style>
+                                    .social-icons {
+                                        display: flex;
+                                        {% comment %} gap: 10px; {% endcomment %}
+                                        align-items: center;
+                                    }
+                                    
+                                    .social-icons .social-icon {
+                                        width: 40px;
+                                        height: 40px;
+                                        border-radius: 50%;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        {% comment %} background-color: #4a90e2; {% endcomment %}
+                                        color: white;
+                                        text-decoration: none;
+                                        transition: all 0.3s ease;
+                                    }
+                                    
+                                    .social-icons .social-icon:hover {
+                                        background-color: #357ABD;
+                                        transform: scale(1.1);
+                                    }
+                                    
+                                    .social-icons .social-icon i {
+                                        font-size: 18px;
+                                    }
+                                    
+                                    /* Specific colors for each platform (optional) */
+                                    .social-icons a[title="Facebook"] {
+                                        background-color: #3b5998;
+                                    }
+                                    
+                                    .social-icons a[title="Instagram"] {
+                                        background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+                                    }
+                                    
+                                    .social-icons a[title="YouTube"] {
+                                        background-color: #ff0000 !important;
+                                    }
+                                    
+                                    .social-icons a[title="LinkedIn"] {
+                                        background-color: #0077b5;
+                                    }
+                                    
+                                    .social-icons a[title="Twitter"] {
+                                        background-color: #000000;
+                                    }
+                                    
+                                    .social-icons a[title="WhatsApp"] {
+                                        background-color: #25d366;
+                                    }
+                                    </style>
+                                
                             </div>
                         </div>
                     </div>
