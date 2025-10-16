@@ -124,10 +124,10 @@
                           </p>
                         </td>
                         <td>
-                          <a href="tel:{{ product_data.customer.phone_number }}">
-                            {{ product_data.customer.phone_number }}
+                          <a href="tel:{{ order.shipping_address.phone_number }}">
+                              {{ order.shipping_address.phone_number }}
                           </a>
-                        </td>
+                      </td>
                         <td>
                           <span class="badge bg-secondary">{{ product_data.item.quantity }}</span>
                         </td>

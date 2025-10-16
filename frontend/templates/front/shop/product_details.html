@@ -211,6 +211,36 @@
                                             <span></span>
                                         </div> {% endcomment %}
 
+
+                                        <!-- Add this to your existing product_details.html template -->
+{% comment %} <div class="social-links-wrapper mt-4">
+    <div class="social-links">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'product_landing_checkout' product.slug %}" 
+               class="btn btn-primary btn-sm"
+               target="_blank"
+               style="text-decoration: none;">
+               <i class="w-icon-share me-2"></i>
+               Open Landing Page
+            </a>
+            
+            <div class="input-group" style="max-width: 300px;">
+                <input type="text" 
+                       class="form-control form-control-sm" 
+                       value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'product_landing_checkout' product.slug %}" 
+                       readonly
+                       id="landingUrlInput">
+                <button class="btn btn-outline-primary btn-sm btn-copy-url" type="button">
+                    <i class="far fa-copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div> {% endcomment %}
+
+
+
+
                                         <div class="fix-bottom product-sticky-content sticky-content">
                                             <div class="product-form container">
                                                 <div class="product-qty-form">
@@ -268,7 +298,7 @@
                                         <!-- === END BOGO SECTION === -->
 
 
-                                        <div class="social-links-wrapper">
+                                        {% comment %} <div class="social-links-wrapper">
                                             <div class="social-links">
                                                 <div class="social-icons social-no-color border-thin">
                                                     <a href="#" class="social-icon social-facebook w-icon-facebook"></a>
@@ -276,7 +306,7 @@
                                                    
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> {% endcomment %}
                                     </div>
                                 </div>
                             </div>

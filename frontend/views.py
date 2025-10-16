@@ -579,6 +579,10 @@ def save_vendor(request):
         
 
 def product_details(request, slug):
+     # 🟩 Step 1: If query params exist, redirect to landing page
+    if request.GET:
+        return redirect('product_landing_checkout', slug=slug)
+    
     product = get_object_or_404(Product, slug=slug)
     images = product.images.all().order_by('position')
     
@@ -983,8 +987,7 @@ def place_order(request):
         # For now, skipping district and thana - set None
         district = request.POST.get('district', '').strip()
         thana = request.POST.get('thana', '').strip()
-
-        print('saving adresss*****************************************')
+        
         # Create Address
         address = Address.objects.create(
             user=user,
@@ -996,8 +999,10 @@ def place_order(request):
             phone_number=phone,
             city=city,
             is_default=True,
+            first_name=firstname if not user else None,  # Save for guest users
+            last_name=lastname if not user else None,    # Save for guest users
         )
-
+        print(f"Address created: {firstname} {lastname}, Phone: {phone}")
         cart = request.session.get("cart", {})
         if not cart:
             return redirect('cart')
@@ -1098,7 +1103,7 @@ def place_order(request):
                 }
             )
             
-            print('saving order -----------------------------------')
+            
 
             OrderItem.objects.create(
             vendor_order=vendor_order,
@@ -1550,9 +1555,90 @@ def delete_address(request):
 
 
 
+#landing page view 
 
+def product_landing_checkout(request, slug):
+    """
+    Landing page that shows product details and checkout form on the same page
+    """
+    product = get_object_or_404(Product, slug=slug)
+    images = product.images.all().order_by('position')
+    
+    # Get the first discount for this product
+    discount = product.discounts.first()
+    
+    # Calculate final price
+    final_price = product.selling_price
+    if discount:
+        if discount.discount_type == 'fixed':
+            final_price = product.selling_price - discount.discount_price
+        elif discount.discount_type == 'percentage':
+            discount_percent = discount.percentage / 100
+            final_price = product.selling_price - (product.selling_price * discount_percent)
+    
+    # Get BOGO product if exists
+    bogo_product = None
+    if discount and discount.discount_type == 'bogo' and discount.free_product:
+        bogo_product = discount.free_product
+    
+    # AUTO ADD PRODUCT TO CART when landing page loads
+    if request.method == 'GET':
+        # CLEAR CART FIRST to ensure only current product is in cart
+        request.session["cart"] = {}
+        
+        # Add current product to cart automatically
+        now = timezone.now()
+        original_price = product.selling_price
+        discount_amount = Decimal("0.00")
 
+        discounts = product.discounts.filter(active=True).filter(
+            (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
+            (Q(end_date__gte=now) | Q(end_date__isnull=True))
+        )
 
+        if discounts.exists():
+            discount_obj = discounts.first()
+            if discount_obj.discount_type == ProductDiscount.FIXED and discount_obj.discount_price is not None:
+                discount_amount = discount_obj.discount_price
+            elif discount_obj.discount_type == ProductDiscount.PERCENT and discount_obj.percentage is not None:
+                discount_amount = original_price * (discount_obj.percentage / Decimal("100"))
+
+        final_price_cart = max(original_price - discount_amount, Decimal("0.00"))
+
+        # Create fresh cart with only this product
+        cart = {
+            str(product.id): {
+                "title": product.title,
+                "price": str(final_price_cart.quantize(Decimal("0.01"))),
+                "discount": str(discount_amount.quantize(Decimal("0.01"))),
+                "quantity": 1,  # Auto add 1 quantity
+                "thumbnail": product.thumbnail_image.url if product.thumbnail_image else "",
+            }
+        }
+
+        request.session["cart"] = cart
+        request.session.modified = True
+    
+    # Get cart context for checkout section
+    cart_data = cart_context(request)
+    
+    context = {
+        'product': product,
+        'images': images,
+        'discount': discount,
+        'final_price': final_price,
+        'bogo_product': bogo_product,
+        
+        # Cart/checkout data - Pass all cart context data
+        'cart_items': cart_data.get("cart_items", []),
+        'cart_count': cart_data.get("cart_count", 0),
+        'subtotal': cart_data.get("subtotal", Decimal("0.00")),
+        'discount_total': cart_data.get("discount_total", Decimal("0.00")),
+        'grand_total': cart_data.get("grand_total", Decimal("0.00")),
+        'has_own_products': cart_data.get("has_own_products", False),
+    }
+    
+    return render(request, 'front/landing/product_landing_checkout.html', context)
 
 
 

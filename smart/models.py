@@ -1131,9 +1131,11 @@ class Address(models.Model):
     phone_number = models.CharField(max_length=20)
     city = models.CharField(max_length=50, blank=True, null=True)
     is_default = models.BooleanField(default=False)
+    first_name = models.CharField(max_length=100, blank=True, null=True)  # ADD THIS
+    last_name = models.CharField(max_length=100, blank=True, null=True)   # ADD THIS
 
     def __str__(self):
-        return f"{self.title} - {self.street_address}, {self.thana}, {self.district}"
+        return f"{self.title} - {self.first_name} {self.last_name} ,{self.street_address}, {self.thana}, {self.district}"
 
 # ----------------------------------
 # Order Models

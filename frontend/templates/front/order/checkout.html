@@ -59,13 +59,16 @@
             <div class="col-xs-6">
               <label>Phone Number *</label>
               <input
-                type="number"
+                type="tel"
                 class="form-control form-control-md"
-                name="email" style="
-                border: 1px solid #747474;
-            "
+                name="phone" 
+                pattern="01[3-9]\d{8}"
+                title="Please enter a valid 11-digit Bangladesh phone number (e.g., 01712345678)"
+                maxlength="11"
+                style="border: 1px solid #747474;"
                 required
               />
+              <small id="phone-error" style="color: red; font-size: 12px; display: none;">Must be exactly 11 digits starting with 013-019</small>
             </div>
           </div>
           <div class="row gutter-sm">
@@ -275,6 +278,28 @@
 <script>
 $(document).ready(function () {
     $('.select2').select2();
+
+    // Phone number validation
+    $('input[name="phone"]').on('input', function() {
+      const phone = $(this).val();
+      const bdPhoneRegex = /^01[3-9]\d{8}$/;
+      const errorElement = $('#phone-error');
+      
+      // Limit to 11 digits
+      if (phone.length > 11) {
+          $(this).val(phone.slice(0, 11));
+          return;
+      }
+      
+      if (phone.length === 11 && !bdPhoneRegex.test(phone)) {
+          this.setCustomValidity('Please enter a valid Bangladesh phone number (e.g., 01712345678)');
+          errorElement.show();
+      } else {
+          this.setCustomValidity('');
+          errorElement.hide();
+      }
+  });
+    
 
     const districtSelect = $("#district");
     const thanaSelect = $("#thana");

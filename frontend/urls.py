@@ -80,6 +80,9 @@ urlpatterns = [
     path('product_search/', views.product_search, name='product_search'),
     path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
     
+    #landing page
+    path('product-landing/<slug:slug>/', views.product_landing_checkout, name='product_landing_checkout'),
+    
 ]
 
 

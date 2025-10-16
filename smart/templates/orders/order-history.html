@@ -135,18 +135,20 @@
                           </td>
                           <td> 
                             <p class="c-o-light">
-                              {% if order.customer %}
-                                {{ order.customer.get_full_name|default:order.customer.email }}
-                              {% else %}
-                                Guest User
-                              {% endif %}
+                                {% if order.customer %}
+                                    {{ order.customer.username|default:order.customer.email }}
+                                {% elif order.shipping_address and order.shipping_address.first_name %}
+                                    {{ order.shipping_address.first_name }} {{ order.shipping_address.last_name }}
+                                {% else %}
+                                    Guest User
+                                {% endif %}
                             </p>
-                          </td>
+                        </td>
                           <td>
-                            <a href="tel:{{ order.customer.phone_number }}">
-                              {{ order.customer.phone_number }}
+                            <a href="tel:{{ order.shipping_address.phone_number }}">
+                                {{ order.shipping_address.phone_number }}
                             </a>
-                          </td>
+                        </td>
                           
                           <td> 
                             <p class="c-o-light">${{ order.grand_total }}</p>

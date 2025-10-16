@@ -1,0 +1,720 @@
+{% extends "front/base.html" %}
+{% load static %}
+
+{% block custom_css %}
+<!-- Vendor CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'front/assets/vendor/fontawesome-free/css/all.min.css'%}">
+<link rel="stylesheet" type="text/css" href="front/assets/vendor/animate/animate.min.css">
+
+<!-- Plugin CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'front/assets/vendor/magnific-popup/magnific-popup.min.css'%}">
+<link rel="stylesheet" href="{% static 'front/assets/vendor/swiper/swiper-bundle.min.css'%}">
+<link rel="stylesheet" type="text/css" href="{% static 'front/assets/vendor/photoswipe/photoswipe.min.css'%}">
+<link rel="stylesheet" type="text/css" href="{% static 'front/assets/vendor/photoswipe/default-skin/default-skin.min.css'%}">
+<!-- Swiper's CSS -->
+<link rel="stylesheet" href="{% static 'front/assets/vendor/swiper/swiper-bundle.min.css'%}">
+
+<!-- Default CSS -->
+<link rel="stylesheet" type="text/css" href="{% static 'front/assets/css/style.min.css'%}">
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<style>
+.embed-responsive {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+.embed-responsive::before {
+    display: block;
+    content: "";
+}
+
+.embed-responsive-16by9::before {
+    padding-top: 56.25%;
+}
+
+.embed-responsive-item {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+}
+
+.video-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Select2 Customization */
+.select2-container--default .select2-selection--single {
+    min-height: 4.4rem;
+    padding: 6px;
+    border: 1px solid #747474 !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    top: 8px;
+}
+
+/* Checkout Section Styling */
+.checkout-section {
+    background: white;
+    padding: 30px 0;
+    margin-top: 30px;
+    border-top: 1px solid #e0e0e0;
+}
+</style>
+{% endblock custom_css %}
+
+{% block content %}
+<!-- Start of Breadcrumb -->
+<nav class="breadcrumb-nav container">
+    <ul class="breadcrumb bb-no">
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li>Products</li>
+    </ul>
+</nav>
+<!-- End of Breadcrumb -->
+
+<!-- Start of Page Content -->
+<div class="page-content">
+    <div class="container">
+        <div class="row gutter-lg">
+            <div class="main-content">
+                <div class="product product-single row">
+                    <div class="col-md-6 mb-6">
+                        <div class="product-gallery product-gallery-sticky">
+                            <div class="swiper-container product-single-swiper swiper-theme nav-inner" data-swiper-options="{
+                                'navigation': {
+                                    'nextEl': '.swiper-button-next',
+                                    'prevEl': '.swiper-button-prev'
+                                }
+                            }">
+                                <div class="swiper-wrapper row cols-1 gutter-no">
+                                    <!-- Main thumbnail image -->
+                                    <div class="swiper-slide">
+                                        <figure class="product-image">
+                                            <img src="{{ product.thumbnail_image.url }}"
+                                                data-zoom-image="{{ product.thumbnail_image.url }}"
+                                                alt="{{ product.title }}" width="800" height="900">
+                                        </figure>
+                                    </div>
+                                    
+                                    <!-- Additional gallery images -->
+                                    {% for image in images %}
+                                        <div class="swiper-slide">
+                                            <figure class="product-image">
+                                                <img src="{{ image.image.url }}"
+                                                    data-zoom-image="{{ image.image.url }}"
+                                                    alt="{{ product.title }}" width="800" height="900">
+                                            </figure>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="swiper-button-next"></button>
+                                <button class="swiper-button-prev"></button>
+                                <a href="#" class="product-gallery-btn product-image-full"><i class="w-icon-zoom"></i></a>
+                            </div>
+                            <div class="product-thumbs-wrap swiper-container" data-swiper-options="{
+                                'navigation': {
+                                    'nextEl': '.swiper-button-next',
+                                    'prevEl': '.swiper-button-prev'
+                                }
+                            }">
+                                <div class="product-thumbs swiper-wrapper row cols-4 gutter-sm">
+                                    <!-- Thumbnail for main image -->
+                                    <div class="product-thumb swiper-slide">
+                                        <img src="{{ product.thumbnail_image.url }}"
+                                            alt="{{ product.title }}" width="800" height="900">
+                                    </div>
+                                    
+                                    <!-- Thumbnails for additional images -->
+                                    {% for image in images %}
+                                    <div class="product-thumb swiper-slide">
+                                        <img src="{{ image.image.url }}"
+                                            alt="{{ product.title }}" width="800" height="900">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="swiper-button-next"></button>
+                                <button class="swiper-button-prev"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4 mb-md-6">
+                        <div class="product-details" data-sticky-options="{'minWidth': 767}">
+                            <h1 class="product-title">{{ product.title }}</h1>
+                           
+                            <div class="product-bm-wrapper">
+                                <div class="product-meta">
+                                    <div class="product-categories"> Model: <span class="product-category">{{ product.model }}</span></div>
+                                    <div class="product-categories">
+                                        Category:
+                                        <span class="product-category"><a href="#">{{ product.category }}</a></span>
+                                    </div>
+                                    <div class="product-sku">
+                                        SKU: <span>{{ product.sku }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="product-divider">
+
+                            <div class="product-price">
+                                {% if discount and discount.discount_type != 'bogo' %}
+                                    <!-- Show discounted price -->
+                                    <del class="old-price" style="color:red">TK.{{ product.selling_price }}</del>
+                                    <ins class="new-price">TK.{{ product.get_discounted_price }}</ins> 
+                                {% else %}
+                                    <!-- Show regular price if no discount -->
+                                    <ins class="new-price">TK.{{ product.selling_price }}</ins>
+                                {% endif %}
+                            </div>
+
+                            <div class="ratings-container">
+                                <div class="ratings-full">
+                                    <span class="ratings" style="width: 80%;"></span>
+                                    <span class="tooltiptext tooltip-top"></span>
+                                </div>
+                                <a href="#product-tab-reviews" class="rating-reviews scroll-to">(3
+                                    Reviews)</a>
+                            </div>
+
+                            <div class="product-short-desc">
+                                <ul class="list-type-check list-style-none">
+                                    <li>{{ product.short_description|safe }}</li>
+                                    
+                                </ul>
+                            </div>
+
+                            <hr class="product-divider">
+
+                            <!-- Quantity Controls Section - EXACTLY like product details page -->
+                            <div class="fix-bottom product-sticky-content sticky-content">
+                                <div class="product-form container">
+                                    <div class="product-qty-form">
+                                        <div class="input-group">
+                                            <input class="quantity form-control" type="number" min="1" max="10000000" 
+                                                   id="quantityInput" value="{{ cart_items.0.quantity|default:1 }}" 
+                                                   data-product-id="{{ product.id }}">
+                                            <button class="quantity-plus w-icon-plus"></button>
+                                            <button class="quantity-minus w-icon-minus"></button>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'product_details' product.slug %}" class="btn btn-outline btn-primary">
+                                        <i class="w-icon-eye"></i>
+                                        <span>View Product Details</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- BOGO Offer Section -->
+                            {% if bogo_product %}
+                            <a href="{% url 'product_details' bogo_product.slug %}" style="text-decoration: none; color: inherit; display: block;">
+                                <div class="bogo-offer" style="display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 1px solid #799b5a;">
+                                    <div style="font-size: 22px; color: #28a745;">🎁 FREE:</div>
+                                    
+                                    {% if bogo_product.thumbnail_small %}
+                                        <img src="{{ bogo_product.thumbnail_small.url }}" 
+                                             alt="{{ bogo_product.title }}"
+                                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; transition: transform 0.3s ease;">
+                                    {% elif bogo_product.thumbnail_image %}
+                                        <img src="{{ bogo_product.thumbnail_image.url }}" 
+                                             alt="{{ bogo_product.title }}"
+                                             style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; transition: transform 0.3s ease;">
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <strong style="font-size: 20px;">{{ bogo_product.title }}</strong>
+                                        {% if bogo_product.model %}
+                                            <div style="font-size: 12px; color: #666;">Model: {{ bogo_product.model }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                            
+                            <style>
+                                .bogo-offer:hover {
+                                    background: #e9ecef !important;
+                                    border-color: #28a745 !important;
+                                    transform: translateY(-2px);
+                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                                }
+                                .bogo-offer:hover img {
+                                    transform: scale(1.1);
+                                }
+                            </style>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End of Page Content -->
+
+<!-- Checkout Section -->
+<section class="checkout-section">
+    <div class="container">
+        <form class="form checkout-form" action="{% url 'place_order' %}" method="post">
+            {% csrf_token %}
+            <div class="row mb-9">
+                <div class="col-lg-7 pr-lg-4 mb-4">
+                    <h3 class="title billing-title text-uppercase ls-10 pt-1 pb-3 mb-0">
+                        Billing Details
+                    </h3>
+                    <div class="row gutter-sm">
+                        <div class="col-xs-6">
+                            <label>Email address</label>
+                            <input
+                                type="email"
+                                class="form-control form-control-md"
+                                name="email" style="border: 1px solid #747474;"
+                            />
+                        </div>
+                        <div class="col-xs-6">
+                            <label>Phone Number *</label>
+                            <input
+                                type="number"
+                                class="form-control form-control-md"
+                                name="email" style="border: 1px solid #747474;"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div class="row gutter-sm">
+                        <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>First name *</label>
+                                <input
+                                    type="text"
+                                    class="form-control form-control-md"
+                                    name="firstname" style="border: 1px solid #747474;"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>Last name *</label>
+                                <input
+                                    type="text"
+                                    class="form-control form-control-md"
+                                    name="lastname" style="border: 1px solid #747474;"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row gutter-sm">
+                        <div class="form-group col-6 mb-5">
+                            <label>District *</label>
+                            <select
+                                id="district"
+                                name="district"
+                                class="form-control form-control-md select2" style="border: 1px solid #747474;"
+                                required
+                            >
+                                <option value="">Select District</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-6 mb-5">
+                            <label>Thana / Upazila *</label>
+                            <select
+                                id="thana"
+                                name="thana"
+                                class="form-control form-control-md select2" style="border: 1px solid #747474;"
+                                required
+                            >
+                                <option value="">Select Thana</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group mb-5">
+                        <label>Street address *</label>
+                        <input
+                            type="text"
+                            placeholder="House number and street name"
+                            class="form-control form-control-md mb-2"
+                            name="street-address-1" style="border: 1px solid #747474;"
+                            required
+                        />
+                    </div>
+                    <div class="row gutter-sm">
+                        <div class="form-group col-6">
+                            <label>Apartment, suite, unit, etc. (optional)</label>
+                            <input
+                                type="text"
+                                placeholder="Apartment, suite, unit, etc. (optional)"
+                                class="form-control form-control-md"
+                                name="street-address-2"
+                            />
+                        </div>
+                        <div class="form-group col-6">
+                            <label>ZIP</label>
+                            <input
+                                type="text"
+                                class="form-control form-control-md"
+                                name="zip"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 mb-4 sticky-sidebar-wrapper">
+                    <div class="order-summary-wrapper sticky-sidebar">
+                        <h3 class="title text-uppercase ls-10">Your Order</h3>
+                        <div class="order-summary">
+                            <table class="order-table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2"><b>Product</b></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartItemsContainer">
+                                    {% for item in cart_items %}
+                                    <tr class="bb-no">
+                                        <td class="product-name">
+                                            {{ item.name }} <i class="fas fa-times"></i>
+                                            <span class="product-quantity">{{ item.quantity }}</span>
+                                            {% if item.bogo_title %}
+                                            <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                                                <span style="font-size: 13px"> {{ item.bogo_title }}</span>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="product-total">
+                                            ৳ {{ item.subtotal|floatformat:2 }}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr class="bb-no">
+                                        <td class="product-name" colspan="2">
+                                            No items in cart. Please add the product to cart first.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    
+                                    {% if cart_items %}
+                                    <tr class="cart-subtotal bb-no">
+                                        <td><b>Subtotal</b></td>
+                                        <td><b>৳<span id="subtotalAmount">{{ subtotal|floatformat:2 }}</span></b></td>
+                                    </tr>
+                                    <tr class="cart-subtotal bb-no">
+                                        <td><b>Discount</b></td>
+                                        <td><b>৳<span id="discountAmount">{{ discount_total|floatformat:2 }}</span></b></td>
+                                    </tr>
+                                    <tr class="shipping-cost bb-no">
+                                        <td><b>Shipping</b></td>
+                                        <td><b>৳<span id="shipping_cost">0.00</span></b></td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                                <tfoot>
+                                    {% if cart_items %}
+                                    <tr class="order-total">
+                                        <th><b>Total</b></th>
+                                        <td><b>৳<span id="cart_total">{{ grand_total|floatformat:2 }}</span></b></td>
+                                    </tr>
+                                    {% endif %}
+                                </tfoot>
+                            </table>
+                            
+                            {% if cart_items %}
+                            <div class="payment-methods" id="payment_method">
+                                <h4 class="title font-weight-bold ls-25 pb-0 mb-1">
+                                    Payment Methods
+                                </h4>
+                                <div class="accordion payment-accordion">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <a href="#cash-on-delivery" class="collapse">Direct Bank Transfer</a>
+                                        </div>
+                                        <div id="cash-on-delivery" class="card-body expanded">
+                                            <p class="mb-0">
+                                                Make your payment directly into our bank account. Please
+                                                use your Order ID as the payment reference. Your order
+                                                will not be shipped until the funds have cleared in our
+                                                account.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <a href="#delivery" class="expand">Cash on delivery</a>
+                                        </div>
+                                        <div id="delivery" class="card-body collapsed">
+                                            <p class="mb-0">Pay with cash upon delivery.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if has_own_products %}
+                            <div style="background-color: rgba(255, 0, 0, 0.1); color: red; padding: 10px; border-radius: 5px; margin-top: 15px;">
+                                You have your own products in the cart. Please remove them to proceed to checkout.
+                            </div>
+                            {% elif cart_items %}
+                            <div class="form-group place-order pt-6">
+                                <button type="submit" class="btn btn-dark btn-block btn-rounded">
+                                    Place Order
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="form-group place-order pt-6">
+                                <button type="button" class="btn btn-secondary btn-block btn-rounded" disabled>
+                                    Add Product to Cart First
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock content %}
+
+{% block custom_js %}
+<!-- Plugin JS File -->
+<script data-cfasync="false" src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script src="{% static 'front/assets/vendor/jquery/jquery.min.js'%}"></script>
+<script src="{% static 'front/assets/vendor/sticky/sticky.js'%}"></script>
+<script src="{% static 'front/assets/vendor/jquery.plugin/jquery.plugin.min.js'%}"></script>
+<script src="{% static 'front/assets/vendor/imagesloaded/imagesloaded.pkgd.min.js'%}"></script>
+<script src="{% static 'front/assets/vendor/magnific-popup/jquery.magnific-popup.min.js'%}"></script>
+<script src="{% static 'front/assets/vendor/swiper/swiper-bundle.min.js'%}"></script>
+<script src="{% static 'front/assets/vendor/zoom/jquery.zoom.js'%}"></script>
+<script src="{% static 'front/assets/vendor/photoswipe/photoswipe.js'%}"></script>
+<script src="{% static 'front/assets/vendor/photoswipe/photoswipe-ui-default.js'%}"></script>
+
+<!-- Swiper JS -->
+<script src="{% static 'front/assets/vendor/swiper/swiper-bundle.min.js'%}"></script>
+
+<!-- Fallback to prevent easing errors -->
+<script>
+    if (typeof jQuery !== "undefined") {
+      if (typeof jQuery.easing !== "object") jQuery.easing = {};
+      if (typeof jQuery.easing.def !== "string") jQuery.easing.def = "swing";
+      if (typeof jQuery.easing.swing !== "function") {
+        jQuery.easing.swing = function (x, t, b, c, d) {
+          return c * (t / d) + b;
+        };
+      }
+    }
+  </script>
+
+
+<!-- Main JS File -->
+<script src="front/assets/js/main.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    // Initialize Select2
+    $('.select2').select2();
+
+    // District and Thana handling
+    const districtSelect = $("#district");
+    const thanaSelect = $("#thana");
+
+    // Load all districts
+    fetch("https://bdapi.vercel.app/api/v.1/district")
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.data) {
+                data.data.forEach(district => {
+                    districtSelect.append(
+                        $("<option>", {
+                            value: district.name,
+                            "data-id": district.id,
+                            text: district.name
+                        })
+                    );
+                });
+            }
+        })
+        .catch(err => console.error("Error loading districts:", err));
+
+    // District change event
+    districtSelect.on("change", function () {
+        const districtName = this.value;
+        thanaSelect.empty().append('<option value="">Select Thana</option>');
+
+        const districtId = $(this).find(":selected").data("id");
+        if (!districtId) return;
+
+        fetch(`https://bdapi.vercel.app/api/v.1/upazilla/${districtId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.data && Array.isArray(data.data)) {
+                data.data.forEach(thana => {
+                    thanaSelect.append(
+                        $("<option>", {
+                            value: thana.name,
+                            text: thana.name
+                        })
+                    );
+                });
+            }
+        });
+
+        // Fetch shipping cost
+        updateShippingCost(districtName);
+    });
+
+    // ===== SIMPLE QUANTITY CONTROLS - Just like product details page =====
+    
+    // Quantity plus button
+$('.quantity-plus').off('click').on('click', function () {
+    const quantityInput = $('#quantityInput');
+    const currentVal = parseInt(quantityInput.val()) || 1;
+   // quantityInput.val(currentVal);
+    updateCartQuantity(currentVal);
+});
+
+// Quantity minus button
+$('.quantity-minus').off('click').on('click', function () {
+    const quantityInput = $('#quantityInput');
+    const currentVal = parseInt(quantityInput.val()) || 1;
+    if (currentVal > 1) {
+        quantityInput.val(currentVal - 1);
+        updateCartQuantity(currentVal - 1);
+    }
+});
+
+
+    // Also update on direct input change
+    $('#quantityInput').on('change', function() {
+        const quantity = parseInt($(this).val());
+        if (quantity >= 1) {
+            updateCartQuantity(quantity);
+        }
+    });
+
+    function updateCartQuantity(quantity) {
+        const productId = $('#quantityInput').data('product-id');
+        
+        $.ajax({
+            url: '{% url "update_quantity" %}',
+            method: 'POST',
+            data: {
+                'id': productId,
+                'quantity': quantity,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Live update the cart summary
+                    updateCartSummary(response, quantity);
+                } else {
+                    alert('Error updating quantity: ' + (response.error || 'Unknown error'));
+                    location.reload();
+                }
+            },
+            error: function() {
+                alert('Error updating quantity. Please try again.');
+                location.reload();
+            }
+        });
+    }
+
+    function updateCartSummary(response, quantity) {
+        const productName = '{{ product.title }}';
+        
+        // Get the actual values from response
+        const originalPrice = {{ product.selling_price }};
+        const discountPerItem = {{ discount_total|default:0 }};  // This is discount per 1 item
+        
+        // Calculate based on quantity
+        const subtotal = originalPrice * quantity;  // Original price × quantity
+        const totalDiscount = discountPerItem * quantity;  // Discount × quantity
+        const itemSubtotal = subtotal - totalDiscount;  // What customer pays
+        
+        // Update the cart items display
+        $('#cartItemsContainer').html(`
+            <tr class="bb-no">
+                <td class="product-name">
+                    ${productName} <i class="fas fa-times"></i>
+                    <span class="product-quantity">${quantity}</span>
+                    {% if bogo_product %}
+                    <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                        <span style="font-size: 13px">FREE: {{ bogo_product.title }}</span>
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="product-total">
+                    ৳ ${itemSubtotal.toFixed(2)}
+                </td>
+            </tr>
+            <tr class="cart-subtotal bb-no">
+                <td><b>Subtotal</b></td>
+                <td><b>৳<span id="subtotalAmount">${subtotal.toFixed(2)}</span></b></td>
+            </tr>
+            <tr class="cart-subtotal bb-no">
+                <td><b>Discount</b></td>
+                <td><b>৳<span id="discountAmount">${totalDiscount.toFixed(2)}</span></b></td>
+            </tr>
+            <tr class="shipping-cost bb-no">
+                <td><b>Shipping</b></td>
+                <td><b>৳<span id="shipping_cost">${parseFloat($('#shipping_cost').text() || 0).toFixed(2)}</span></b></td>
+            </tr>
+        `);
+    
+        // Update grand total
+        const shippingCost = parseFloat($('#shipping_cost').text()) || 0;
+        const grandTotal = subtotal + shippingCost - totalDiscount;
+        
+        $('#cart_total').text(grandTotal.toFixed(2));
+    }
+
+    function updateShippingCost(districtName) {
+        fetch(`/get-shipping-cost/?district=${encodeURIComponent(districtName)}`)
+            .then(res => res.json())
+            .then(data => {
+                const shippingEl = document.getElementById("shipping_cost");
+                if (shippingEl && data.shipping_cost) {
+                    shippingEl.textContent = parseFloat(data.shipping_cost).toFixed(2);
+                }
+    
+                // Update grand total with new shipping
+                updateGrandTotal();
+            })
+            .catch(err => console.error("Error fetching shipping cost:", err));
+    }
+    
+    function updateGrandTotal() {
+        // Get the CURRENT subtotal from the display (which is already calculated with discounted price)
+        const subtotalText = $('#subtotalAmount').text();
+        const subtotal = parseFloat(subtotalText) || 0;
+        
+        // Get discount amount from display
+        const discountText = $('#discountAmount').text();
+        const discountAmount = parseFloat(discountText) || 0;
+        
+        // Get shipping cost
+        const shippingCost = parseFloat($('#shipping_cost').text()) || 0;
+        
+        // Calculate grand total: subtotal - discount + shipping
+        const grandTotal = Math.max(subtotal - discountAmount + shippingCost, 0);
+        
+        // Update grand total display
+        $('#cart_total').text(grandTotal.toFixed(2));
+    }
+    
+});
+</script>
+{% endblock custom_js %}
