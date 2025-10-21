@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-d@ub!sxl+p3xehse+7ge)(+_e0)nmrgig9h7!p5b7_o)rt8^@v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['smartdsm.com.bd', 'www.smartdsm.com.bd']
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'smart.User'
 
