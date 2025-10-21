@@ -73,6 +73,64 @@
     border-top: 1px solid #e0e0e0;
 }
 </style>
+
+<style>
+    .btn-buy-now {
+        background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        border: none;
+        border-radius: 2px;
+        color: white !important;
+        padding: 15px 20px;
+        margin-bottom: 1rem;
+        margin-left: 1rem;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        display: inline-flex;
+        align-items: center;
+        {% comment %} gap: 8px; {% endcomment %}
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-buy-now::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-buy-now:hover {
+        color: white;
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+        background: linear-gradient(135deg, #ff5252, #ff7b36);
+    }
+
+    .btn-buy-now:hover::before {
+        left: 100%;
+    }
+
+    .btn-buy-now:active {
+        box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-buy-now i {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-buy-now:hover i {
+        transform: scale(1.1);
+    }
+</style>
 {% endblock custom_css %}
 
 {% block content %}
@@ -199,23 +257,28 @@
                             <hr class="product-divider">
 
                             <!-- Quantity Controls Section - EXACTLY like product details page -->
-                            <div class="fix-bottom product-sticky-content sticky-content">
-                                <div class="product-form container">
-                                    <div class="product-qty-form">
-                                        <div class="input-group">
-                                            <input class="quantity form-control" type="number" min="1" max="10000000" 
-                                                   id="quantityInput" value="{{ cart_items.0.quantity|default:1 }}" 
-                                                   data-product-id="{{ product.id }}">
-                                            <button class="quantity-plus w-icon-plus"></button>
-                                            <button class="quantity-minus w-icon-minus"></button>
-                                        </div>
-                                    </div>
-                                    <a href="{% url 'product_details' product.slug %}" class="btn btn-outline btn-primary">
-                                        <i class="w-icon-eye"></i>
-                                        <span>View Product Details</span>
-                                    </a>
-                                </div>
-                            </div>
+                            <!-- Replace your existing section with this -->
+<div class="fix-bottom product-sticky-content sticky-content">
+    <div class="product-form container" style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;">
+        <div class="product-qty-form" style="margin-bottom: 0px;margin-right: 0px;">
+            <div class="input-group">
+                <input class="quantity form-control" type="number" min="1" max="10000000" 
+                       id="quantityInput" value="{{ cart_items.0.quantity|default:1 }}" 
+                       data-product-id="{{ product.id }}">
+                <button class="quantity-plus w-icon-plus"></button>
+                <button class="quantity-minus w-icon-minus"></button>
+            </div>
+        </div>
+        <a href="{% url 'product_details' product.slug %}" class="btn btn-outline btn-primary" style="white-space: nowrap;">
+            <i class="w-icon-eye"></i>
+            <span>View Product</span>
+        </a>
+        <button class="btn btn-buy-now" data-product-id="{{ product.id }}" style="margin-left: 0; margin-bottom: 0; white-space: nowrap;">
+            <i class="fas fa-bolt"></i>
+            <span>Buy Now</span>
+        </button>
+    </div>
+</div>
 
                             <!-- BOGO Offer Section -->
                             {% if bogo_product %}
@@ -275,7 +338,7 @@
                     </h3>
                     <div class="row gutter-sm">
                         <div class="col-xs-6">
-                            <label>Email address</label>
+                            <label>Email address(ইমেইল)</label>
                             <input
                                 type="email"
                                 class="form-control form-control-md"
@@ -283,7 +346,7 @@
                             />
                         </div>
                         <div class="col-xs-6">
-                            <label>Phone Number *</label>
+                            <label>Phone Number(ফোন নম্বর) *</label>
                             <input
                                 type="number"
                                 class="form-control form-control-md"
@@ -295,7 +358,7 @@
                     <div class="row gutter-sm">
                         <div class="col-xs-6">
                             <div class="form-group">
-                                <label>First name *</label>
+                                <label>First name(প্রথম নাম) *</label>
                                 <input
                                     type="text"
                                     class="form-control form-control-md"
@@ -306,7 +369,7 @@
                         </div>
                         <div class="col-xs-6">
                             <div class="form-group">
-                                <label>Last name *</label>
+                                <label>Last name(পদবি) *</label>
                                 <input
                                     type="text"
                                     class="form-control form-control-md"
@@ -318,7 +381,7 @@
                     </div>
                     <div class="row gutter-sm">
                         <div class="form-group col-6 mb-5">
-                            <label>District *</label>
+                            <label>District(জেলা) *</label>
                             <select
                                 id="district"
                                 name="district"
@@ -329,7 +392,7 @@
                             </select>
                         </div>
                         <div class="form-group col-6 mb-5">
-                            <label>Thana / Upazila *</label>
+                            <label>Thana / Upazila(থানা/উপজেলা) *</label>
                             <select
                                 id="thana"
                                 name="thana"
@@ -341,7 +404,7 @@
                         </div>
                     </div>
                     <div class="form-group mb-5">
-                        <label>Street address *</label>
+                        <label>Street address(ঠিকানা) *</label>
                         <input
                             type="text"
                             placeholder="House number and street name"
@@ -352,7 +415,7 @@
                     </div>
                     <div class="row gutter-sm">
                         <div class="form-group col-6">
-                            <label>Apartment, suite, unit, etc. (optional)</label>
+                            <label>Apartment, unit, etc.(optional)(ঠিকানা )</label>
                             <input
                                 type="text"
                                 placeholder="Apartment, suite, unit, etc. (optional)"
@@ -361,7 +424,7 @@
                             />
                         </div>
                         <div class="form-group col-6">
-                            <label>ZIP</label>
+                            <label>ZIP(জিপ)</label>
                             <input
                                 type="text"
                                 class="form-control form-control-md"
@@ -715,6 +778,15 @@ $('.quantity-minus').off('click').on('click', function () {
         $('#cart_total').text(grandTotal.toFixed(2));
     }
     
+});
+// Buy Now button scroll functionality
+$('.btn-buy-now').on('click', function(e) {
+    e.preventDefault();
+    
+    // Smooth scroll to checkout section
+    $('html, body').animate({
+        scrollTop: $('.checkout-section').offset().top - 20
+    }, 800);
 });
 </script>
 {% endblock custom_js %}
