@@ -107,27 +107,29 @@
                           </p>
                         </td>
                         <td>
-                          <a href="{% url 'order_details' product_data.order.id %}" class="text-primary">
-                            #{{ product_data.order_number }}
-                          </a>
-                        </td>
-                        <td>
-                          <p class="c-o-light">{{ product_data.order_date|date:"d M Y h:i A" }}</p>
-                        </td>
-                        <td>
-                          <p class="c-o-light">
-                            {% if product_data.customer %}
-                              {{ product_data.customer.get_full_name|default:product_data.customer.email }}
-                            {% else %}
-                              Guest User
-                            {% endif %}
-                          </p>
-                        </td>
-                        <td>
                           <a href="tel:{{ order.shipping_address.phone_number }}">
                               {{ order.shipping_address.phone_number }}
                           </a>
                       </td>
+                        <td>
+                          <p class="c-o-light">{{ product_data.order_date|date:"d M Y h:i A" }}</p>
+                        </td>
+                        <td> 
+                            <p class="c-o-light">
+                                {% if order.customer %}
+                                    {{ order.customer.username|default:order.customer.email }}
+                                {% elif order.shipping_address and order.shipping_address.first_name %}
+                                    {{ order.shipping_address.first_name }} {{ order.shipping_address.last_name }}
+                                {% else %}
+                                    Guest User
+                                {% endif %}
+                            </p>
+                        </td>
+                        <td>
+                          <a href="tel:{{ product_data.customer.phone_number }}">
+                            {{ product_data.customer.phone_number }}
+                          </a>
+                        </td>
                         <td>
                           <span class="badge bg-secondary">{{ product_data.item.quantity }}</span>
                         </td>

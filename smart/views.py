@@ -434,6 +434,70 @@ def sliders(request):
 
 
 
+
+
+
+
+def site_logo_list(request):
+    logos = SiteLogo.objects.all().order_by("-id")
+    return render(request, "aboutus/sitelogo.html", {"logos": logos})
+
+
+def add_site_logo(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        logo = request.FILES.get("logo")
+        active = "active" in request.POST
+
+        # if setting active, deactivate others
+        if active:
+            SiteLogo.objects.filter(active=True).update(active=False)
+
+        SiteLogo.objects.create(name=name, logo=logo, active=active)
+        messages.success(request, "Logo added successfully!")
+        return redirect("site_logo_list")
+
+    return redirect("site_logo_list")
+
+
+def edit_site_logo(request, pk):
+    logo_obj = get_object_or_404(SiteLogo, pk=pk)
+
+    if request.method == "POST":
+        logo_obj.name = request.POST.get("name")
+
+        if request.FILES.get("logo"):
+            logo_obj.logo = request.FILES.get("logo")
+
+        logo_obj.active = "active" in request.POST
+
+        if logo_obj.active:
+            SiteLogo.objects.exclude(pk=logo_obj.pk).update(active=False)
+
+        logo_obj.save()
+        messages.success(request, "Logo updated successfully!")
+        return redirect("site_logo_list")
+
+    return redirect("site_logo_list")
+
+
+def delete_site_logo(request, pk):
+    logo_obj = get_object_or_404(SiteLogo, pk=pk)
+    if request.method == "POST":
+        logo_obj.delete()
+        messages.success(request, "Logo deleted successfully!")
+    return redirect("site_logo_list")
+
+
+
+
+
+
+
+
+
+
+
 def regions(request):
     if request.method == 'POST':
         # data = json.loads(request.body.decode('utf-8'))
@@ -955,7 +1019,7 @@ def edit_product(request, id):
             product.shipping_class = shipping_class
             product.publish_status = publish_status
             product.publish_date = publish_date
-            product.youtube_video_url = youtube_video_url if youtube_video_url else ''  # Add this line
+            product.youtube_video_url = youtube_video_url if youtube_video_url else None  # Add this line
 
             # Update thumbnail if new one is provided
             if thumbnail:
@@ -1074,7 +1138,7 @@ def edit_product(request, id):
     percent_discount = product.discounts.filter(discount_type='percentage', active=True).first()
     bogo_discount = product.discounts.filter(discount_type='bogo', active=True).first()
     bulk_discount = product.discounts.filter(discount_type='bulk', active=True).first()
-# Filter products to show only the current user's products
+    # Filter products to show only the current user's products
     products = Product.objects.filter(seller=request.user)
     context = {
        
@@ -1089,8 +1153,6 @@ def edit_product(request, id):
     }
 
     return render(request, 'products/edit_products.html', context)
-
-
 
 @login_required(login_url="/admin-dashboard/login_home")
 def single_product_request(request, id):
@@ -1354,6 +1416,7 @@ def update_contact_header(request):
     return render(request, 'applications/contacts/page-header.html', {'header': header})
 
 
+
 @login_required(login_url="/admin-dashboard/login_home")
 def contactfaq(request):
     """Display FAQ list"""
@@ -1562,8 +1625,6 @@ def reply_contact_message(request):
 
 
 
-
-
 @login_required
 def contactUs_location(request):
     locations = ContactLocation.objects.all()
@@ -1642,58 +1703,6 @@ def delete_contact_info(request, pk):
     return redirect("contact_info")
 
 
-
-#-----------------site logo------
-
-def site_logo_list(request):
-    logos = SiteLogo.objects.all().order_by("-id")
-    return render(request, "aboutus/sitelogo.html", {"logos": logos})
-
-
-def add_site_logo(request):
-    if request.method == "POST":
-        name = request.POST.get("name")
-        logo = request.FILES.get("logo")
-        active = "active" in request.POST
-
-        # if setting active, deactivate others
-        if active:
-            SiteLogo.objects.filter(active=True).update(active=False)
-
-        SiteLogo.objects.create(name=name, logo=logo, active=active)
-        messages.success(request, "Logo added successfully!")
-        return redirect("site_logo_list")
-
-    return redirect("site_logo_list")
-
-
-def edit_site_logo(request, pk):
-    logo_obj = get_object_or_404(SiteLogo, pk=pk)
-
-    if request.method == "POST":
-        logo_obj.name = request.POST.get("name")
-
-        if request.FILES.get("logo"):
-            logo_obj.logo = request.FILES.get("logo")
-
-        logo_obj.active = "active" in request.POST
-
-        if logo_obj.active:
-            SiteLogo.objects.exclude(pk=logo_obj.pk).update(active=False)
-
-        logo_obj.save()
-        messages.success(request, "Logo updated successfully!")
-        return redirect("site_logo_list")
-
-    return redirect("site_logo_list")
-
-
-def delete_site_logo(request, pk):
-    logo_obj = get_object_or_404(SiteLogo, pk=pk)
-    if request.method == "POST":
-        logo_obj.delete()
-        messages.success(request, "Logo deleted successfully!")
-    return redirect("site_logo_list")
 
 
 
@@ -2630,6 +2639,7 @@ def order_details(request, order_id):
     return render(request, "orders/order-details.html", context)
 
 
+
 @login_required(login_url="/admin-dashboard/login_home")
 def own_orders(request):
     """
@@ -2693,7 +2703,6 @@ def own_orders(request):
         "total_products": len(admin_products),
     }
     return render(request, 'orders/own_orders.html', context)
-
 
 
 
@@ -2860,112 +2869,9 @@ def mark_vendor_order_viewed(request):
     return JsonResponse({"status": "ok"})
 
 
-@login_required
-def social_icons_list(request):
-    """
-    View to display all social icons in the admin interface
-    """
-    social_icons = SocialIcon.objects.all().order_by('title')
-    
-    # Get ICON_CHOICES from the model
-    icon_choices = SocialIcon.ICON_CHOICES
-    
-    context = {
-        'social_icons': social_icons,
-        'icon_choices': icon_choices,
-        'page_title': 'Social Icons Management',
-    }
-    
-    return render(request, 'aboutus/sociallink.html', context)
 
-@login_required
-def add_social_icon(request):
-    """
-    View to add a new social icon
-    """
-    if request.method == 'POST':
-        try:
-            title = request.POST.get('title')
-            icon = request.POST.get('icon')
-            link = request.POST.get('link')
-            
-            # Validate required fields
-            if not all([title, icon, link]):
-                messages.error(request, 'All fields are required.')
-                return redirect('social_icons_list')
-            
-            # Create new social icon
-            social_icon = SocialIcon.objects.create(
-                title=title,
-                icon=icon,
-                link=link
-            )
-            
-            messages.success(request, f'Social icon "{title}" added successfully!')
-            
-        except Exception as e:
-            messages.error(request, f'Error adding social icon: {str(e)}')
-        
-        return redirect('social_icons_list')
-    
-    # If GET request, redirect to list
-    return redirect('social_icons_list')
 
-@login_required
-def update_social_icon(request, icon_id):
-    """
-    View to update an existing social icon
-    """
-    if request.method == 'POST':
-        try:
-            social_icon = get_object_or_404(SocialIcon, id=icon_id)
-            
-            title = request.POST.get('title')
-            icon = request.POST.get('icon')
-            link = request.POST.get('link')
-            
-            # Validate required fields
-            if not all([title, icon, link]):
-                messages.error(request, 'All fields are required.')
-                return redirect('social_icons_list')
-            
-            # Update social icon
-            social_icon.title = title
-            social_icon.icon = icon
-            social_icon.link = link
-            social_icon.save()
-            
-            messages.success(request, f'Social icon "{title}" updated successfully!')
-            
-        except Exception as e:
-            messages.error(request, f'Error updating social icon: {str(e)}')
-        
-        return redirect('social_icons_list')
-    
-    # If GET request, redirect to list
-    return redirect('social_icons_list')
 
-@login_required
-def delete_social_icon(request, icon_id):
-    """
-    View to delete a social icon
-    """
-    if request.method == 'POST':
-        try:
-            social_icon = get_object_or_404(SocialIcon, id=icon_id)
-            icon_title = social_icon.title
-            
-            social_icon.delete()
-            
-            messages.success(request, f'Social icon "{icon_title}" deleted successfully!')
-            
-        except Exception as e:
-            messages.error(request, f'Error deleting social icon: {str(e)}')
-        
-        return redirect('social_icons_list')
-    
-    # If GET request, redirect to list
-    return redirect('social_icons_list')
 
 
 
@@ -3132,6 +3038,12 @@ def deliveryCharge(request):
 
 
 
+
+
+
+
+
+
 @login_required(login_url="/admin-dashboard/login_home")
 def invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
@@ -3161,7 +3073,112 @@ def invoice(request, order_id):
 
 
 
+@login_required
+def social_icons_list(request):
+    """
+    View to display all social icons in the admin interface
+    """
+    social_icons = SocialIcon.objects.all().order_by('title')
+    
+    # Get ICON_CHOICES from the model
+    icon_choices = SocialIcon.ICON_CHOICES
+    
+    context = {
+        'social_icons': social_icons,
+        'icon_choices': icon_choices,
+        'page_title': 'Social Icons Management',
+    }
+    
+    return render(request, 'aboutus/sociallink.html', context)
 
+@login_required
+def add_social_icon(request):
+    """
+    View to add a new social icon
+    """
+    if request.method == 'POST':
+        try:
+            title = request.POST.get('title')
+            icon = request.POST.get('icon')
+            link = request.POST.get('link')
+            
+            # Validate required fields
+            if not all([title, icon, link]):
+                messages.error(request, 'All fields are required.')
+                return redirect('social_icons_list')
+            
+            # Create new social icon
+            social_icon = SocialIcon.objects.create(
+                title=title,
+                icon=icon,
+                link=link
+            )
+            
+            messages.success(request, f'Social icon "{title}" added successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error adding social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
+
+@login_required
+def update_social_icon(request, icon_id):
+    """
+    View to update an existing social icon
+    """
+    if request.method == 'POST':
+        try:
+            social_icon = get_object_or_404(SocialIcon, id=icon_id)
+            
+            title = request.POST.get('title')
+            icon = request.POST.get('icon')
+            link = request.POST.get('link')
+            
+            # Validate required fields
+            if not all([title, icon, link]):
+                messages.error(request, 'All fields are required.')
+                return redirect('social_icons_list')
+            
+            # Update social icon
+            social_icon.title = title
+            social_icon.icon = icon
+            social_icon.link = link
+            social_icon.save()
+            
+            messages.success(request, f'Social icon "{title}" updated successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
+
+@login_required
+def delete_social_icon(request, icon_id):
+    """
+    View to delete a social icon
+    """
+    if request.method == 'POST':
+        try:
+            social_icon = get_object_or_404(SocialIcon, id=icon_id)
+            icon_title = social_icon.title
+            
+            social_icon.delete()
+            
+            messages.success(request, f'Social icon "{icon_title}" deleted successfully!')
+            
+        except Exception as e:
+            messages.error(request, f'Error deleting social icon: {str(e)}')
+        
+        return redirect('social_icons_list')
+    
+    # If GET request, redirect to list
+    return redirect('social_icons_list')
 
 
 
@@ -4616,7 +4633,7 @@ def edit_ad_banner(request, banner_id):
         order = request.POST.get('order')
         remove_image_flag = request.POST.get('remove_image') == 'true'
 
-        if not (title and  button_text and button_link and order):
+        if not (title and button_text and button_link and order):
             return JsonResponse({'success': False, 'error': 'All fields are required.'}, status=400)
 
         try:

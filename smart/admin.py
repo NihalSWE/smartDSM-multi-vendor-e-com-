@@ -258,9 +258,9 @@ class VariantOptionSelectionInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('id',
-        'title', 'sku','model', 'seller', 'short_description','category', 'selling_price', 'stock_quantity',
-        'publish_status', 'is_digital_product', 'youtube_video_url','created_at'
+    list_display = (
+        'title', 'id', 'sku','model', 'seller', 'short_description','category', 'selling_price', 'stock_quantity',
+        'publish_status', 'is_digital_product',  'youtube_video_url','created_at'
     )
     list_filter = (
         'publish_status', 'stock_availability', 'is_digital_product',
@@ -543,21 +543,3 @@ class DeliveryChargeAdmin(VendorOwnedAdminMixin, admin.ModelAdmin):
         if not request.user.is_superuser:
             obj.vendor = request.user
         super().save_model(request, obj, form, change)
-        
-        
-        
-@admin.register(ContactInformation)
-class ContactInformationAdmin(admin.ModelAdmin):
-    list_display = ("title", "value", "icon", "order", "active")
-    list_editable = ("order", "active")
-    ordering = ("order",)
-    
-    
-@admin.register(SiteLogo)
-class SiteLogoAdmin(admin.ModelAdmin):
-    list_display = ("name", "logo", "active")
-    
-
-@admin.register(contactFAQ)
-class contactFAQAdmin(admin.ModelAdmin):
-    list_display = ("question", "answer", "is_active","order")

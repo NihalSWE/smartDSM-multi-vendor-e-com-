@@ -5,7 +5,7 @@ from .models import *
 
 
 #contact page faqs
-class contactFAQForm(forms.ModelForm):
+class contactFAQorm(forms.ModelForm):
     class Meta:
         model = contactFAQ
         fields = ['question', 'answer', 'is_active', 'order']
@@ -51,8 +51,8 @@ class ProductReviewForm(forms.ModelForm):
             }),
         }
         
-
-
+        
+        
 class ContactInformationForm(forms.ModelForm):
     class Meta:
         model = ContactInformation
@@ -63,4 +63,4 @@ class ContactInformationForm(forms.ModelForm):
             "icon": forms.Select(attrs={"class": "form-control"}),
             "order": forms.NumberInput(attrs={"class": "form-control"}),
             "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-        }       
+        }     

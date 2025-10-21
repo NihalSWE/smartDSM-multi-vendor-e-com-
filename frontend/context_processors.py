@@ -155,14 +155,14 @@ def cart_context(request):
             "subtotal": line_subtotal,
         })
         
-        # === NEW: ADD BOGO PRODUCT TITLE ONLY ===
+        
+         # === NEW: ADD BOGO PRODUCT TITLE ONLY ===
         if discounts.exists():
             discount = discounts.first()
             if discount.discount_type == 'bogo' and hasattr(discount, 'free_product') and discount.free_product:
                 # Add bogo_title to the current cart item
                 cart_items[-1]['bogo_title'] = f"FREE: {discount.free_product.title}"
         # === END BOGO ===
-
     # shipping_cost = Decimal("100.00")
     grand_total = (total_price_without_discount - total_discount)
     
@@ -257,9 +257,10 @@ def categories_context(request):
     except Exception as e:
         print("Error in categories_context:", e)
         return {'navigation_categories': []}
-    
-    
-    
+        
+        
+        
+        
     
 # Add this function to your existing context_processors.py file
 # This will make categories available globally for the search form
@@ -274,10 +275,11 @@ def search_categories_context(request):
         return {'search_categories': search_categories}
     except Exception as e:
         print("Error in search_categories_context:", e)
-        return {'search_categories': []}
-    
-    
-    
+        return {'search_categories': []}        
+        
+      
+      
+      
 def footer_contact_context(request):
     """
     Provide dynamic phone number for footer (Call us 24/7) and dynamic footer logo
@@ -309,7 +311,9 @@ def footer_contact_context(request):
         }
 
 
-
+      
+      
+      
 def site_logo_context(request):
     """
     Provide dynamic site logo for navbar (from SiteLogo model)
@@ -320,9 +324,14 @@ def site_logo_context(request):
     except Exception as e:
         print("Error in site_logo_context:", e)
         return {"site_logo": None}
-
-
-
+        
+        
+        
+        
+        
+        
+        
+        
 def social_icons_context(request):
     """
     Provide all active social icons for header/footer dynamically.
@@ -344,4 +353,8 @@ def social_icons_context(request):
 
     except Exception as e:
         print("Error in social_icons_context:", e)
-        return {"social_icons": []}
+        return {"social_icons": []}        
+        
+        
+        
+        

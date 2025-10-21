@@ -476,7 +476,7 @@ class Product(models.Model):
     updated_at          = models.DateTimeField(auto_now=True)
     
     objects = ProductQuerySet.as_manager()
-    youtube_video_url = models.URLField(max_length=500, blank=True, null=True, default='',help_text="YouTube video URL for product demonstration")
+    youtube_video_url = models.URLField(max_length=500, blank=True, null=True, help_text="YouTube video URL for product demonstration")
     class Meta:
         ordering = ['-created_at']
 
@@ -601,7 +601,7 @@ class Product(models.Model):
             return round(final_price, 2)
 
         # For BOGO / BULK, return the original price (no price reduction)
-        return self.selling_price   
+        return self.selling_price     
 
 
 class ProductImage(models.Model):
@@ -1135,7 +1135,7 @@ class Address(models.Model):
     last_name = models.CharField(max_length=100, blank=True, null=True)   # ADD THIS
 
     def __str__(self):
-        return f"{self.title} - {self.first_name} {self.last_name} ,{self.street_address}, {self.thana}, {self.district}"
+        return f"{self.title} - {self.street_address}, {self.thana}, {self.district}"
 
 # ----------------------------------
 # Order Models
@@ -1189,13 +1189,12 @@ class Order(models.Model):
 
     shipping_address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='shipping_orders')
     billing_address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='billing_orders', blank=True, null=True)
+    free_product=models.CharField(max_length=200, blank=True, null=True)
 
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    free_product=models.CharField(max_length=200, blank=True, null=True)
-    
     def save(self, *args, **kwargs):
         if not self.order_number:
             self.order_number = "ORD-" + str(uuid4())[:8].upper()
@@ -1285,7 +1284,7 @@ class OrderItem(models.Model):
     discount_applied = models.ForeignKey('ProductDiscount', on_delete=models.SET_NULL, blank=True, null=True)
     # Add this field to your OrderItem model (optional)
     is_free_product = models.BooleanField(default=False)
-
+    
     def get_total_price(self):
         return self.final_price * Decimal(self.quantity)
 
@@ -1477,7 +1476,6 @@ class DeliveryCharge(models.Model):
         
         
         
-        
 class ContactInformation(models.Model):
     ICON_CHOICES = [
         ("email", "Email"),
@@ -1496,9 +1494,7 @@ class ContactInformation(models.Model):
         return self.title    
         
         
-        
-        
-        
+     
 class SiteLogo(models.Model):
     """
     Stores the site logo displayed in the navbar and footer.
@@ -1508,7 +1504,12 @@ class SiteLogo(models.Model):
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.name        
+        return self.name 
+        
+        
+        
+        
+        
         
         
         
@@ -1583,8 +1584,8 @@ class SocialIcon(models.Model):
         verbose_name_plural = "Social Icons"
 
     def __str__(self):
-        return self.title
-  
+        return self.title        
+        
         
         
         

@@ -22,7 +22,6 @@ urlpatterns = [
     #logout
     
     #shop
-    
     path('shop',views.shop,name='shop'),
     path('shop/category/<slug:slug>/', views.shop_by_category, name='shop_by_category'),
     path('product-details/<slug:slug>/', views.product_details, name='product_details'),
@@ -76,11 +75,12 @@ urlpatterns = [
     # products
     path('create-product/', views.create_customer_product, name='create_customer_product'),
     
+    
     #search
     path('product_search/', views.product_search, name='product_search'),
     path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
     
-    #landing page
+        #landing page
     path('product-landing/<slug:slug>/', views.product_landing_checkout, name='product_landing_checkout'),
     
 ]

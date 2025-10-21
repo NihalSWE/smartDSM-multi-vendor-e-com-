@@ -63,8 +63,9 @@ def home(request):
         'top_categories': top_categories,
         'best_seller': best_seller,
     })
-    
-    
+   
+   
+   
 def product_search(request):
     """
     Handle product search with optional category filtering
@@ -190,9 +191,8 @@ def search_suggestions(request):
         'suggestions': suggestions,
         'query': query
     })
-
-
-
+   
+   
    
     
     
@@ -227,13 +227,20 @@ def attach_products_to_ad_banners(ad_banners):
     for banner in ad_banners:
         # Get up to 2 categories from the banner
         categories = list(banner.categories.all())[:2]
+        
+        # Determine the number of products to fetch per category
+        if len(categories) == 1:
+            products_per_category = 8
+        else:
+            products_per_category = 4
+            
         product_chunks = []
         publish_statuses = [1, 4]
 
         for category in categories:
             products = (Product.objects
                         .filter(category=category, publish_status__in=publish_statuses)
-                        .order_by('?')[:4])
+                        .order_by('?')[:products_per_category])
             product_chunks.append(list(products))  # keep separate per category
 
         # Merge all products into one list (8 total)
@@ -291,8 +298,8 @@ def contactUs(request):
 
 
 
+#faq--
 
-#----------FAQ-----
 def faq(request):
     header=FaqsPageHeader.objects.filter(is_active=True).first()
     faqs = contactFAQ.objects.filter(is_active=True).order_by('order')
@@ -301,7 +308,6 @@ def faq(request):
         'faqs': faqs
         }
     return render(request, 'front/pages/faq.html',context)
-
 
 #login--
 
@@ -598,7 +604,8 @@ def product_details(request, slug):
             # Convert percentage value (like 500 = 5%, 1000 = 10%)
             discount_percent = discount.percentage / 100
             final_price = product.selling_price - (product.selling_price * discount_percent)
-    
+            
+            
     
     # === ADD THIS SECTION FOR BOGO PRODUCT ===
     # Get BOGO product if exists (adjust field name based on your model)
@@ -607,7 +614,7 @@ def product_details(request, slug):
         bogo_product = discount.free_product
     # === END BOGO SECTION ===
     
-           
+            
     # Get related products (same category, exclude current)
     related_products = Product.objects.filter(
         category=product.category  # Same category as current product
@@ -890,24 +897,161 @@ def create_order(user, cart_items, subtotal, discount_total, shipping_total, gra
     )
     # TODO: create OrderVendor and OrderItem instances here if you want
     return order
+    
+    
+def create_order(user, cart_items, subtotal, discount_total, shipping_total, grand_total, shipping_address):
+    order = Order.objects.create(
+        order_number="ORD-" + str(uuid4())[:8].upper(),
+        customer=user,
+        payment_method=0,  # Cash on Delivery
+        subtotal=subtotal,
+        discount_total=discount_total,
+        shipping_total=shipping_total,
+        grand_total=grand_total,
+        shipping_address=shipping_address,
+    )
+    # TODO: create OrderVendor and OrderItem instances here if you want
+    return order
+
+
+def _get_checkout_product_data(product_id):
+    product = get_object_or_404(
+        Product.objects.select_related('category', 'shipping_class', 'seller')
+        .prefetch_related('discounts', 'variants', 'variation_types__options'),
+        pk=product_id
+    )
+
+    current_time = now()
+    active_discount = (
+        product.discounts
+        .filter(active=True)
+        .filter(
+            Q(start_date__isnull=True) | Q(start_date__lte=current_time),
+            Q(end_date__isnull=True) | Q(end_date__gte=current_time)
+        )
+        .order_by('-start_date')
+        .first()
+    )
+
+    discount_info = None
+    discounted_price = product.selling_price
+
+    if active_discount:
+        if active_discount.discount_type == ProductDiscount.FIXED and active_discount.discount_price:
+            discounted_price = max(product.selling_price - active_discount.discount_price, Decimal('0.00'))
+            discount_info = {
+                "type": "fixed",
+                "value": str(active_discount.discount_price),
+                "final_price": str(discounted_price)
+            }
+        elif active_discount.discount_type == ProductDiscount.PERCENT and active_discount.percentage:
+            discount_value = (product.selling_price * active_discount.percentage) / Decimal('100')
+            discounted_price = max(product.selling_price - discount_value, Decimal('0.00'))
+            discount_info = {
+                "type": "percentage",
+                "value": str(active_discount.percentage),
+                "final_price": str(discounted_price)
+            }
+        elif active_discount.discount_type == ProductDiscount.BOGO:
+            discount_info = {
+                "type": "bogo",
+                "free_product": active_discount.free_product.title if active_discount.free_product else None,
+                "min_quantity": active_discount.min_quantity,
+                "max_quantity": active_discount.max_quantity
+            }
+        elif active_discount.discount_type == ProductDiscount.BULK:
+            discount_info = {
+                "type": "bulk",
+                "bulk_quantity": active_discount.bulk_quantity,
+                "discount_type": active_discount.bulk_discount_type,
+                "discount_value": str(active_discount.bulk_discount_value)
+            }
+
+    variation_data = []
+    for vtype in product.variation_types.all():
+        variation_data.append({
+            "name": vtype.name,
+            "options": [
+                {
+                    "id": opt.id,
+                    "value": opt.value,
+                    "hex_code": opt.hex_code,
+                    "price_modifier": str(opt.price_modifier),
+                    "swatch_image": opt.swatch_image.url if opt.swatch_image else None
+                }
+                for opt in vtype.options.all()
+            ]
+        })
+
+    variants = [
+        {
+            "id": v.id,
+            "sku": v.sku,
+            "price": str(v.price),
+            "stock": v.stock_quantity,
+            "label": v.option_label,
+        }
+        for v in product.variants.filter(is_active=True)
+    ]
+
+    return {
+        "id": product.id,
+        "title": product.title,
+        "sku": product.sku,
+        "slug": product.slug,
+        "description": product.description,
+        "short_description": product.short_description,
+        "thumbnail": product.thumbnail_image.url if product.thumbnail_image else None,
+        "selling_price": str(product.selling_price),
+        "final_price": str(discounted_price),
+        "discount": discount_info,
+        "stock": product.stock_quantity,
+        "is_digital": product.is_digital_product,
+        "shipping_class": product.shipping_class.name if product.shipping_class else None,
+        "category": product.category.name if product.category else None,
+        "seller": product.seller.username,
+        "variants": variants,
+        "variations": variation_data,
+    }
+    
 
     
 def order_checkout(request):
     cart_data = cart_context(request)
     shipping_cost = Decimal("0.00")  # fixed shipping cost, or calculate dynamically
+    
+    product_id = request.GET.get("product_id")
+    product = None
+    
+    if product_id:
+        product = Product.objects.filter(id=product_id).first()
+        product_data = _get_checkout_product_data(product_id)
+        
+        # Single product checkout from buy now button
+        product_data = _get_checkout_product_data(product_id)
+        context = {
+            "product": product,
+            "buy_now": True,
+            "product": product_data,
+            "shipping_cost": shipping_cost,
+            "cart_total": (Decimal(product_data["final_price"]) + shipping_cost).quantize(Decimal("0.01")),
+        }
 
 
-    print('cart data: ', cart_data)
+    else:
+        # Normal cart checkout
+        cart_data = cart_context(request)
+        context = {
+            "product": product,
+            "buy_now": False,
+            "cart_items": cart_data["cart_items"],
+            "total_price_without_discount": cart_data["subtotal"],
+            "cart_discount_total": cart_data["discount_total"],
+            "shipping_cost": shipping_cost,
+            "cart_total": (cart_data["grand_total"] + shipping_cost).quantize(Decimal("0.01")),
+        }
 
-    context = {
-        "cart_items": cart_data["cart_items"],
-        "total_price_without_discount": cart_data["subtotal"],
-        "cart_discount_total": cart_data["discount_total"],
-        "shipping_cost": shipping_cost,
-        "cart_total": (cart_data["grand_total"] + shipping_cost).quantize(Decimal("0.01")),
-    }
-
-    return render(request, 'front/order/checkout.html', context)
+    return render(request, "front/order/checkout.html", context)
 
 
 def get_shipping_cost(request):
@@ -959,68 +1103,63 @@ def get_shipping_cost(request):
 def place_order(request):
     try:
         user = request.user if request.user.is_authenticated else None
-        
+
         print('************************hit *****************')
 
-        # Get form data
+        # --- basic customer data ---
         phone = request.POST.get('phone', '').strip()
         firstname = request.POST.get('firstname', '').strip()
         lastname = request.POST.get('lastname', '').strip()
         street_address_1 = request.POST.get('street-address-1', '').strip()
-        city = request.POST.get('city', '').strip()
         street_address_2 = request.POST.get('street-address-2', '').strip()
+        city = request.POST.get('city', '').strip()
         town = request.POST.get('town', '').strip()
         zip_code = request.POST.get('zip', '').strip()
+        district = request.POST.get('district', '').strip()
+        thana = request.POST.get('thana', '').strip()
 
-        # Validate required fields (phone, street_address_1, etc)
-        # if not phone:
-        #     return render(request, 'front/order/checkout.html', {'error': 'Phone number is required.'})
-        # if not street_address_1:
-        #     return render(request, 'front/order/checkout.html', {'error': 'Street address is required.'})
-        # # You can add more validation here if needed
-
-        # Compose full street address
+        # Compose full address
         full_street_address = street_address_1
         if street_address_2:
             full_street_address += ", " + street_address_2
 
-        # For now, skipping district and thana - set None
-        district = request.POST.get('district', '').strip()
-        thana = request.POST.get('thana', '').strip()
-        
-        # Create Address
+        # --- create address ---
         address = Address.objects.create(
             user=user,
             title="Home",
-            district=district,  # Requires district FK nullable in model
-            thana=thana,        # Requires thana FK nullable in model
+            district=district,
+            thana=thana,
             street_address=full_street_address,
             postal_code=zip_code or None,
             phone_number=phone,
             city=city,
             is_default=True,
-            first_name=firstname if not user else None,  # Save for guest users
-            last_name=lastname if not user else None,    # Save for guest users
         )
-        print(f"Address created: {firstname} {lastname}, Phone: {phone}")
-        cart = request.session.get("cart", {})
-        if not cart:
-            return redirect('cart')
+
+        # === Detect if it’s a BUY NOW checkout ===
+        buy_now_product_id = request.POST.get("product_id")
+
+        if buy_now_product_id:
+            # Single product purchase
+            product = get_object_or_404(Product, id=buy_now_product_id)
+            quantity = 1  # Default to 1 or add input field if you want
+            cart_items = {str(product.id): {'quantity': quantity}}
+        else:
+            # Normal cart purchase
+            cart = request.session.get("cart", {})
+            if not cart:
+                return redirect('cart')
+            cart_items = cart
 
         subtotal = Decimal('0.00')
         discount_total = Decimal('0.00')
-        shipping_total = Decimal("0.00")  # Hardcoded shipping cost
-        
-        # get total shipping cost
-        product_ids = [product_id for product_id, item in cart.items()]
-        products = Product.objects.filter(id__in=product_ids).select_related("seller")
-        
-        unique_sellers = set()
-        for product in products:
-            if product.seller:
-                unique_sellers.add(product.seller)
+        shipping_total = Decimal("0.00")
 
-        # Step 2: For each seller, add shipping cost based on district
+        product_ids = [int(pid) for pid in cart_items.keys()]
+        products = Product.objects.filter(id__in=product_ids).select_related("seller")
+
+        unique_sellers = {p.seller for p in products if p.seller}
+
         for seller in unique_sellers:
             if district == "Dhaka":
                 charge = DeliveryCharge.objects.filter(
@@ -1034,13 +1173,11 @@ def place_order(request):
                     delivery_type__slug="outside-dhaka",
                     status=True
                 ).first()
-
             if charge:
                 shipping_total += charge.amount
 
-        # Create the Order
         order = Order.objects.create(
-            customer=user,  # None for guest
+            customer=user,
             subtotal=Decimal('0.00'),
             discount_total=Decimal('0.00'),
             shipping_total=shipping_total,
@@ -1049,28 +1186,23 @@ def place_order(request):
             billing_address=address,
         )
 
-        # Process cart items
-        # Process cart items - MATCHING cart_context LOGIC EXACTLY
-        for product_id, item in cart.items():
+        for product_id, item in cart_items.items():
             product = Product.objects.get(pk=product_id)
             quantity = item.get('quantity', 1)
-
             price = product.selling_price
             now = timezone.now()
 
-            # EXACT SAME LOGIC AS cart_context
-            # --- find discount amount ---
             discounts = product.discounts.filter(active=True).filter(
                 (Q(start_date__lte=now) | Q(start_date__isnull=True)) &
                 (Q(end_date__gte=now) | Q(end_date__isnull=True))
             )
 
             discount_amount = Decimal("0.00")
-            discount_applied = None  # Initialize as None
+            discount_applied = None
 
             if discounts.exists():
                 discount = discounts.first()
-                discount_applied = discount  # Store the discount object regardless of type
+                discount_applied = discount
 
                 if discount.discount_type == ProductDiscount.FIXED and discount.discount_price:
                     discount_amount = discount.discount_price
@@ -1082,18 +1214,11 @@ def place_order(request):
                             discount_amount = discount.bulk_discount_value
                         elif discount.bulk_discount_type == ProductDiscount.PERCENT and discount.bulk_discount_value:
                             discount_amount = price * (discount.bulk_discount_value / Decimal("100"))
-                # Note: No else needed here - discount_amount remains 0.00 if conditions not met
 
-            discounted_price = price - discount_amount
-            if discounted_price < 0:
-                discounted_price = Decimal("0.00")
-
-            base_price = price
-            final_price = discounted_price
+            discounted_price = max(price - discount_amount, Decimal("0.00"))
 
             vendor = product.seller
-
-            vendor_order, created = OrderVendor.objects.get_or_create(
+            vendor_order, _ = OrderVendor.objects.get_or_create(
                 order=order,
                 vendor=vendor,
                 defaults={
@@ -1102,76 +1227,35 @@ def place_order(request):
                     'vendor_total': Decimal('0.00'),
                 }
             )
-            
-            
 
             OrderItem.objects.create(
-            vendor_order=vendor_order,
-            product=product,
-            quantity=quantity,
-            base_price=base_price,
-            discount_amount=discount_amount,
-            final_price=final_price,
-            discount_applied=discount_applied,  # Use discount_applied instead of discount
-        )
+                vendor_order=vendor_order,
+                product=product,
+                quantity=quantity,
+                base_price=price,
+                discount_amount=discount_amount,
+                final_price=discounted_price,
+                discount_applied=discount_applied,
+            )
 
-            vendor_order.vendor_subtotal += base_price * quantity
+            vendor_order.vendor_subtotal += price * quantity
             vendor_order.vendor_discount += discount_amount * quantity
-            vendor_order.vendor_total += final_price * quantity
+            vendor_order.vendor_total += discounted_price * quantity
             vendor_order.save()
 
-            subtotal += base_price * quantity
+            subtotal += price * quantity
             discount_total += discount_amount * quantity
-            
-                        # === ADD BOGO FREE PRODUCT HANDLING ===
-            if discount_applied and discount_applied.discount_type == 'bogo':  # Use discount_applied
-                if (hasattr(discount_applied, 'free_product') and 
-                    discount_applied.free_product):
-                    
-                    free_product = discount_applied.free_product
-                    free_product_price = free_product.selling_price
-                    
-                    # Create free product order item with 100% discount
-                    OrderItem.objects.create(
-                        vendor_order=vendor_order,
-                        product=free_product,
-                        quantity=1,
-                        base_price=free_product_price,
-                        discount_amount=free_product_price,
-                        final_price=Decimal('0.00'),
-                        discount_applied=discount_applied,  # Use discount_applied
-                        is_free_product=True,
-                    )
-                    
-                    # Update vendor order totals for the free product
-                    vendor_order.vendor_subtotal += free_product_price * 1
-                    vendor_order.vendor_discount += free_product_price * 1
-                    vendor_order.save()
-                    
-                    # Update order totals for the free product
-                    subtotal += free_product_price * 1
-                    discount_total += free_product_price * 1
-                    
-                    # Store free product info in Order model
-                    if order.free_product:
-                        order.free_product += f", {free_product.title}"
-                    else:
-                        order.free_product = free_product.title
-                    
-                    print(f"Added free BOGO product: {free_product.title}")
-            # === END BOGO HANDLING ===
 
         grand_total = subtotal - discount_total + shipping_total
-
         order.subtotal = subtotal
         order.discount_total = discount_total
         order.shipping_total = shipping_total
         order.grand_total = grand_total
         order.save()
 
-        # Clear cart after order saved
-        request.session['clear_cart_after_success'] = True
-
+        # Only clear the cart if it was a cart purchase
+        if not buy_now_product_id:
+            request.session['clear_cart_after_success'] = True
 
         return redirect('order_success')
 
@@ -1179,6 +1263,10 @@ def place_order(request):
         error_message = f"An error occurred: {str(e)}\n\n{traceback.format_exc()}"
         print(error_message)
         return render(request, 'front/order/checkout.html', {'error': error_message})
+
+
+
+
 
 
 
@@ -1555,6 +1643,7 @@ def delete_address(request):
 
 
 
+
 #landing page view 
 
 def product_landing_checkout(request, slug):
@@ -1673,6 +1762,7 @@ def product_landing_checkout(request, slug):
 
 
 
+
 from django.db.models import Min, Max
 
 from django.core.paginator import Paginator
@@ -1680,7 +1770,7 @@ from django.core.paginator import Paginator
 def shop(request):
     publish_statuses = [1, 4]
     products = Product.objects.filter(publish_status__in=publish_statuses)
-
+    
     # --- category filter (added) ---
     category_slug = request.GET.get("category")
     if category_slug:

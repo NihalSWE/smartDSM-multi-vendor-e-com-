@@ -145,13 +145,13 @@
                             </p>
                         </td>
                           <td>
-                            <a href="tel:{{ order.shipping_address.phone_number }}">
-                                {{ order.shipping_address.phone_number }}
-                            </a>
-                        </td>
+                          <a href="tel:{{ order.shipping_address.phone_number }}">
+                              {{ order.shipping_address.phone_number }}
+                          </a>
+                      </td>
                           
                           <td> 
-                            <p class="c-o-light">${{ order.grand_total }}</p>
+                            <p class="c-o-light">৳{{ order.grand_total }}</p>
                           </td>
                           <td> 
                             <p class="c-o-light">{{ order.free_product }}</p>

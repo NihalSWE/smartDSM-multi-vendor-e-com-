@@ -100,7 +100,7 @@ urlpatterns = [
     path('contactfaq/add/', views.add_faq, name='add_faq'),
     path('contactfaq/update/<int:pk>/', views.update_faq, name='update_faq'),
     path('contactfaq/delete/<int:pk>/', views.delete_faq, name='delete_faq'),
-
+    
     
     path('contact_messages/', views.contact_messages, name='contact_messages'),
     path('contact-messages/<int:pk>/mark-viewed/', views.mark_message_viewed, name='mark_message_viewed'),
@@ -108,11 +108,14 @@ urlpatterns = [
     path('contact-messages/reply/', views.reply_contact_message, name='reply_contact_message'),
     
     
+    
+    
+    
     path('contactUs_location',views.contactUs_location,name='contactUs_location'),
-    path("contact_info/", views.contact_info, name="contact_info"),
-    path("add_contact_info", views.add_contact_info, name="add_contact_info"),
-    path("edit_contact_info<int:pk>/", views.edit_contact_info, name="edit_contact_info"),
-    path("delete_contact_info/<int:pk>/", views.delete_contact_info, name="delete_contact_info"),
+    path("contacts/", views.contact_info, name="contact_info"),
+    path("contacts/add/", views.add_contact_info, name="add_contact_info"),
+    path("contacts/edit/<int:pk>/", views.edit_contact_info, name="edit_contact_info"),
+    path("contacts/delete/<int:pk>/", views.delete_contact_info, name="delete_contact_info"),
     
     # blogs
     path('blogList_header',views.blogList_header,name="blogList_header"),
@@ -180,13 +183,16 @@ urlpatterns = [
         #invoice
     path('invoice/<int:order_id>/', views.invoice, name='invoice'),
 
-    #invoice
-    #social link
+
+
+
+        #social link
     path('social_icons_list', views.social_icons_list, name='social_icons_list'),
     path('add/', views.add_social_icon, name='add_social_icon'),
     path('update/<int:icon_id>/', views.update_social_icon, name='update_social_icon'),
     path('delete/<int:icon_id>/', views.delete_social_icon, name='delete_social_icon'),
     #social link
+    #invoice
     
     
     path('products/create/', views.create_product, name='create_product'),
@@ -286,7 +292,7 @@ urlpatterns = [
     
     
     # #------------------------contacts
-    
+    path('contacts', views.contacts, name="contacts"),
 
     # #------------------------task
     path('task', views.task, name="task"),

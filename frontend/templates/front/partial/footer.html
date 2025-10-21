@@ -41,16 +41,15 @@
                                     <img src="{{ footer_logo }}" alt="logo-footer" width="130" height="35" />
                                 {% endif %}
                             </a>
-                            
+
                             <div class="widget-body">
                                 <p class="widget-about-title">Got Question? Call us 24/7</p>
-                                {% if footer_phone_number %}
+                               {% if footer_phone_number %}
                                 <a href="tel:{{ footer_phone_number }}" class="widget-about-call">{{ footer_phone_number }}</a>
                                 {% endif %}
-
                         
 
-                                <div class="social-icons social-icons-colored">
+                               <div class="social-icons social-icons-colored">
                                     {% for icon in social_icons %}
                                         <a {% if icon.title == 'Youtube' %}style="background:red;"{% endif %} href="{{ icon.link }}" class="social-icon" title="{{ icon.title }}" target="_blank">
                                             <i class="{{ icon.icon_class }}"></i>
@@ -60,7 +59,7 @@
                                 <style>
                                     .social-icons {
                                         display: flex;
-                                        {% comment %} gap: 10px; {% endcomment %}
+                                       
                                         align-items: center;
                                     }
                                     
@@ -111,7 +110,6 @@
                                         background-color: #25d366;
                                     }
                                     </style>
-                                
                             </div>
                         </div>
                     </div>

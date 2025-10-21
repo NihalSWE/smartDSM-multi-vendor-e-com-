@@ -17,41 +17,151 @@
 <!-- Default CSS -->
 <link rel="stylesheet" type="text/css" href="{% static 'front/assets/css/style.min.css'%}">
 
-<style>.embed-responsive {
-    position: relative;
-    display: block;
-    width: 100%;
-    padding: 0;
-    overflow: hidden;
-}
 
-.embed-responsive::before {
-    display: block;
-    content: "";
-}
+<style>
+    .btn-buy-now {
+        background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        border: none;
+        border-radius: 2px;
+        color: white;
+        padding: 15px 20px;
+        margin-bottom: 1rem;
+        margin-left: 1rem;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center; /* Add this for horizontal centering */
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+        width: 100%; /* Ensure full width for proper centering */
+        text-align: center; /* Fallback centering */
+    }
 
-.embed-responsive-16by9::before {
-    padding-top: 56.25%;
-}
+    /* Also update the button group styles */
+    .button-group {
+        display: flex;
+        flex: 1;
+        gap: 10px;
+        align-items: center;
+    }
 
-.embed-responsive-item {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    border-radius: 8px;
-}
+    .btn-cart,
+    .btn-buy-now {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Ensure both buttons are centered */
+    }
 
-.video-container {
-    max-width: 800px;
-    margin: 0 auto;
-}
+    .btn-buy-now::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
 
+    .btn-buy-now:hover {
+        color: white;
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+        background: linear-gradient(135deg, #ff5252, #ff7b36);
+    }
+
+    .btn-buy-now:hover::before {
+        left: 100%;
+    }
+
+    .btn-buy-now:active {
+        box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-buy-now i {
+        font-size: 16px;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-buy-now:hover i {
+        transform: scale(1.1);
+    }
+
+    /* quantity ,add to cart and buy now button alignment starts */
+    .product-form {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .product-qty-form {
+        flex-shrink: 0;
+    }
+
+    .button-group {
+        display: flex;
+        flex: 1;
+        gap: 10px;
+    }
+
+    .btn-cart,
+    .btn-buy-now {
+        flex: 1;
+    }
+
+    /* Reduce height of quantity form */
+    .product-qty-form .input-group {
+        height: 44px; /* Match button height */
+    }
+
+    .quantity.form-control {
+        height: 44px;
+        padding: 8px 12px;
+    }
+
+    .quantity-plus,
+    .quantity-minus {
+        height: 44px;
+    }
+
+    /* Mobile styles */
+    @media (max-width: 462px) {
+        .product-form {
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .product-qty-form {
+            margin-bottom: 0;
+            margin-right: 10px;
+        }
+        
+        .button-group {
+            width: auto;
+            flex: 1;
+        }
+        
+        .input-group {
+            width: auto;
+        }
+        
+        /* Ensure buttons and quantity form have same height */
+        .btn-cart,
+        .btn-buy-now,
+        .product-qty-form .input-group {
+            height: 44px;
+        }
+    }
+    /* quantity ,add to cart and buy now button alignment ends */
 </style>
-
 
 {% endblock custom_css %}
 
@@ -141,7 +251,6 @@
                                 <div class="col-md-6 mb-4 mb-md-6">
                                     <div class="product-details" data-sticky-options="{'minWidth': 767}">
                                         <h1 class="product-title">{{ product.title }}</h1>
-                                       
                                         <div class="product-bm-wrapper">
                                             <div class="product-meta">
                                                 <div class="product-categories"> Model: <span class="product-category">{{ product.model }}</span></div>
@@ -161,7 +270,18 @@
                                             {% if discount and discount.discount_type != 'bogo' %}
                                                 <!-- Show discounted price -->
                                                 <del class="old-price" style="color:red">TK.{{ product.selling_price }}</del>
-                                                <ins class="new-price">TK.{{ product.get_discounted_price }}</ins> 
+                                                <ins class="new-price">TK.{{  product.get_discounted_price }}</ins>
+                                                
+                                                {% comment %} <!-- Show discount amount -->
+                                                <span class="price-badge">
+                                                    -TK.
+                                                    {% if discount.discount_type == 'fixed' %}
+                                                        {{ discount.discount_price }}
+                                                    {% elif discount.discount_type == 'percentage' %}
+                                                        {{ discount.percentage|floatformat:0 }}
+                                                    {% endif %}
+                                                    OFF
+                                                </span> {% endcomment %}
                                             {% else %}
                                                 <!-- Show regular price if no discount -->
                                                 <ins class="new-price">TK.{{ product.selling_price }}</ins>
@@ -211,36 +331,6 @@
                                             <span></span>
                                         </div> {% endcomment %}
 
-
-                                        <!-- Add this to your existing product_details.html template -->
-{% comment %} <div class="social-links-wrapper mt-4">
-    <div class="social-links">
-        <div class="d-flex align-items-center gap-3">
-            <a href="{% url 'product_landing_checkout' product.slug %}" 
-               class="btn btn-primary btn-sm"
-               target="_blank"
-               style="text-decoration: none;">
-               <i class="w-icon-share me-2"></i>
-               Open Landing Page
-            </a>
-            
-            <div class="input-group" style="max-width: 300px;">
-                <input type="text" 
-                       class="form-control form-control-sm" 
-                       value="{{ request.build_absolute_uri|slice:':-1' }}{% url 'product_landing_checkout' product.slug %}" 
-                       readonly
-                       id="landingUrlInput">
-                <button class="btn btn-outline-primary btn-sm btn-copy-url" type="button">
-                    <i class="far fa-copy"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div> {% endcomment %}
-
-
-
-
                                         <div class="fix-bottom product-sticky-content sticky-content">
                                             <div class="product-form container">
                                                 <div class="product-qty-form">
@@ -255,10 +345,15 @@
                                                     <i class="w-icon-cart"></i>
                                                     <span>Add to Cart</span>
                                                 </button>
+                                                
+                                                <button class="btn btn-buy-now" data-product-id="{{ product.id }}">
+                                                        <i class="fas fa-bolt"></i>
+                                                    <span>Buy Now</span>
+                                                </button>
                                             </div>
                                         </div>
-
-                                        <!-- === ADD THIS SECTION FOR BOGO PRODUCT === -->
+                                            
+                                             <!-- === ADD THIS SECTION FOR BOGO PRODUCT === -->
                                        {% if bogo_product %}
                                        <a href="{% url 'product_details' bogo_product.slug %}" style="text-decoration: none; color: inherit; display: block;">
                                            <div class="bogo-offer" style="display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 1px solid #799b5a;">
@@ -296,17 +391,19 @@
                                        </style>
                                        {% endif %}
                                         <!-- === END BOGO SECTION === -->
-
-
-                                        {% comment %} <div class="social-links-wrapper">
-                                            <div class="social-links">
-                                                <div class="social-icons social-no-color border-thin">
-                                                    <a href="#" class="social-icon social-facebook w-icon-facebook"></a>
-                                                    <a href="#" class="social-icon social-whatsapp fab fa-whatsapp"></a>
+                                            
+                                            
+                                            
+                                            
+                                        <!--<div class="social-links-wrapper">-->
+                                        <!--    <div class="social-links">-->
+                                        <!--        <div class="social-icons social-no-color border-thin">-->
+                                        <!--            <a href="#" class="social-icon social-facebook w-icon-facebook"></a>-->
+                                        <!--            <a href="#" class="social-icon social-whatsapp fab fa-whatsapp"></a>-->
                                                    
-                                                </div>
-                                            </div>
-                                        </div> {% endcomment %}
+                                        <!--        </div>-->
+                                        <!--    </div>-->
+                                        <!--</div>-->
                                     </div>
                                 </div>
                             </div>
@@ -758,13 +855,9 @@
                                                 <div class="swiper-slide product">
                                                     <figure class="product-media">
                                                         <a href="{% url 'product_details' product.slug %}">
-                                                            {% if product.thumbnail_image %}
-                                                                <img src="{{ product.thumbnail_image.url }}" alt="{{ product.name }}" width="300" height="338" />
-                                                            {% else %}
-                                                                <img src="{% static 'images/no-image.jpg' %}" alt="No Image" width="300" height="338" />
-                                                            {% endif %}
+                                                            <img src="{{ product.thumbnail_image.url }}" alt="Product"
+                                                                width="300" height="338" />
                                                         </a>
-                                                        
                                                         <div class="product-action-vertical">
                                                             <a href="#" class="btn-product-icon btn-cart w-icon-cart"
                                                                 title="Add to cart" data-product-id="{{ product.id }}"></a>
@@ -780,6 +873,7 @@
                                                     </figure>
                                                     <div class="product-details">
                                                         <h4 class="product-name"><a href="{% url 'product_details' product.slug %}">{{ product.title }}</a></h4>
+                                                       
                                                         <div class="ratings-container">
                                                             <div class="ratings-full">
                                                                 <span class="ratings" style="width: 100%;"></span>
@@ -825,13 +919,9 @@
                                                 <div class="swiper-slide product">
                                                     <figure class="product-media">
                                                         <a href="{% url 'product_details' product.slug %}">
-                                                            {% if product.thumbnail_image %}
-                                                                <img src="{{ product.thumbnail_image.url }}" alt="{{ product.name }}" width="300" height="338" />
-                                                            {% else %}
-                                                                <img src="{% static 'images/no-image.jpg' %}" alt="No Image" width="300" height="338" />
-                                                            {% endif %}
+                                                            <img src="{{ product.thumbnail_image.url }}" alt="Product"
+                                                                width="300" height="338" />
                                                         </a>
-                                                        
                                                         <div class="product-action-vertical">
                                                             <a href="#" class="btn-product-icon btn-cart w-icon-cart"
                                                                 title="Add to cart" data-product-id="{{ product.id }}"></a>
@@ -961,6 +1051,20 @@
  
      <!-- Main JS File -->
      <script src="front/assets/js/main.min.js"></script>
+     
+     
+    <!-- Fallback to prevent easing errors -->
+    <script>
+        if (typeof jQuery !== "undefined") {
+          if (typeof jQuery.easing !== "object") jQuery.easing = {};
+          if (typeof jQuery.easing.def !== "string") jQuery.easing.def = "swing";
+          if (typeof jQuery.easing.swing !== "function") {
+            jQuery.easing.swing = function (x, t, b, c, d) {
+              return c * (t / d) + b;
+            };
+          }
+        }
+      </script>
 
 
      <script>
@@ -983,7 +1087,7 @@
         
                 // Optional: on load, if select has value, mark the stars
                 var current = parseInt($('#rating').val());
-                if (!isNaN(current) && current >= 1 && current <= 5) {
+                if (!isNaN(current) && current >= 1 && current <= 5) {add 
                     var $links = $('.rating-stars a');
                     $links.each(function(i){
                         if (i <= (current - 1)) $(this).addClass('active');
@@ -991,6 +1095,17 @@
                 }
             });
         })(jQuery);
+        </script>
+        
+        
+        <script>
+            document.addEventListener("click", function(e) {
+                const btn = e.target.closest(".btn-buy-now");
+                if (!btn) return;
+
+                const productId = btn.getAttribute("data-product-id");
+                window.location.href = `{% url 'order_checkout' %}?product_id=${productId}`;
+            });
         </script>
         
 

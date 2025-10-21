@@ -40,6 +40,9 @@
       method="post"
     >
       {% csrf_token %}
+      {% if product %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+        {% endif %}
       <div class="row mb-9">
         <div class="col-lg-7 pr-lg-4 mb-4">
           <h3 class="title billing-title text-uppercase ls-10 pt-1 pb-3 mb-0">
@@ -79,8 +82,8 @@
                   type="text"
                   class="form-control form-control-md"
                   name="firstname" style="
-                  border: 1px solid #747474;
-              "
+                border: 1px solid #747474;
+            "
                   required
                 />
               </div>
@@ -92,8 +95,8 @@
                   type="text"
                   class="form-control form-control-md"
                   name="lastname" style="
-                  border: 1px solid #747474;
-              "
+                border: 1px solid #747474;
+            "
                   required
                 />
               </div>
@@ -105,9 +108,7 @@
               <select
                 id="district"
                 name="district"
-                class="form-control form-control-md select2" style="
-                border: 1px solid #747474;
-            "
+                class="form-control form-control-md select2"
                 required
               >
                 <option value="">Select District</option>
@@ -118,9 +119,7 @@
               <select
                 id="thana"
                 name="thana"
-                class="form-control form-control-md select2" style="
-                border: 1px solid #747474;
-            "
+                class="form-control form-control-md select2"
                 required
               >
                 <option value="">Select Thana</option>
@@ -134,8 +133,8 @@
               placeholder="House number and street name"
               class="form-control form-control-md mb-2"
               name="street-address-1" style="
-              border: 1px solid #747474;
-          "
+                border: 1px solid #747474;
+            "
               required
             />
           </div>
@@ -150,7 +149,7 @@
                 />
             </div>
             <div class="form-group col-6">
-              <label>ZIP</label>
+              <label>ZIP *</label>
               <input
                 type="text"
                 class="form-control form-control-md"
@@ -165,52 +164,119 @@
             <h3 class="title text-uppercase ls-10">Your Order</h3>
             <div class="order-summary">
               <table class="order-table">
-                <thead>
-                  <tr>
-                    <th colspan="2"><b>Product</b></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for item in cart_items %}
-                  <tr class="bb-no">
-                    <td class="product-name">
-                      {{ item.name }} <i class="fas fa-times"></i>
-                      <span class="product-quantity">{{ item.quantity }}</span>
-                      {% if item.bogo_title %}
-                      <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
-                         <span style="font-size: 13px"> {{ item.bogo_title }}</span>
-                      </div>
-                  {% endif %}
-                    </td>
-                    <td class="product-total">
-                      ৳ {{ item.subtotal|floatformat:2 }}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                  <tr class="cart-subtotal bb-no">
-                    <td><b>Subtotal</b></td>
-                    <td>
-                      <b>৳{{ total_price_without_discount|floatformat:2 }}</b>
-                    </td>
-                  </tr>
-                  <tr class="cart-subtotal bb-no">
-                    <td><b>Discount</b></td>
-                    <td><b>৳{{ cart_discount_total }}</b></td>
-                  </tr>
-                    <tr class="shipping-cost bb-no">
-                        <td><b>Shipping</b></td>
-                        <td><b>৳<span id="shipping_cost">{{ shipping_cost|floatformat:2 }}</span></b></td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="shipping-methods"></tr>
-                  
-                    <tr class="order-total">
-                        <th><b>Total</b></th>
-                        <td><b>৳<span id="cart_total">{{ cart_total|floatformat:2 }}</span></b></td>
-                    </tr>
-                </tfoot>
-              </table>
+                        <thead>
+                        <tr>
+                            <th colspan="2"><b>Product</b></th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {% if buy_now %}
+                            <!-- Buy Now product -->
+                            <tr class="bb-no">
+                                <td class="product-name">
+                                    {{ product.title }}
+                                    <span class="product-quantity">1</span>
+                                    {% if product.discount %}
+                                        <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                                            {% if product.discount.type == "fixed" %}
+                                                <span style="font-size: 13px;">
+                                                    ৳{{ product.discount.value }} off
+                                                </span>
+                                            {% elif product.discount.type == "percentage" %}
+                                                <span style="font-size: 13px;">
+                                                    {{ product.discount.value }}% off
+                                                </span>
+                                            {% elif product.discount.type == "bogo" %}
+                                                <span style="font-size: 13px;">
+                                                    Buy {{ product.discount.min_quantity }} Get 1 Free
+                                                </span>
+                                            {% elif product.discount.type == "bulk" %}
+                                                <span style="font-size: 13px;">
+                                                    Bulk Discount ({{ product.discount.discount_value }})
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="product-total">
+                                    ৳{{ product.final_price }}
+                                </td>
+                            </tr>
+
+                            <tr class="cart-subtotal bb-no">
+                                <td><b>Subtotal</b></td>
+                                <td><b>৳{{ product.selling_price }}</b></td>
+                            </tr>
+
+                            {% if product.discount %}
+                            <tr class="cart-subtotal bb-no">
+                                <td><b>Discount</b></td>
+                                <td>
+                                    {% if product.discount.type == "fixed" %}
+                                        <b>-৳{{ product.discount.value }}</b>
+                                    {% elif product.discount.type == "percentage" %}
+                                        <b>-{{ product.discount.value }}%</b>
+                                    {% else %}
+                                        <b>-</b>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+
+                            <tr class="shipping-cost bb-no">
+                                <td><b>Shipping</b></td>
+                                <td><b>৳{{ shipping_cost|floatformat:2 }}</b></td>
+                            </tr>
+
+                            <tfoot>
+                                <tr class="order-total">
+                                    <th><b>Total</b></th>
+                                    <td><b>৳{{ cart_total|floatformat:2 }}</b></td>
+                                </tr>
+                            </tfoot>
+
+                        {% else %}
+                            <!-- Normal cart checkout (existing behavior) -->
+                            {% for item in cart_items %}
+                            <tr class="bb-no">
+                                <td class="product-name">
+                                    {{ item.name }} <i class="fas fa-times"></i>
+                                    <span class="product-quantity">{{ item.quantity }}</span>
+                                    {% if item.bogo_title %}
+                                    <div style="color: #28a745; font-weight: 600; margin-top: 5px;">
+                                        <span style="font-size: 13px;">{{ item.bogo_title }}</span>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="product-total">৳ {{ item.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+
+                            <tr class="cart-subtotal bb-no">
+                                <td><b>Subtotal</b></td>
+                                <td><b>৳{{ total_price_without_discount|floatformat:2 }}</b></td>
+                            </tr>
+
+                            <tr class="cart-subtotal bb-no">
+                                <td><b>Discount</b></td>
+                                <td><b>৳{{ cart_discount_total }}</b></td>
+                            </tr>
+
+                            <tr class="shipping-cost bb-no">
+                                <td><b>Shipping</b></td>
+                                <td><b>৳{{ shipping_cost|floatformat:2 }}</b></td>
+                            </tr>
+
+                            <tfoot>
+                                <tr class="order-total">
+                                    <th><b>Total</b></th>
+                                    <td><b>৳{{ cart_total|floatformat:2 }}</b></td>
+                                </tr>
+                            </tfoot>
+                        {% endif %}
+                        </tbody>
+                    </table>
               <div class="payment-methods" id="payment_method">
                 <h4 class="title font-weight-bold ls-25 pb-0 mb-1">
                   Payment Methods
@@ -278,7 +344,8 @@
 <script>
 $(document).ready(function () {
     $('.select2').select2();
-
+    
+    
     // Phone number validation
     $('input[name="phone"]').on('input', function() {
       const phone = $(this).val();
@@ -299,7 +366,6 @@ $(document).ready(function () {
           errorElement.hide();
       }
   });
-    
 
     const districtSelect = $("#district");
     const thanaSelect = $("#thana");

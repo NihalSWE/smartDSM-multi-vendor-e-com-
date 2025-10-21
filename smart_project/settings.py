@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-d@ub!sxl+p3xehse+7ge)(+_e0)nmrgig9h7!p5b7_o)rt8^@v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['smartdsm.com.bd', 'www.smartdsm.com.bd']
 
 AUTH_USER_MODEL = 'smart.User'
 
@@ -167,38 +167,6 @@ MESSAGE_TAGS = {
 
 
 
-
-# settings.py
-
-# # The email address the admin wants to send from (used by our reply view)
-# ADMIN_REPLY_EMAIL = "support@yourdomain.com"
-
-# # Default from email (fallback)
-# DEFAULT_FROM_EMAIL = "no-reply@yourdomain.com"
-
-# # Typical SMTP config (example, replace with real credentials)
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = "smtp.yourprovider.com"
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "smtp_user@yourprovider.com"
-# EMAIL_HOST_PASSWORD = "your_smtp_password"
-
-
-
-# settings.py
-
-# ADMIN_REPLY_EMAIL = "mrnihal588@gmail.com"
-# DEFAULT_FROM_EMAIL = "mrnihal588@gmail.com"
-
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = "smtp.gmail.com"
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "mrnihal588@gmail.com"
-# EMAIL_HOST_PASSWORD = "boxf qieq fgck xqsi"  # your Gmail App Password
-
-
 # ==============================
 # 📧 Email Configuration (via django-environ)
 # ==============================
@@ -221,3 +189,11 @@ EMAIL_PORT = env.int("EMAIL_PORT")
 EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+
+
+
+
+
+
+
+
