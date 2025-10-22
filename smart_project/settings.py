@@ -81,6 +81,7 @@ TEMPLATES = [
                 'frontend.context_processors.footer_contact_context',
                 'frontend.context_processors.site_logo_context',
                 'frontend.context_processors.social_icons_context',
+                'frontend.context_processors.meta_tags',
                 'smart.context_processors.global_context',
             ],
         },

@@ -1590,8 +1590,37 @@ class SocialIcon(models.Model):
         
         
         
-        
-        
+
+
+class SiteSettings(models.Model):
+    """
+    Singleton model for site-wide settings
+    """
+    # Basic Information
+    site_name = models.CharField(max_length=200, default="Smart DSM")
+    site_description = models.TextField(default="Your trusted marketplace")
+    site_keywords = models.TextField(default="marketplace, ecommerce")
+    
+    # Images
+    og_image = models.ImageField(upload_to='meta/', blank=True, null=True, help_text="Recommended size: 1200x630px")
+    favicon = models.ImageField(upload_to='meta/', blank=True, null=True, help_text="Recommended size: 512x512px")
+    
+    class Meta:
+        verbose_name = "Site Settings"
+        verbose_name_plural = "Site Settings"
+    
+    def __str__(self):
+        return self.site_name
+    
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists (Singleton pattern)
+        self.pk = 1
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
         
         
         

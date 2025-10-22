@@ -358,3 +358,40 @@ def social_icons_context(request):
         
         
         
+        
+        
+from django.conf import settings      
+def meta_tags(request):
+    """
+    Global context processor for meta tags from database
+    """
+    site_settings = SiteSettings.load()
+    current_url = request.build_absolute_uri()
+    
+    # Get OG image URL
+    og_image_url = (
+        request.build_absolute_uri(site_settings.og_image.url) 
+        if site_settings.og_image 
+        else request.build_absolute_uri(settings.STATIC_URL + 'front/assets/images/og-image.jpg')
+    )
+    
+    # Get favicon URL
+    favicon_url = (
+        request.build_absolute_uri(site_settings.favicon.url) 
+        if site_settings.favicon 
+        else request.build_absolute_uri(settings.STATIC_URL + 'front/assets/images/icons/favicon.png')
+    )
+    
+    default_meta = {
+        'title': site_settings.site_name,
+        'description': site_settings.site_description,
+        'keywords': site_settings.site_keywords,
+        'og_image': og_image_url,
+        'og_url': current_url,
+        'favicon': favicon_url,
+    }
+    
+    return {
+        'meta': default_meta,
+        'site_settings': site_settings
+    }

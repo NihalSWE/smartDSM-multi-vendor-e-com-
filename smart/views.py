@@ -5002,9 +5002,99 @@ def remove_order_item(request, order_id, item_id):
 
 
 
+def site(request):
+    """
+    View to display and manage site settings
+    """
+    if request.method == "GET":
+        # Load site settings
+        site_settings = SiteSettings.load()
+        
+        context = {
+            'settings': site_settings,
+        }
+        return render(request, 'sitesettings/sitesettings.html', context)
+    
+    elif request.method == "POST":
+        try:
+            # Check if it's a file upload (multipart/form-data)
+            if request.content_type.startswith('multipart/form-data'):
+                return handle_file_upload(request)
+            
+            # Handle JSON data for text fields
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            site_settings = SiteSettings.load()
+            
+            if action == 'update_basic':
+                site_settings.site_name = data.get('site_name', site_settings.site_name)
+                site_settings.site_description = data.get('site_description', site_settings.site_description)
+                site_settings.site_keywords = data.get('site_keywords', site_settings.site_keywords)
+                site_settings.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Basic information updated successfully!'
+                })
+            
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid action'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
 
-    
-    
+def handle_file_upload(request):
+    """
+    Handle image file uploads
+    """
+    try:
+        site_settings = SiteSettings.load()
+        
+        if 'og_image' in request.FILES:
+            # Delete old file if exists
+            if site_settings.og_image:
+                site_settings.og_image.delete(save=False)
+            
+            site_settings.og_image = request.FILES['og_image']
+            site_settings.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'OG Image uploaded successfully!',
+                'image_url': site_settings.og_image.url
+            })
+        
+        elif 'favicon' in request.FILES:
+            # Delete old file if exists
+            if site_settings.favicon:
+                site_settings.favicon.delete(save=False)
+            
+            site_settings.favicon = request.FILES['favicon']
+            site_settings.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Favicon uploaded successfully!',
+                'image_url': site_settings.favicon.url
+            })
+        
+        return JsonResponse({
+            'status': 'error',
+            'message': 'No file provided'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
     
     
     

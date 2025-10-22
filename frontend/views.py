@@ -673,6 +673,39 @@ def product_details(request, slug):
         elif "youtu.be/" in video_url:
             youtube_video_id = video_url.split('youtu.be/')[1].split('?')[0]
     
+    
+     # --- Safe meta setup ---
+    og_image_url = None
+    try:
+        if product.thumbnail_image and hasattr(product.thumbnail_image, "url"):
+            og_image_url = request.build_absolute_uri(product.thumbnail_image.url)
+        elif product.images.exists():
+            first_img = product.images.first()
+            if first_img and first_img.image and hasattr(first_img.image, "url"):
+                og_image_url = request.build_absolute_uri(first_img.image.url)
+    except Exception:
+        og_image_url = None
+
+    short_desc = ""
+    if getattr(product, "short_description", None):
+        short_desc = str(product.short_description)[:160]
+
+    category_name = ""
+    if getattr(product, "category", None):
+        try:
+            category_name = product.category.name or ""
+        except Exception:
+            category_name = ""
+
+    meta = {
+        "title": product.meta_title or f"{product.title} - Smart DSM",
+        "description": product.meta_description or (short_desc or f"Buy {product.title} at the best price from Smart DSM"),
+        "keywords": product.meta_keywords or f"{product.title}, {category_name}, buy online, Bangladesh",
+        "og_image": og_image_url,
+        "og_url": request.build_absolute_uri(request.path),
+    }
+    
+    
     context = {
         'product': product,
         'images': images,
@@ -690,6 +723,7 @@ def product_details(request, slug):
         'recommended_percentage': round(recommended_percentage, 1),
         'review_form': review_form,
         'youtube_video_id': youtube_video_id,  # Add this line
+        'meta': meta,
     }
     return render(request, 'front/shop/product_details.html', context)
 
@@ -1136,7 +1170,7 @@ def place_order(request):
             is_default=True,
         )
 
-        # === Detect if it’s a BUY NOW checkout ===
+        # === Detect if itï¿½s a BUY NOW checkout ===
         buy_now_product_id = request.POST.get("product_id")
 
         if buy_now_product_id:

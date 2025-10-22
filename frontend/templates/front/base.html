@@ -6,16 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
 
-    <title>Smart DSM</title>
+    <!-- Dynamic Title -->
+    <title>{% block title %}{{ meta.title }}{% endblock %}</title>
 
-    <meta name="keywords" content="Marketplace ecommerce responsive HTML5 Template" />
-    <meta name="description"
-        content="Wolmart is powerful marketplace &amp; ecommerce responsive Html5 Template.">
-    <meta name="author" content="D-THEMES">
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}{{ meta.description }}{% endblock %}"/>
+    <meta name="keywords" content="{% block meta_keywords %}{{ meta.keywords }}{% endblock %}"/>
+    <meta name="author" content="Smart DSM">
+
+    <!-- Open Graph Meta Tags for Facebook & Social Media -->
+    <meta property="og:title" content="{% block og_title %}{{ meta.title }}{% endblock %}"/>
+    <meta property="og:description" content="{% block og_description %}{{ meta.description }}{% endblock %}"/>
+    <meta property="og:image" content="{% block og_image %}{{ meta.og_image }}{% endblock %}"/>
+    <meta property="og:image:width" content="1200"/>
+    <meta property="og:image:height" content="630"/>
+    <meta property="og:url" content="{{ meta.og_url }}"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="{{ meta.title }}"/>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'front/assets/images/icons/favicon.png' %}">
+    <link rel="icon" type="image/png" href="{{ meta.favicon }}">
+    <link rel="shortcut icon" href="{{ meta.favicon }}">
+    <link rel="apple-touch-icon" href="{{ meta.favicon }}">
 
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ meta.og_url }}"/>
     <!-- WebFont.js -->
     <script>
         WebFontConfig = {

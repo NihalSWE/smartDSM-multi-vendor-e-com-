@@ -543,3 +543,24 @@ class DeliveryChargeAdmin(VendorOwnedAdminMixin, admin.ModelAdmin):
         if not request.user.is_superuser:
             obj.vendor = request.user
         super().save_model(request, obj, form, change)
+        
+        
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('site_name', 'site_description', 'site_keywords')
+        }),
+        ('Images', {
+            'fields': ('og_image', 'favicon'),
+            'description': 'OG Image recommended size: 1200x630px. Favicon recommended size: 512x512px'
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # Prevent adding more than one instance
+        return not SiteSettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # Prevent deletion
+        return False

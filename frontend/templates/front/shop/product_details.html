@@ -1,6 +1,14 @@
 {% extends "front/base.html" %}
 {% load static %}
 
+
+{% block title %}{{ meta.title }}{% endblock %}
+{% block meta_description %}{{ meta.description }}{% endblock %}
+{% block meta_keywords %}{{ meta.keywords }}{% endblock %}
+{% block og_title %}{{ meta.title }}{% endblock %}
+{% block og_description %}{{ meta.description }}{% endblock %}
+{% block og_image %}{{ meta.og_image }}{% endblock %}
+
 {% block custom_css %}
 <!-- Vendor CSS -->
 <link rel="stylesheet" type="text/css" href="{% static 'front/assets/vendor/fontawesome-free/css/all.min.css'%}">

@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .custom-large-btn:hover {
+        background-color: #4a3dd9 !important;
+    }
+
+    .success-message {
+        background-color: #10cf1057;
+        color: #096009;
+    }
+
+    .error-message {
+        background-color: #ff0d0d78 !important;
+        color: #890000;
+    }
+
+    .error-success-div {
+        max-height: 0;
+        opacity: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+
+    .error-success-div.show {
+        max-height: 200px;
+        opacity: 1;
+    }
+
+    .section-card {
+        margin-bottom: 25px;
+    }
+
+    .image-preview {
+        max-width: 200px;
+        max-height: 150px;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 130px;
+        object-fit: contain;
+    }
+
+    .upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .upload-area:hover {
+        border-color: #4a3dd9;
+        background-color: #f8f9fa;
+    }
+
+    .upload-area i {
+        font-size: 48px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+
+
+</style>
+{% endblock css %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header pb-0 card-no-border">
+                    <h1><i class="fa-solid fa-gear me-2"></i>Site Settings</h1>
+                    <p class="text-muted">Manage your website's meta information and social media links</p>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Basic Information Section -->
+                    <div class="section-card">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fa-solid fa-info-circle me-2"></i>Basic Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="basicInfoForm">
+                                    {% csrf_token %}
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label" for="site_name">Site Name</label>
+                                            <input class="form-control btn-pill" id="site_name" name="site_name" type="text" value="{{ settings.site_name }}" placeholder="Enter site name">
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label" for="site_description">Site Description</label>
+                                            <textarea class="form-control btn-pill" id="site_description" name="site_description" rows="3" placeholder="Enter site description">{{ settings.site_description }}</textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label" for="site_keywords">SEO Keywords</label>
+                                            <textarea class="form-control btn-pill" id="site_keywords" name="site_keywords" rows="2" placeholder="keyword1, keyword2, keyword3">{{ settings.site_keywords }}</textarea>
+                                            <small class="text-muted">Separate keywords with commas</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="error-success-div"></div>
+
+                                    <div class="text-end mt-3">
+                                        <button class="btn btn-primary custom-large-btn" type="submit">
+                                            <i class="fa-solid fa-save me-2"></i>Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Section -->
+                    <div class="section-card">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fa-solid fa-images me-2"></i>Images</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- OG Image -->
+                                    <div class="col-md-6 mb-4">
+                                        <label class="form-label">OG Image (Social Media Preview)</label>
+                                        <p class="text-muted small">Recommended size: 1200x630px</p>
+                                        
+                                        <form id="ogImageForm" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="upload-area" onclick="document.getElementById('og_image_input').click()">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                <p class="mb-0">Click to upload OG Image</p>
+                                            </div>
+                                            <input type="file" id="og_image_input" name="og_image" accept="image/*" style="display: none;">
+                                        </form>
+
+                                        {% if settings.og_image %}
+                                        <div class="image-preview mt-3">
+                                            <img src="{{ settings.og_image.url }}" alt="OG Image" id="og_image_preview">
+                                        </div>
+                                        {% else %}
+                                        <div class="image-preview mt-3" id="og_image_preview_container" style="display: none;">
+                                            <img src="" alt="OG Image" id="og_image_preview">
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Favicon -->
+                                    <div class="col-md-6 mb-4">
+                                        <label class="form-label">Favicon</label>
+                                        <p class="text-muted small">Recommended size: 512x512px</p>
+                                        
+                                        <form id="faviconForm" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="upload-area" onclick="document.getElementById('favicon_input').click()">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                <p class="mb-0">Click to upload Favicon</p>
+                                            </div>
+                                            <input type="file" id="favicon_input" name="favicon" accept="image/*" style="display: none;">
+                                        </form>
+
+                                        {% if settings.favicon %}
+                                        <div class="image-preview mt-3">
+                                            <img src="{{ settings.favicon.url }}" alt="Favicon" id="favicon_preview">
+                                        </div>
+                                        {% else %}
+                                        <div class="image-preview mt-3" id="favicon_preview_container" style="display: none;">
+                                            <img src="" alt="Favicon" id="favicon_preview">
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="error-success-div"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 text-center p-4">
+            <div class="text-center">
+                <img src="{% static 'assets/images/tick_anim.gif' %}" alt="Success" class="success-media" style="width: 150px; height: 150px;"/>
+            </div>
+            <h5 class="mt-3" id="successMessage">Updated successfully!</h5>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scriptcontent %}
+
+<script>
+    function showMessage(formElement, type, message) {
+        const div = $(formElement).find(".error-success-div");
+
+        function expand() {
+            div
+                .removeClass("error-message success-message")
+                .addClass(type + "-message")
+                .text(message);
+
+            requestAnimationFrame(() => {
+                div.addClass("show");
+            });
+
+            if (type === "success") {
+                setTimeout(() => {
+                    div.removeClass("show");
+                }, 3000);
+            }
+        }
+
+        if (div.hasClass("show")) {
+            div.removeClass("show");
+            div.one("transitionend", expand);
+        } else {
+            expand();
+        }
+    }
+
+    // Basic Information Form
+    $("#basicInfoForm").on("submit", function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            action: "update_basic",
+            site_name: $("#site_name").val(),
+            site_description: $("#site_description").val(),
+            site_keywords: $("#site_keywords").val()
+        };
+
+        fetch("{% url 'site' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(r => r.json())
+        .then(d => {
+            showMessage("#basicInfoForm", d.status, d.message);
+        })
+        .catch(err => {
+            showMessage("#basicInfoForm", "error", "An error occurred");
+        });
+    });
+
+    // OG Image Upload
+    $("#og_image_input").on("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('og_image', file);
+            formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+
+            fetch("{% url 'site' %}", {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.status === "success") {
+                    $("#og_image_preview").attr("src", d.image_url);
+                    $("#og_image_preview_container").show();
+                    showMessage("#ogImageForm", d.status, d.message);
+                } else {
+                    showMessage("#ogImageForm", d.status, d.message);
+                }
+            })
+            .catch(err => {
+                showMessage("#ogImageForm", "error", "Upload failed");
+            });
+        }
+    });
+
+    // Favicon Upload
+    $("#favicon_input").on("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('favicon', file);
+            formData.append('csrfmiddlewaretoken', "{{ csrf_token }}");
+
+            fetch("{% url 'site' %}", {
+                method: "POST",
+                body: formData
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.status === "success") {
+                    $("#favicon_preview").attr("src", d.image_url);
+                    $("#favicon_preview_container").show();
+                    showMessage("#faviconForm", d.status, d.message);
+                } else {
+                    showMessage("#faviconForm", d.status, d.message);
+                }
+            })
+            .catch(err => {
+                showMessage("#faviconForm", "error", "Upload failed");
+            });
+        }
+    });
+</script>
+
+{% endblock %}

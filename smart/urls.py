@@ -183,6 +183,8 @@ urlpatterns = [
         #invoice
     path('invoice/<int:order_id>/', views.invoice, name='invoice'),
 
+    #site setting
+    path('site',views.site,name='site'),
 
 
 
