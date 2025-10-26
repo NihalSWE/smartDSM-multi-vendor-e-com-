@@ -321,9 +321,80 @@
                     </div>
                 </div>
             </div>
+            <aside class="sidebar product-sidebar sidebar-fixed right-sidebar sticky-sidebar-wrapper">
+                <div class="sidebar-overlay"></div>
+                <div class="widget widget-products">
+                    <div class="title-link-wrapper mb-2">
+                        <h4 class="title title-link font-weight-bold">More Related Products</h4>
+                    </div>
+            
+                    <div class="swiper nav-top">
+                        <div class="swiper-container swiper-theme nav-top" data-swiper-options='{
+                            "slidesPerView": 1,
+                            "spaceBetween": 20,
+                            "navigation": {
+                                "prevEl": ".swiper-button-prev",
+                                "nextEl": ".swiper-button-next"
+                            }
+                        }'>
+                            <div class="swiper-wrapper">
+                                {% for product_chunk in related_products %}
+                                <div class="widget-col swiper-slide">
+                                    {% for product in product_chunk %}
+                                    <div class="product product-widget">
+                                        <figure class="product-media">
+                                            <a href="{% url 'product_details' product.slug %}">
+                                                {% if product.thumbnail_image %}
+                                    <img src="{{ product.thumbnail_image.url }}" alt="{{ product.name }}" width="100px" height="113px">
+                                {% else %}
+                                    <img src="{% static 'images/default_thumbnail.png' %}" alt="Default Image"width="100px" height="113px">
+                                {% endif %}
+                                            </a>
+                                        </figure>
+                                        <div class="product-details">
+                                            <h4 class="product-name">
+                                                <a href="{% url 'product_details' product.slug %}">{{ product.title }}</a>
+                                            </h4>
+                                            {% comment %} <div class="ratings-container">
+                                                <div class="ratings-full">
+                                                    <span class="ratings" style="width: {{ product.get_average_rating_percentage }}%;"></span>
+                                                    <span class="tooltiptext tooltip-top"></span>
+                                                </div>
+                                            </div> {% endcomment %}
+                                            <div class="product-price">
+                                                {% if product.get_discounted_price < product.selling_price %}
+                                                    <!-- Show discounted price with original crossed -->
+                                                    <del class="old-price" style="color:red">৳{{ product.selling_price }}</del>
+                                                    <ins class="new-price">৳{{ product.get_discounted_price }}</ins>
+                                                {% else %}
+                                                    <!-- Show regular price if no discount -->
+                                                    <ins class="new-price">৳{{ product.selling_price }}</ins>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% empty %}
+                                <div class="widget-col swiper-slide">
+                                    <p>No related products found</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if related_products|length > 1 %}
+                            <button class="swiper-button-next"></button>
+                            <button class="swiper-button-prev"></button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
 </div>
+
+
+
 <!-- End of Page Content -->
 
 <!-- Checkout Section -->
@@ -543,9 +614,11 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </form>
     </div>
+
 </section>
 {% endblock content %}
 

@@ -184,3 +184,46 @@ def get_upload_limit(user):
 
     # Others (e.g., Staff=2): unlimited
     return None
+
+
+
+
+
+from django.core.cache import cache
+from datetime import datetime, timedelta
+import hashlib
+
+def get_client_identifier(request):
+    """Create unique identifier for each visitor"""
+    ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    identifier = f"{ip}_{user_agent}"
+    return hashlib.md5(identifier.encode()).hexdigest()
+
+def track_live_viewer(request, product_id):
+    """
+    Track live viewers on product page
+    Returns current number of people viewing right now
+    """
+    cache_key = f"product_viewers_{product_id}"
+    viewer_id = get_client_identifier(request)
+    
+    # Get current viewers
+    viewers = cache.get(cache_key, {})
+    
+    # Add current viewer with timestamp
+    viewers[viewer_id] = datetime.now().isoformat()
+    
+    # Remove inactive viewers (older than 2 minutes)
+    current_time = datetime.now()
+    active_viewers = {}
+    
+    for vid, timestamp in viewers.items():
+        viewer_time = datetime.fromisoformat(timestamp)
+        if current_time - viewer_time < timedelta(minutes=2):
+            active_viewers[vid] = timestamp
+    
+    # Save to cache
+    cache.set(cache_key, active_viewers, 180)
+    
+    return len(active_viewers)

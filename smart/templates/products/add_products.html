@@ -559,6 +559,24 @@
                                                             <textarea name="description" id="product-description" style="display: none"></textarea>
                                                         </div>
                                                     </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Product Specification</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar4">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor3"></div>
+                                                            <textarea name="specification" id="product-specification" style="display: none"></textarea>
+                                                        </div>
+                                                    </div>
                                                     <div class="col-12 product-buttons">
                                                         <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
                                                             <svg>
@@ -1091,21 +1109,27 @@
         const submitBtn = productForm.querySelector('button[type="submit"]')
         
         // Initialize editors
+                // Initialize editors - ONLY ONCE for each editor
         const descriptionEditor = new Quill('#editor2', {
             theme: 'snow',
             modules: { toolbar: '#toolbar3' }
         })
-        
+
         const metaEditor = new Quill('#editor4', {
             theme: 'snow',
             modules: { toolbar: '#toolbar4' }
         })
 
-        // Initialize editors
         const shortDescriptionEditor = new Quill('#editor5', {
             theme: 'snow',
             modules: { toolbar: '#toolbar2' }
         })
+
+        const specificationEditor = new Quill('#editor3', {
+            theme: 'snow',
+            modules: { toolbar: '#toolbar4' }
+        });
+
         
         // Initialize Tagify
         new Tagify(document.querySelector('input[name="tags"]'))
@@ -1216,12 +1240,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             const skuInput = document.querySelector('input[name="sku"]');
             const titleInput = document.querySelector('input[name="title"]');
-            const quillEditor = new Quill('#editor2', {
-                theme: 'snow',
-                modules: {
-                    toolbar: '#toolbar2'
-                }
-            });
+            
             const nextButton = document.getElementById('next-button');
 
             function updateHiddenDescription() {
@@ -1231,6 +1250,12 @@
                 description.value = quillEditor.root.innerHTML;
                 shortDescription.value = quillEditor.root.innerHTML;
             }
+
+            function updateHiddenSpecification() {
+                const specification = document.querySelector('#product-specification');
+                specification.value = specificationEditor.root.innerHTML;
+            }
+            
 
             function checkFieldsFilled() {
                 const sku = skuInput.value.trim();
@@ -1245,6 +1270,12 @@
             }
 
             // Event listeners
+            specificationEditor.on('text-change', function() {
+                updateHiddenSpecification();
+            });
+
+
+
             skuInput.addEventListener('input', checkFieldsFilled);
             titleInput.addEventListener('input', checkFieldsFilled);
             quillEditor.on('text-change', function () {
@@ -1419,6 +1450,32 @@
             loadingModal.style.display = 'flex';
 
             const form = document.getElementById('product-form');
+             // SYNC ALL EDITORS BEFORE SUBMISSION
+            // Sync description editor
+            const descEditor = document.querySelector('#editor2 .ql-editor');
+            if (descEditor) {
+                document.getElementById('product-description').value = descEditor.innerHTML;
+            }
+            
+            // Sync short description editor  
+            const shortDescEditor = document.querySelector('#editor5 .ql-editor');
+            if (shortDescEditor) {
+                document.getElementById('short-description').value = shortDescEditor.innerHTML;
+            }
+            
+            // Sync specification editor
+            const specEditor = document.querySelector('#editor3 .ql-editor');
+            if (specEditor) {
+                document.getElementById('product-specification').value = specEditor.innerHTML;
+            }
+            
+            // Sync meta description editor
+            const metaDescEditor = document.querySelector('#editor4 .ql-editor');
+            if (metaDescEditor) {
+                document.getElementById('meta-description').value = metaDescEditor.innerHTML;
+            }
+
+
             const formData = new FormData(form);
 
             fetch("{% url 'create_product' %}", {

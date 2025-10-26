@@ -525,6 +525,35 @@
                                                         <input class="form-control" id="validationProductTitle" type="text" 
                                                                placeholder="Title" name="title" value="{{ product.title }}" required />
                                                     </div>
+                                                    
+                                                    <!-- Add missing Product Model field -->
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" for="validationProductModel">Product Model</label>
+                                                        <input class="form-control" id="validationProductModel" type="text" 
+                                                               placeholder="Product Model" name="model" value="{{ product.model }}"
+                                                               oninput="this.value = this.value.toUpperCase()" />
+                                                    </div>
+                                        
+                                                    <!-- Add missing Short Description field -->
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Short Description</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar5">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor5">{{ product.short_description|safe }}</div>
+                                                            <textarea name="short_description" id="short-description" style="display: none">{{ product.short_description|safe }}</textarea>
+                                                        </div>
+                                                    </div>
+                                        
                                                     <div class="col-md-12">
                                                         <label class="form-label">Product Description</label>
                                                         <div class="toolbar-box">
@@ -543,6 +572,27 @@
                                                             <textarea name="description" id="product-description" style="display: none">{{ product.description|safe }}</textarea>
                                                         </div>
                                                     </div>
+                                                    
+                                                    <!-- Add missing Product Specification field -->
+                                                    <div class="col-md-12">
+                                                        <label class="form-label">Product Specification</label>
+                                                        <div class="toolbar-box">
+                                                            <div id="toolbar3">
+                                                                <button class="ql-bold">Bold</button>
+                                                                <button class="ql-italic">Italic</button>
+                                                                <button class="ql-underline">underline</button>
+                                                                <button class="ql-strike">Strike</button>
+                                                                <button class="ql-list" value="ordered">List</button>
+                                                                <button class="ql-list" value="bullet"></button>
+                                                                <button class="ql-indent" value="-1"></button>
+                                                                <button class="ql-indent" value="+1"></button>
+                                                                <button class="ql-link"></button>
+                                                            </div>
+                                                            <div id="editor3">{{ product.specification|safe }}</div>
+                                                            <textarea name="specification" id="product-specification" style="display: none">{{ product.specification|safe }}</textarea>
+                                                        </div>
+                                                    </div>
+                                                    
                                                     <div class="col-12 product-buttons">
                                                         <button class="btn" type="button" onclick="handleNextButtonClick('category-product-tab')">
                                                             <svg>
@@ -1062,6 +1112,19 @@
                 theme: 'snow',
                 modules: { toolbar: '#toolbar4' }
             })
+
+
+            // Initialize the additional editors for edit page
+            const shortDescriptionEditor = new Quill('#editor5', {
+                theme: 'snow',
+                modules: { toolbar: '#toolbar5' }
+            });
+
+            const specificationEditor = new Quill('#editor3', {
+                theme: 'snow',
+                modules: { toolbar: '#toolbar3' }
+            });
+
             
             // Initialize Tagify
             new Tagify(document.querySelector('input[name="tags"]'))
@@ -1082,6 +1145,17 @@
                     const metaEditor = document.querySelector('#editor4 .ql-editor')
                     if (metaEditor) {
                         document.getElementById('meta-description').value = metaEditor.innerHTML
+                    }
+
+                    // Sync all editors before submission
+                    const shortDescEditor = document.querySelector('#editor5 .ql-editor');
+                    if (shortDescEditor) {
+                        document.getElementById('short-description').value = shortDescEditor.innerHTML;
+                    }
+
+                    const specEditor = document.querySelector('#editor3 .ql-editor');
+                    if (specEditor) {
+                        document.getElementById('product-specification').value = specEditor.innerHTML;
                     }
                 
                     // Submit form

@@ -425,6 +425,7 @@ class Product(models.Model):
     model               = models.CharField(max_length=255, blank=True, null=True)
     slug                = models.SlugField(max_length=255, unique=True)
     description         = models.TextField(blank=True, null=True)
+    specification         = models.TextField(blank=True, null=True)
     short_description   = models.TextField(max_length=200,blank=True, null=True)
     
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', help_text="Who is selling this item")

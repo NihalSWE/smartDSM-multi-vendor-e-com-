@@ -273,7 +273,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('title', 'slug', 'sku', 'model','short_description','description', 'seller', 'thumbnail_image')
+            'fields': ('title', 'slug', 'sku', 'model','short_description','description', 'specification','seller', 'thumbnail_image')
         }),
         ('Pricing & Inventory', {
             'fields': ('buy_price', 'selling_price', 'stock_availability',

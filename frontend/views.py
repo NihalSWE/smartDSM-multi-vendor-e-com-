@@ -583,13 +583,17 @@ def save_vendor(request):
             'message': f'An error occurred: {str(e)}'
         }, status=500)
         
-
+from .utils.utils import track_live_viewer
 def product_details(request, slug):
      # 🟩 Step 1: If query params exist, redirect to landing page
     if request.GET:
         return redirect('product_landing_checkout', slug=slug)
     
     product = get_object_or_404(Product, slug=slug)
+    
+    # ✅ NEW: Track live viewer and get current count (ADD THIS ONE LINE)
+    live_viewers = track_live_viewer(request, product.id)
+    
     images = product.images.all().order_by('position')
     
     # Get the first discount for this product
@@ -724,6 +728,7 @@ def product_details(request, slug):
         'review_form': review_form,
         'youtube_video_id': youtube_video_id,  # Add this line
         'meta': meta,
+        'live_viewers': live_viewers,
     }
     return render(request, 'front/shop/product_details.html', context)
 
@@ -1745,6 +1750,18 @@ def product_landing_checkout(request, slug):
     # Get cart context for checkout section
     cart_data = cart_context(request)
     
+    # Get related products (same category, exclude current)
+    related_products = Product.objects.filter(
+        category=product.category  # Same category as current product
+    ).exclude(id=product.id).order_by('?')[:6]  # Random 6 products from same category
+    
+    vendor_products = Product.objects.filter(
+        seller=product.seller  # Same seller as current product
+    ).exclude(id=product.id).order_by('?')[:3]
+    
+    # Split into chunks of 3 for swiper slides
+    related_chunks = [list(related_products)[i:i+3] for i in range(0, len(related_products), 3)]
+    
     context = {
         'product': product,
         'images': images,
@@ -1759,6 +1776,9 @@ def product_landing_checkout(request, slug):
         'discount_total': cart_data.get("discount_total", Decimal("0.00")),
         'grand_total': cart_data.get("grand_total", Decimal("0.00")),
         'has_own_products': cart_data.get("has_own_products", False),
+        'related_products': related_chunks,
+        'related_products_of_same_category': related_products,
+        'vendor_products': vendor_products,
     }
     
     return render(request, 'front/landing/product_landing_checkout.html', context)

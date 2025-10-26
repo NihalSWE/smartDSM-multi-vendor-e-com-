@@ -1231,6 +1231,7 @@ def create_product(request):
             return JsonResponse({'success': False, 'errors': errors})
 
         description = data.get('description', '')
+        specification=data.get('specification','')
         model = data.get('model', '')
         short_description = data.get('short_description', '')
          # Add buy_price handling
@@ -1290,6 +1291,7 @@ def create_product(request):
             model=model,
             short_description=short_description,
             description=description,
+            specification=specification,
             thumbnail_image=thumbnail,
             buy_price=buy_price,  # Add this line
             selling_price=selling_price,

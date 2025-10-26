@@ -273,6 +273,43 @@
                                         </div>
 
                                         <hr class="product-divider">
+                                        <!-- ============================================ -->
+
+                                        <div class="product-live-viewers" style="margin: 15px 0;">
+                                            <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; font-size: 14px; color: #495057;">
+                                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 6px; height: 6px; position: relative;">
+                                                    <span class="pulse-ring" style="display: block; width: 6px; height: 6px; border-radius: 50%; background: #28a745; animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;"></span>
+                                                    <span style="position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #28a745;"></span>
+                                                </span>
+                                                <i class="fas fa-eye" style="color: #6c757d; font-size: 14px;"></i>
+                                                <span style="font-weight: 500; color: #212529;">
+                                                    <strong id="live-viewer-count" style="color: #28a745;">{{ live_viewers }}</strong> 
+                                                    {% if live_viewers == 1 %}
+                                                        person is
+                                                    {% else %}
+                                                        people are
+                                                    {% endif %}
+                                                    viewing this product
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <style>
+                                        @keyframes pulse-ring {
+                                            0% {
+                                                transform: scale(1);
+                                                opacity: 1;
+                                            }
+                                            100% {
+                                                transform: scale(2.5);
+                                                opacity: 0;
+                                            }
+                                        }
+                                        
+                                        .product-live-viewers:hover {
+                                            opacity: 0.9;
+                                        }
+                                        </style>
 
                                         <div class="product-price">
                                             {% if discount and discount.discount_type != 'bogo' %}
@@ -403,15 +440,72 @@
                                             
                                             
                                             
-                                        <!--<div class="social-links-wrapper">-->
-                                        <!--    <div class="social-links">-->
-                                        <!--        <div class="social-icons social-no-color border-thin">-->
-                                        <!--            <a href="#" class="social-icon social-facebook w-icon-facebook"></a>-->
-                                        <!--            <a href="#" class="social-icon social-whatsapp fab fa-whatsapp"></a>-->
-                                                   
-                                        <!--        </div>-->
-                                        <!--    </div>-->
-                                        <!--</div>-->
+                                        <div class="social-links-wrapper">
+                                            <div class="social-links">
+                                                <div class="social-icons social-icons-colored">
+                                                            {% for icon in social_icons %}
+                                                                <a {% if icon.title == 'Youtube' %}style="background:red;"{% endif %} href="{{ icon.link }}" class="social-icon" title="{{ icon.title }}" target="_blank">
+                                                                    <i class="{{ icon.icon_class }}"></i>
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                        <style>
+                                                            .social-icons {
+                                                                display: flex;
+                                                                {% comment %} gap: 10px; {% endcomment %}
+                                                                align-items: center;
+                                                            }
+                                                            
+                                                            .social-icons .social-icon {
+                                                                width: 40px;
+                                                                height: 40px;
+                                                                border-radius: 50%;
+                                                                display: flex;
+                                                                align-items: center;
+                                                                justify-content: center;
+                                                                {% comment %} background-color: #4a90e2; {% endcomment %}
+                                                                color: white;
+                                                                text-decoration: none;
+                                                                transition: all 0.3s ease;
+                                                            }
+                                                            
+                                                            .social-icons .social-icon:hover {
+                                                                background-color: #357ABD;
+                                                                transform: scale(1.1);
+                                                            }
+                                                            
+                                                            .social-icons .social-icon i {
+                                                                font-size: 18px;
+                                                            }
+                                                            
+                                                            /* Specific colors for each platform (optional) */
+                                                            .social-icons a[title="Facebook"] {
+                                                                background-color: #3b5998;
+                                                            }
+                                                            
+                                                            .social-icons a[title="Instagram"] {
+                                                                background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+                                                            }
+                                                            
+                                                            .social-icons a[title="YouTube"] {
+                                                                background-color: #ff0000 !important;
+                                                            }
+                                                            
+                                                            .social-icons a[title="LinkedIn"] {
+                                                                background-color: #0077b5;
+                                                            }
+                                                            
+                                                            .social-icons a[title="Twitter"] {
+                                                                background-color: #000000;
+                                                            }
+                                                            
+                                                            .social-icons a[title="WhatsApp"] {
+                                                                background-color: #25d366;
+                                                            }
+                                                            </style>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -481,9 +575,9 @@
                                     <li class="nav-item">
                                         <a href="#product-tab-description" class="nav-link active">Description</a>
                                     </li>
-                                    <!--<li class="nav-item">-->
-                                    <!--    <a href="#product-tab-specification" class="nav-link">Specification</a>-->
-                                    <!--</li>-->
+                                   <li class="nav-item">
+                                        <a href="#product-tab-specification" class="nav-link">Specification</a>
+                                    </li>
                                     <!--<li class="nav-item">-->
                                     <!--    <a href="#product-tab-vendor" class="nav-link">Vendor Info</a>-->
                                     <!--</li>-->
@@ -495,7 +589,6 @@
                                     <div class="tab-pane active" id="product-tab-description">
                                         <div class="row mb-4">
                                             <div class="col-md-12 mb-5">
-                                                <h4 class="title tab-pane-title font-weight-bold mb-2">Detail</h4>
                                                 <p class="mb-4">{{product.description |safe}}</p>
                                             </div>
                                             <div class="col-md-6 mb-5">
@@ -545,24 +638,7 @@
                                         </div> {% endcomment %}
                                     </div>
                                     <div class="tab-pane" id="product-tab-specification">
-                                        <ul class="list-none">
-                                            <li>
-                                                <label>Model</label>
-                                                <p>Skysuite 320</p>
-                                            </li>
-                                            <li>
-                                                <label>Color</label>
-                                                <p>Black</p>
-                                            </li>
-                                            <li>
-                                                <label>Size</label>
-                                                <p>Large, Small</p>
-                                            </li>
-                                            <li>
-                                                <label>Guarantee Time</label>
-                                                <p>3 Months</p>
-                                            </li>
-                                        </ul>
+                                        <p class="mb-4">{{product.specification |safe}}</p>
                                     </div>
                                     <div class="tab-pane" id="product-tab-vendor">
                                         <div class="row mb-3">
@@ -952,9 +1028,9 @@
                                                             </div>
                                                             <a href="product-default.html" class="rating-reviews">(3 reviews)</a>
                                                         </div>
-                                                        <div class="product-pa-wrapper">
+                                                        {% comment %} <div class="product-pa-wrapper">
                                                             <div class="product-price">৳632.00</div>
-                                                        </div>
+                                                        </div> {% endcomment %}
                                                     </div>
                                                 </div>
                                             {% endfor %}
@@ -1116,6 +1192,25 @@
             });
         </script>
         
-
-
+        <script>
+            // Auto-refresh viewer count every 30 seconds
+            setInterval(function() {
+                fetch(window.location.href, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newCount = doc.querySelector('#live-viewer-count');
+                    if (newCount) {
+                        document.getElementById('live-viewer-count').textContent = newCount.textContent;
+                    }
+                })
+                .catch(error => console.log('Viewer update failed'));
+            }, 30000);
+            </script>
     {% endblock custom_js %}
